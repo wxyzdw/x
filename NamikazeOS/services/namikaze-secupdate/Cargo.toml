@@ -1,0 +1,17 @@
+[package]
+name = "namikaze-secupdate"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+namikaze-common = { path = "../../lib/namikaze-common" }
+namikaze-rt = { path = "../../lib/namikaze-rt" }
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "namikaze-secupdate"
+path = "src/main.rs"

@@ -1,0 +1,18 @@
+[package]
+name = "namikaze-vault"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+namikaze-common = { path = "../../lib/namikaze-common" }
+namikaze-ffi = { path = "../../lib/namikaze-ffi" }
+namikaze-rt = { path = "../../lib/namikaze-rt" }
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "namikaze-vault"
+path = "src/main.rs"

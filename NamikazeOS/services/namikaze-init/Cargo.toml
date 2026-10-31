@@ -1,0 +1,16 @@
+[package]
+name = "namikaze-init"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+namikaze-common = { path = "../../lib/namikaze-common" }
+namikaze-rt = { path = "../../lib/namikaze-rt" }
+namikaze-ffi = { path = "../../lib/namikaze-ffi" }
+namikaze-live-core = { path = "../../lib/namikaze-live-core" }
+
+[[bin]]
+name = "namikaze-init"
+path = "src/main.rs"

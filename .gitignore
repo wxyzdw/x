@@ -1,7 +1,16 @@
+# Build outputs (the workspace lives in NamikazeOS/)
+/NamikazeOS/target
+/NamikazeOS/dist
 /target
 /dist
 *.img
 *.iso
 *.log
 Cargo.lock.bak
-/NamikazeOS
+
+# Local agent workspace, never part of the project
+.env
+/skills
+/upload
+/download
+/scripts

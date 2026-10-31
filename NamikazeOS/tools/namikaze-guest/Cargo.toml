@@ -1,0 +1,15 @@
+[package]
+name = "namikaze-guest"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+namikaze-common = { path = "../../lib/namikaze-common" }
+namikaze-rt = { path = "../../lib/namikaze-rt" }
+namikaze-detect = { path = "../../services/namikaze-detect" }
+
+[[bin]]
+name = "namikaze-guest"
+path = "src/main.rs"

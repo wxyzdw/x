@@ -1,0 +1,15 @@
+[package]
+name = "namikaze-ntp"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+namikaze-common = { path = "../../lib/namikaze-common" }
+namikaze-chrono = { path = "../../tools/namikaze-chrono" }
+namikaze-rt = { path = "../../lib/namikaze-rt" }
+
+[[bin]]
+name = "namikaze-ntp"
+path = "src/main.rs"

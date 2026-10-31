@@ -1,0 +1,24 @@
+[package]
+name = "namikaze-sentinel"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+namikaze-common = { path = "../../lib/namikaze-common" }
+namikaze-vault = { path = "../../tools/namikaze-vault" }
+namikaze-rt = { path = "../../lib/namikaze-rt" }
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "namikaze-sentinel"
+path = "src/main.rs"
+
+[features]
+default = []
+# PAM service module ABI (cdylib); built in CI with:
+#   cargo rustc -p namikaze-sentinel --features pam-module --crate-type cdylib
+pam-module = []

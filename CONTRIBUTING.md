@@ -6,7 +6,8 @@ is "what the guards will check anyway".
 
 ## The one command that matters
 
-Before every push:
+Before every push, from the `NamikazeOS/` workspace directory (the
+repository root only carries project meta):
 
     cargo run -p xtask -- ci
 

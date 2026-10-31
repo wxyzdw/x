@@ -5,6 +5,23 @@ the Keep a Changelog structure; the project uses pure semantic versioning.
 
 ## [3.0.0-alpha.3]
 
+### Changed - repository restructure (post-release)
+
+- **role-based layout**: the repository root now carries only project
+  meta (README, LICENSE, policy docs, CI workflows); the entire product
+  tree moved under `NamikazeOS/` with the 51 crates grouped by role:
+  `lib/` (7 foundational libraries), `services/` (21 init.d services
+  and the boot chain) and `tools/` (23 userland CLIs), next to
+  `xtask/`, `iso/`, `kernel/`, `overlay/` and `sysroot/`.
+- **guards follow the tree**: xtask walks the new layout; the CI
+  workflow runs the gate from `NamikazeOS/` and the release artifacts
+  come from `NamikazeOS/dist/`.
+- **repository hygiene**: stale development clones (gitlink
+  directories), the vendored skills mirror, the legacy Forgejo
+  workflows and the obsolete transplant script are no longer tracked;
+  file modes normalized (docs and configs are no longer marked
+  executable).
+
 ### Added - CI hardening (post-release)
 
 - **CI gate unified**: the workflow now runs `cargo run -p xtask -- ci`,

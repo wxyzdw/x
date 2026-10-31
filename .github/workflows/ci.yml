@@ -16,6 +16,12 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
 
+# The repository root carries only project meta; the Rust workspace and
+# every xtask task live under NamikazeOS/, so all run steps execute there.
+defaults:
+  run:
+    working-directory: NamikazeOS
+
 jobs:
   # One job, one command: the xtask ci gate runs the exact sequence the
   # maintainers run locally (guards, build, tests, fmt, clippy, sbom).
@@ -29,13 +35,15 @@ jobs:
           components: clippy, rustfmt
       - name: Cache cargo state
         uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: NamikazeOS
       - name: Full gate (guards + build + tests + fmt + clippy + sbom)
         run: cargo run -p xtask -- ci
       - name: Upload SBOM
         uses: actions/upload-artifact@v7
         with:
           name: sbom
-          path: dist/sbom.json
+          path: NamikazeOS/dist/sbom.json
 
   # Static cross builds for the musl targets. All crates are pure Rust,
   # so the bundled rust-lld links them without any external toolchain:
@@ -67,7 +75,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: namikaze-bin-${{ matrix.target }}
-          path: dist/bin-${{ matrix.target }}
+          path: NamikazeOS/dist/bin-${{ matrix.target }}
 
   # Tag pushes cut a release: seal id, SBOM and checksums as artifacts.
   release:
