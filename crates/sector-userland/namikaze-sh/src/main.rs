@@ -121,10 +121,8 @@ fn find_top(s: &str, needle: &str) -> Option<usize> {
         match bytes[i] {
             b'\'' if !in_d => in_s = !in_s,
             b'"' if !in_s => in_d = !in_d,
-            _ if !in_s && !in_d => {
-                if &bytes[i..i + n.len()] == n {
-                    return Some(i);
-                }
+            _ if !in_s && !in_d && &bytes[i..i + n.len()] == n => {
+                return Some(i);
             }
             _ => {}
         }
@@ -223,7 +221,7 @@ fn run_pipeline(pipeline: &str, env: &mut HashMap<String, String>) -> Result<i32
         }
         let mut command = Command::new(&cmd.argv[0]);
         command.args(&cmd.argv[1..]);
-        command.envs(env.iter().map(|(k, v)| (k, v)));
+        command.envs(env.iter());
         if !carry.is_empty() {
             command.stdin(Stdio::piped());
         } else if let Some(path) = &cmd.stdin_file {
@@ -247,9 +245,7 @@ fn run_pipeline(pipeline: &str, env: &mut HashMap<String, String>) -> Result<i32
         } else {
             command.stdout(Stdio::piped());
         }
-        let mut child = command
-            .spawn()
-            .map_err(|e| format!("{}: {e}", cmd.argv[0]))?;
+        let mut child = command.spawn().map_err(|e| format!("{}: {e}", cmd.argv[0]))?;
         if !carry.is_empty() {
             if let Some(mut stdin) = child.stdin.take() {
                 let _ = stdin.write_all(&carry);
@@ -308,11 +304,8 @@ fn parse_command(stage: &str, env: &HashMap<String, String>) -> Result<SimpleCom
             continue;
         }
         if c == '>' {
-            let (append, ni) = if chars.get(i + 1) == Some(&'>') {
-                (true, i + 2)
-            } else {
-                (false, i + 1)
-            };
+            let (append, ni) =
+                if chars.get(i + 1) == Some(&'>') { (true, i + 2) } else { (false, i + 1) };
             let ni = skip_ws(&chars, ni);
             let (tok, ni) = read_word(&chars, ni)?;
             stdout_file = Some((expand(&tok, env), append));
@@ -320,11 +313,8 @@ fn parse_command(stage: &str, env: &HashMap<String, String>) -> Result<SimpleCom
             continue;
         }
         if c == '2' && chars.get(i + 1) == Some(&'>') {
-            let (append, ni) = if chars.get(i + 2) == Some(&'>') {
-                (true, i + 3)
-            } else {
-                (false, i + 2)
-            };
+            let (append, ni) =
+                if chars.get(i + 2) == Some(&'>') { (true, i + 3) } else { (false, i + 2) };
             let ni = skip_ws(&chars, ni);
             let (tok, ni) = read_word(&chars, ni)?;
             stderr_file = Some((expand(&tok, env), append));
@@ -392,32 +382,26 @@ fn read_word(chars: &[char], mut i: usize) -> Result<(String, usize), String> {
 }
 
 fn is_builtin(name: &str) -> bool {
-    matches!(
-        name,
-        "cd" | "pwd" | "exit" | "export" | "unset" | "echo" | "true" | "false" | "help"
-    )
+    matches!(name, "cd" | "pwd" | "exit" | "export" | "unset" | "echo" | "true" | "false" | "help")
 }
 
 fn builtin(cmd: &SimpleCommand, env: &mut HashMap<String, String>) -> Result<Option<i32>, String> {
     let argv = &cmd.argv;
     match argv[0].as_str() {
         "cd" => {
-            let target = argv.get(1).cloned().unwrap_or_else(|| {
-                env.get("HOME").cloned().unwrap_or_else(|| "/".into())
-            });
+            let target = argv
+                .get(1)
+                .cloned()
+                .unwrap_or_else(|| env.get("HOME").cloned().unwrap_or_else(|| "/".into()));
             std::env::set_current_dir(&target).map_err(|e| format!("cd: {target}: {e}"))?;
-            let pwd = std::env::current_dir()
-                .map(|p| p.display().to_string())
-                .unwrap_or_default();
+            let pwd = std::env::current_dir().map(|p| p.display().to_string()).unwrap_or_default();
             env.insert("PWD".into(), pwd);
             Ok(None)
         }
         "pwd" => {
             println!(
                 "{}",
-                std::env::current_dir()
-                    .map(|p| p.display().to_string())
-                    .unwrap_or_default()
+                std::env::current_dir().map(|p| p.display().to_string()).unwrap_or_default()
             );
             Ok(None)
         }
@@ -482,7 +466,10 @@ mod tests {
         let e = env();
         let cmd = parse_command("run --x > /tmp/out 2> /tmp/err < in.txt", &e).unwrap();
         assert_eq!(cmd.argv, vec!["run", "--x"]);
-        assert_eq!(cmd.stdout_file.as_ref().map(|(p, a)| (p.as_str(), *a)), Some(("/tmp/out", false)));
+        assert_eq!(
+            cmd.stdout_file.as_ref().map(|(p, a)| (p.as_str(), *a)),
+            Some(("/tmp/out", false))
+        );
         assert_eq!(cmd.stderr_file.as_ref().map(|(p, _)| p.as_str()), Some("/tmp/err"));
         assert_eq!(cmd.stdin_file.as_deref(), Some("in.txt"));
     }

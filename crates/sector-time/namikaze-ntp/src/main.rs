@@ -78,11 +78,7 @@ pub fn validate(resp: &SntpPacket) -> Result<()> {
         return Err(Error::Other(format!("unexpected version {}", resp.version())));
     }
     if resp.stratum() == 0 {
-        let kod: String = resp
-            .reference_id()
-            .iter()
-            .map(|b| *b as char)
-            .collect();
+        let kod: String = resp.reference_id().iter().map(|b| *b as char).collect();
         return Err(Error::Other(format!("kiss of death: {kod}")));
     }
     if resp.li() == 3 {
@@ -93,11 +89,7 @@ pub fn validate(resp: &SntpPacket) -> Result<()> {
 
 /// One request/response exchange against `server:123` (or custom port).
 pub fn query(server: &str, timeout: Duration) -> Result<Measurement> {
-    let addr = if server.contains(':') {
-        server.to_string()
-    } else {
-        format!("{server}:123")
-    };
+    let addr = if server.contains(':') { server.to_string() } else { format!("{server}:123") };
     let socket = UdpSocket::bind(if ipv6_target(&addr) { "[::]:0" } else { "0.0.0.0:0" })?;
     socket.set_read_timeout(Some(timeout))?;
     socket.connect(&addr)?;
@@ -106,9 +98,7 @@ pub fn query(server: &str, timeout: Duration) -> Result<Measurement> {
     let t1 = Instant::now();
     socket.send(&req.0)?;
     let mut buf = [0u8; 48];
-    let (n, _) = socket
-        .recv_from(&mut buf)
-        .map_err(|e| Error::Other(format!("ntp reply: {e}")))?;
+    let (n, _) = socket.recv_from(&mut buf).map_err(|e| Error::Other(format!("ntp reply: {e}")))?;
     let t4 = t1.elapsed();
     if n < 48 {
         return Err(Error::Other("short ntp reply".into()));
@@ -116,10 +106,7 @@ pub fn query(server: &str, timeout: Duration) -> Result<Measurement> {
     let resp = SntpPacket(buf);
     validate(&resp)?;
 
-    let local_recv = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
+    let local_recv = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
     let server_ts = resp.transmit_ts() >> 32; // whole seconds
     let server_secs = server_ts as i64 - NTP_ERA_OFFSET as i64;
     let local_secs = local_recv as i64;
@@ -131,8 +118,7 @@ pub fn query(server: &str, timeout: Duration) -> Result<Measurement> {
 }
 
 fn ipv6_target(addr: &str) -> bool {
-    addr.rsplit(':').next().map(|h| h.contains(':')).unwrap_or(false)
-        || addr.starts_with('[')
+    addr.rsplit(':').next().map(|h| h.contains(':')).unwrap_or(false) || addr.starts_with('[')
 }
 
 /// Best measurement across a server list; first success wins with the
@@ -153,47 +139,7 @@ pub fn measure_best(servers: &[&str], timeout: Duration) -> Result<Measurement> 
             break;
         }
     }
-    best.ok_or_else(|| {
-        last_err.unwrap_or_else(|| Error::Other("no ntp servers configured".into()))
-    })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn request_packet_shape() {
-        let p = SntpPacket::request();
-        assert_eq!(p.li(), 0);
-        assert_eq!(p.version(), 4);
-        assert_eq!(p.mode(), 3);
-        assert_eq!(p.0.len(), 48);
-    }
-
-    #[test]
-    fn validate_rejects_kod() {
-        let mut p = SntpPacket::request();
-        p.0[0] = 0b00_100_100; // mode 4 (server)
-        p.0[1] = 0; // stratum 0
-        p.0[12..16].copy_from_slice(b"RATE");
-        let err = validate(&p).unwrap_err();
-        assert!(err.to_string().contains("RATE"));
-    }
-
-    #[test]
-    fn validate_accepts_server() {
-        let mut p = SntpPacket::request();
-        p.0[0] = 0b00_100_100; // mode 4
-        p.0[1] = 2; // stratum 2
-        assert!(validate(&p).is_ok());
-    }
-
-    #[test]
-    fn era_offset_is_correct() {
-        // 1900-01-01T00:00:00Z == unix -2208988800
-        assert_eq!(NTP_ERA_OFFSET, 2_208_988_800);
-    }
+    best.ok_or_else(|| last_err.unwrap_or_else(|| Error::Other("no ntp servers configured".into())))
 }
 
 const USAGE: &[&str] = &[
@@ -213,20 +159,13 @@ fn main() {
     }
     let mut servers: Vec<String> = cli.free(&[]).into_iter().skip(1).collect();
     if servers.is_empty() {
-        servers = vec![
-            "0.pool.ntp.org".into(),
-            "1.pool.ntp.org".into(),
-            "2.pool.ntp.org".into(),
-        ];
+        servers = vec!["0.pool.ntp.org".into(), "1.pool.ntp.org".into(), "2.pool.ntp.org".into()];
     }
     let refs: Vec<&str> = servers.iter().map(String::as_str).collect();
     match cli.sub().unwrap_or_default() {
         "query" => match measure_best(&refs, std::time::Duration::from_secs(5)) {
             Ok(m) => {
-                println!(
-                    "offset={}s rtt={}ms stratum={}",
-                    m.offset_secs, m.rtt_ms, m.stratum
-                );
+                println!("offset={}s rtt={}ms stratum={}", m.offset_secs, m.rtt_ms, m.stratum);
             }
             Err(e) => {
                 eprintln!("namikaze-ntp: {e}");
@@ -265,4 +204,42 @@ fn now_secs() -> i64 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs() as i64)
         .unwrap_or(0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn request_packet_shape() {
+        let p = SntpPacket::request();
+        assert_eq!(p.li(), 0);
+        assert_eq!(p.version(), 4);
+        assert_eq!(p.mode(), 3);
+        assert_eq!(p.0.len(), 48);
+    }
+
+    #[test]
+    fn validate_rejects_kod() {
+        let mut p = SntpPacket::request();
+        p.0[0] = 0b00_100_100; // mode 4 (server)
+        p.0[1] = 0; // stratum 0
+        p.0[12..16].copy_from_slice(b"RATE");
+        let err = validate(&p).unwrap_err();
+        assert!(err.to_string().contains("RATE"));
+    }
+
+    #[test]
+    fn validate_accepts_server() {
+        let mut p = SntpPacket::request();
+        p.0[0] = 0b00_100_100; // mode 4
+        p.0[1] = 2; // stratum 2
+        assert!(validate(&p).is_ok());
+    }
+
+    #[test]
+    fn era_offset_is_correct() {
+        // 1900-01-01T00:00:00Z == unix -2208988800
+        assert_eq!(NTP_ERA_OFFSET, 2_208_988_800);
+    }
 }

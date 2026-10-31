@@ -10,7 +10,6 @@
 
 #![forbid(unsafe_code)]
 
-
 use namikaze_common::{init_tracing, Error, Result};
 use namikaze_rt::args::Cli;
 
@@ -99,12 +98,10 @@ fn main() -> Result<()> {
     if cli.wants_help() {
         cli.usage_exit(USAGE);
     }
-    let out_dir = std::path::PathBuf::from(
-        cli.value_or("out", "./scrubbed"),
-    );
+    let out_dir = std::path::PathBuf::from(cli.value_or("out", "./scrubbed"));
     std::fs::create_dir_all(&out_dir)?;
     let files: Vec<std::path::PathBuf> =
-        cli.free(&["out"]).into_iter().skip(0).map(std::path::PathBuf::from).collect();
+        cli.free(&["out"]).into_iter().map(std::path::PathBuf::from).collect();
     for file in &files {
         let data = std::fs::read(file)?;
         let cleaned = if is_jpeg(&data) {
@@ -118,12 +115,7 @@ fn main() -> Result<()> {
         let name = file.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
         let dest = out_dir.join(name);
         namikaze_common::write_private(&dest, &cleaned)?;
-        println!(
-            "scrubbed {} ({} -> {} bytes)",
-            file.display(),
-            data.len(),
-            cleaned.len()
-        );
+        println!("scrubbed {} ({} -> {} bytes)", file.display(), data.len(), cleaned.len());
     }
     Ok(())
 }

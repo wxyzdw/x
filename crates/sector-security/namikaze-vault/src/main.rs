@@ -48,13 +48,9 @@ fn main() -> Result<()> {
             let pass = ask_passphrase()?;
             let mut entries = namikaze_vault::read_entries(&container, &pass)?;
             let data = std::fs::read(&file)?;
-            let name = cli
-                .value("as-name")
-                .unwrap_or_else(|| {
-                    file.file_name()
-                        .map(|s| s.to_string_lossy().to_string())
-                        .unwrap_or_default()
-                });
+            let name = cli.value("as-name").unwrap_or_else(|| {
+                file.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default()
+            });
             entries.retain(|(n, _)| n != &name);
             let size = data.len();
             entries.push((name.clone(), data));
@@ -70,10 +66,8 @@ fn main() -> Result<()> {
         }
         "extract" => {
             let container = required_path(args.first(), USAGE)?;
-            let name = args
-                .get(1)
-                .ok_or_else(|| Error::Other("missing entry name".into()))?
-                .clone();
+            let name =
+                args.get(1).ok_or_else(|| Error::Other("missing entry name".into()))?.clone();
             let pass = ask_passphrase()?;
             let entries = namikaze_vault::read_entries(&container, &pass)?;
             let (_, data) = entries

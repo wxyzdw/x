@@ -24,10 +24,7 @@ const USAGE: &[&str] = &[
 ];
 
 fn handle_stream(mut stream: TcpStream, kind: &str) {
-    let peer = stream
-        .peer_addr()
-        .map(|a| a.to_string())
-        .unwrap_or_else(|_| "unknown".into());
+    let peer = stream.peer_addr().map(|a| a.to_string()).unwrap_or_else(|_| "unknown".into());
     namikaze_rt::log_warn!("decoy connection {kind} from {peer}");
     match kind {
         "ssh" => {

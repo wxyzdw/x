@@ -30,10 +30,7 @@ const USAGE: &[&str] = &[
 ];
 
 fn now_secs() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0)
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
 }
 
 fn parse_pri(line: &str) -> (u8, &str) {

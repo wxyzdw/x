@@ -106,15 +106,9 @@ pub fn hash(data: &[u8]) -> String {
 fn header_to_json(params: &KdfParams) -> Vec<u8> {
     let v = json::Value::Obj(
         [
-            (
-                "algo".to_string(),
-                json::Value::Str(params.algo.clone()),
-            ),
+            ("algo".to_string(), json::Value::Str(params.algo.clone())),
             ("salt".to_string(), json::Value::Str(params.salt.clone())),
-            (
-                "iterations".to_string(),
-                json::Value::Int(params.iterations as i64),
-            ),
+            ("iterations".to_string(), json::Value::Int(params.iterations as i64)),
         ]
         .into_iter()
         .collect(),
@@ -149,12 +143,10 @@ fn entries_to_json(entries: &[(String, Vec<u8>)]) -> Result<Vec<u8>> {
 }
 
 fn parse_entries(bytes: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
-    let text = std::str::from_utf8(bytes)
-        .map_err(|_| Error::Crypto("vault body is not utf-8".into()))?;
+    let text =
+        std::str::from_utf8(bytes).map_err(|_| Error::Crypto("vault body is not utf-8".into()))?;
     let v = json::parse(text).map_err(|e| Error::Crypto(format!("bad vault body: {e}")))?;
-    let arr = v
-        .as_arr()
-        .ok_or_else(|| Error::Crypto("vault body is not an array".into()))?;
+    let arr = v.as_arr().ok_or_else(|| Error::Crypto("vault body is not an array".into()))?;
     let mut out = Vec::new();
     for item in arr {
         let name = item
@@ -162,11 +154,8 @@ fn parse_entries(bytes: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
             .and_then(|x| x.as_str())
             .ok_or_else(|| Error::Crypto("vault entry missing name".into()))?
             .to_string();
-        let data = item
-            .get("data")
-            .and_then(|x| x.as_str())
-            .and_then(b64::decode)
-            .unwrap_or_default();
+        let data =
+            item.get("data").and_then(|x| x.as_str()).and_then(b64::decode).unwrap_or_default();
         out.push((name, data));
     }
     Ok(out)

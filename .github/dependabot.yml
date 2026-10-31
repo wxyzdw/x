@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # The Rust workspace is intentionally dependency-free, so there is
+  # nothing for the cargo ecosystem to bump. Keep the workflow actions
+  # pinned and current instead.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: ci
+    labels:
+      - ci

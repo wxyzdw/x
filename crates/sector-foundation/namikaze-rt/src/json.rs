@@ -192,10 +192,7 @@ impl<'a> Parser<'a> {
             self.pos += 1;
             Ok(())
         } else {
-            Err(crate::Error::Parse(format!(
-                "expected {c:?} at byte offset {}",
-                self.pos
-            )))
+            Err(crate::Error::Parse(format!("expected {c:?} at byte offset {}", self.pos)))
         }
     }
 
@@ -313,32 +310,30 @@ impl<'a> Parser<'a> {
                             self.pos += 1;
                             let mut code = 0u32;
                             for _ in 0..4 {
-                                let c = self.peek()
+                                let c = self
+                                    .peek()
                                     .ok_or_else(|| crate::Error::Parse("bad \\u escape".into()))?;
                                 code = code * 16
-                                    + c.to_digit(16)
-                                        .ok_or_else(|| crate::Error::Parse("bad hex digit".into()))?;
+                                    + c.to_digit(16).ok_or_else(|| {
+                                        crate::Error::Parse("bad hex digit".into())
+                                    })?;
                                 self.pos += 1;
                             }
                             // surrogate pair handling
-                            if (0xd800..0xdc00).contains(&code) {
-                                if self.peek() == Some('\\') {
-                                    self.pos += 1;
-                                    self.expect('u')?;
-                                    let mut low = 0u32;
-                                    for _ in 0..4 {
-                                        let c = self.peek().ok_or_else(|| {
-                                            crate::Error::Parse("bad \\u escape".into())
-                                        })?;
-                                        low = low * 16 + c
-                                            .to_digit(16)
+                            if (0xd800..0xdc00).contains(&code) && self.peek() == Some('\\') {
+                                self.pos += 1;
+                                self.expect('u')?;
+                                let mut low = 0u32;
+                                for _ in 0..4 {
+                                    let c = self.peek().ok_or_else(|| {
+                                        crate::Error::Parse("bad \\u escape".into())
+                                    })?;
+                                    low = low * 16
+                                        + c.to_digit(16)
                                             .ok_or_else(|| crate::Error::Parse("bad hex".into()))?;
-                                        self.pos += 1;
-                                    }
-                                    code = 0x10000
-                                        + ((code - 0xd800) << 10)
-                                        + (low - 0xdc00);
+                                    self.pos += 1;
                                 }
+                                code = 0x10000 + ((code - 0xd800) << 10) + (low - 0xdc00);
                             }
                             out.push(char::from_u32(code).unwrap_or('\u{fffd}'));
                             continue;

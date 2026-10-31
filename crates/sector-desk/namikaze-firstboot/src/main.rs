@@ -41,9 +41,11 @@ fn main() -> Result<()> {
     let language = prompt::choose("Language", &languages, 0);
     let lang_code = ["en", "tr", "de", "ar"][language];
 
-    let levels = ["standard (Tor available, permissive defaults)",
+    let levels = [
+        "standard (Tor available, permissive defaults)",
         "hardened (transparent Tor, random identity, recommended)",
-        "maximum (Tor-only egress, decoys on, IPv6 off)"];
+        "maximum (Tor-only egress, decoys on, IPv6 off)",
+    ];
     let level = prompt::choose("Anonymity level", &levels, 1);
     let level_code = ["standard", "hardened", "maximum"][level];
 

@@ -56,9 +56,7 @@ fn run() -> Result<()> {
         cli.usage_exit(USAGE);
     }
     let free = cli.free(&[]);
-    let arg_path = |i: usize| -> PathBuf {
-        free.get(i).map(PathBuf::from).unwrap_or_default()
-    };
+    let arg_path = |i: usize| -> PathBuf { free.get(i).map(PathBuf::from).unwrap_or_default() };
     match cli.sub().unwrap_or_default() {
         "create" => {
             let pass = read_passphrase(true)?;

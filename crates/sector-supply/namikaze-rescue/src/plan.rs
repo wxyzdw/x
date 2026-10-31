@@ -68,10 +68,7 @@ mod tests {
     use super::*;
 
     fn target() -> RescueTarget {
-        RescueTarget {
-            tree: "x86-64".into(),
-            slots_dir: "/var/lib/namikaze/updates".into(),
-        }
+        RescueTarget { tree: "x86-64".into(), slots_dir: "/var/lib/namikaze/updates".into() }
     }
 
     #[test]

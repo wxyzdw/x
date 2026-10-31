@@ -3,7 +3,6 @@
 
 #![forbid(unsafe_code)]
 
-
 use namikaze_common::{init_tracing, Result};
 use namikaze_rt::args::Cli;
 
@@ -37,9 +36,8 @@ fn run() -> Result<()> {
             if device.as_os_str().is_empty() {
                 cli.usage_exit(USAGE);
             }
-            let payload = std::path::PathBuf::from(
-                cli.value_or("payload", "/run/namikaze-install/payload"),
-            );
+            let payload =
+                std::path::PathBuf::from(cli.value_or("payload", "/run/namikaze-install/payload"));
             let persist = cli.flag("persist");
             let argon = cli.value_or("argon", "balanced");
             let yes = cli.flag("yes");
@@ -49,9 +47,8 @@ fn run() -> Result<()> {
         "iso" => {
             let payload = arg(1);
             let out = arg(2);
-            let esp = std::path::PathBuf::from(
-                cli.value_or("esp", "/run/namikaze-install/esp.img"),
-            );
+            let esp =
+                std::path::PathBuf::from(cli.value_or("esp", "/run/namikaze-install/esp.img"));
             namikaze_install::iso(&payload, &out, &esp)?;
             println!("ISO written to {}", out.display());
         }

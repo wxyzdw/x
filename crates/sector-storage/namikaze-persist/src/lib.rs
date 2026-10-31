@@ -27,27 +27,18 @@ pub const MAPPER_NAME: &str = "namikaze-persist";
 pub const PERSIST_MOUNT: &str = "/run/persist";
 
 /// Directory layout created inside a freshly formatted persist volume.
-pub const PERSIST_DIRS: &[&str] = &[
-    "upper", "work", "home", "etc", "var", "root", "packages", "snapshots",
-];
+pub const PERSIST_DIRS: &[&str] =
+    &["upper", "work", "home", "etc", "var", "root", "packages", "snapshots"];
 
 fn run_cryptsetup(argv: &[String], passphrase: Option<&ZeroBuf>) -> Result<()> {
     let mut cmd = Command::new("/usr/sbin/cryptsetup");
     cmd.args(&argv[1..])
         .env_clear()
-        .stdin(if passphrase.is_some() {
-            Stdio::piped()
-        } else {
-            Stdio::null()
-        })
+        .stdin(if passphrase.is_some() { Stdio::piped() } else { Stdio::null() })
         .stdout(Stdio::null());
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| Error::Other(format!("spawn cryptsetup: {e}")))?;
+    let mut child = cmd.spawn().map_err(|e| Error::Other(format!("spawn cryptsetup: {e}")))?;
     if let (Some(mut stdin), Some(pass)) = (child.stdin.take(), passphrase) {
-        stdin
-            .write_all(pass.as_slice())
-            .map_err(Error::Io)?;
+        stdin.write_all(pass.as_slice()).map_err(Error::Io)?;
     }
     let status = child.wait()?;
     if !status.success() {
@@ -62,9 +53,7 @@ fn run_cryptsetup(argv: &[String], passphrase: Option<&ZeroBuf>) -> Result<()> {
 
 /// Read a machine resource snapshot for PBKDF scaling (cpus, RAM KiB).
 pub fn machine_resources() -> (u32, u64) {
-    let cpus = std::thread::available_parallelism()
-        .map(|n| n.get() as u32)
-        .unwrap_or(2);
+    let cpus = std::thread::available_parallelism().map(|n| n.get() as u32).unwrap_or(2);
     let mut ram_kb: u64 = 2 * 1024 * 1024;
     if let Ok(text) = fs::read_to_string("/proc/meminfo") {
         for line in text.lines() {
@@ -91,13 +80,7 @@ pub fn create_volume(
     namikaze_common::register_secret(passphrase.as_slice());
 
     let (cpus, ram_kb) = machine_resources();
-    let argv = format_argv(
-        device.to_str().unwrap_or_default(),
-        argon,
-        integrity,
-        cpus,
-        ram_kb,
-    );
+    let argv = format_argv(device.to_str().unwrap_or_default(), argon, integrity, cpus, ram_kb);
     run_cryptsetup(&argv, Some(passphrase))?;
 
     run_cryptsetup(
@@ -119,10 +102,7 @@ pub fn create_volume(
         .env_clear()
         .status()?;
     if !mkfs.success() {
-        let _ = run_cryptsetup(
-            &["cryptsetup".into(), "close".into(), MAPPER_NAME.into()],
-            None,
-        );
+        let _ = run_cryptsetup(&["cryptsetup".into(), "close".into(), MAPPER_NAME.into()], None);
         return Err(Error::Other("mkfs.ext4 failed".into()));
     }
 
@@ -132,10 +112,7 @@ pub fn create_volume(
     }
     fs::write(root.join("persistence.conf"), namikaze_live_core::DEFAULT_CONF)?;
 
-    run_cryptsetup(
-        &["cryptsetup".into(), "close".into(), MAPPER_NAME.into()],
-        None,
-    )?;
+    run_cryptsetup(&["cryptsetup".into(), "close".into(), MAPPER_NAME.into()], None)?;
     Ok(())
 }
 
@@ -161,19 +138,13 @@ pub fn unlock_volume(device: &Path, passphrase: &ZeroBuf) -> Result<String> {
 /// Close the volume and flush buffers.
 pub fn close_volume() -> Result<()> {
     ffi::do_sync();
-    run_cryptsetup(
-        &["cryptsetup".into(), "close".into(), MAPPER_NAME.into()],
-        None,
-    )
+    run_cryptsetup(&["cryptsetup".into(), "close".into(), MAPPER_NAME.into()], None)
 }
 
 /// Read `luksDump` output for a device.
 pub fn dump(device: &Path) -> Result<String> {
-    let out = Command::new("/usr/sbin/cryptsetup")
-        .arg("luksDump")
-        .arg(device)
-        .env_clear()
-        .output()?;
+    let out =
+        Command::new("/usr/sbin/cryptsetup").arg("luksDump").arg(device).env_clear().output()?;
     if !out.status.success() {
         return Err(Error::Other("cryptsetup luksDump failed".into()));
     }
@@ -208,9 +179,7 @@ pub fn header_backup(device: &Path, out: &Path) -> Result<()> {
 /// Restore a LUKS2 header backup onto `device`. Requires `--yes`.
 pub fn header_restore(device: &Path, from: &Path, yes: bool) -> Result<()> {
     if !yes {
-        return Err(Error::Config(
-            "header restore is destructive; pass --yes to confirm".into(),
-        ));
+        return Err(Error::Config("header restore is destructive; pass --yes to confirm".into()));
     }
     let status = Command::new("/usr/sbin/cryptsetup")
         .args(["luksHeaderRestore", device.to_str().unwrap_or_default()])

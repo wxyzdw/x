@@ -28,10 +28,7 @@ fn read_lines(source: &str) -> LineSource {
         match fs::File::open(source) {
             Ok(f) => Box::new(BufReader::new(f)),
             Err(e) => {
-                return LineSource {
-                    lines,
-                    error: Some(format!("cannot open {source}: {e}")),
-                }
+                return LineSource { lines, error: Some(format!("cannot open {source}: {e}")) }
             }
         }
     };
@@ -67,7 +64,10 @@ fn write_lines(lines: &[Vec<u8>]) -> io::Result<()> {
 
 // ----------------------------------------------------------------- head ----
 
-fn parse_head_tail(argv: &[String], tool: &str) -> Result<(Option<u64>, Option<u64>, Vec<String>), i32> {
+/// Parsed head/tail invocation: (line limit, byte limit, file list).
+type HeadTailOpts = (Option<u64>, Option<u64>, Vec<String>);
+
+fn parse_head_tail(argv: &[String], tool: &str) -> Result<HeadTailOpts, i32> {
     let mut lines: Option<u64> = None;
     let mut bytes: Option<u64> = None;
     let mut files: Vec<String> = Vec::new();
@@ -125,23 +125,18 @@ pub fn head(argv: &[String]) -> i32 {
             }
             let _ = writeln!(out, "==> {name} <==");
         }
-        let limit_bytes = match bytes {
-            Some(n) => Some(n as usize),
-            None => None,
-        };
-        let emitted = (|out: &mut dyn Write| -> io::Result<()> {
-            if name == "-" {
-                emit_head(&mut io::stdin().lock(), out, lines, limit_bytes)
-            } else {
-                match fs::File::open(name) {
-                    Ok(f) => emit_head(&mut BufReader::new(f), out, lines, limit_bytes),
-                    Err(e) => {
-                        let _ = writeln!(out, "namikaze-userland: head: cannot open {name}: {e}");
-                        Err(io::Error::new(io::ErrorKind::Other, "open failed"))
-                    }
+        let limit_bytes = bytes.map(|n| n as usize);
+        let emitted: io::Result<()> = if name == "-" {
+            emit_head(&mut io::stdin().lock(), &mut out, lines, limit_bytes)
+        } else {
+            match fs::File::open(name) {
+                Ok(f) => emit_head(&mut BufReader::new(f), &mut out, lines, limit_bytes),
+                Err(e) => {
+                    let _ = writeln!(out, "namikaze-userland: head: cannot open {name}: {e}");
+                    Err(io::Error::other("open failed"))
                 }
             }
-        })(&mut out);
+        };
         if emitted.is_err() {
             code = EXIT_FAILURE;
         }
@@ -150,7 +145,12 @@ pub fn head(argv: &[String]) -> i32 {
     code
 }
 
-fn emit_head<R: Read>(r: &mut R, out: &mut dyn Write, lines: Option<u64>, bytes: Option<usize>) -> io::Result<()> {
+fn emit_head<R: Read>(
+    r: &mut R,
+    out: &mut dyn Write,
+    lines: Option<u64>,
+    bytes: Option<usize>,
+) -> io::Result<()> {
     if let Some(n) = bytes {
         let mut taken = r.take(n as u64);
         io::copy(&mut taken, out)?;
@@ -193,7 +193,7 @@ pub fn tail(argv: &[String]) -> i32 {
         }
         let r = (|| -> io::Result<()> {
             if let Some(n) = bytes {
-                return emit_tail_bytes(name, n as u64, &mut out);
+                return emit_tail_bytes(name, n, &mut out);
             }
             let want = lines.unwrap_or(10);
             emit_tail_lines(name, want, &mut out)
@@ -581,7 +581,7 @@ pub fn sort(argv: &[String]) -> i32 {
             ka.partial_cmp(&kb).unwrap_or(std::cmp::Ordering::Equal).then(a.cmp(b))
         });
     } else {
-        lines.sort_by(|a, b| a.cmp(b));
+        lines.sort();
     }
     if reverse {
         lines.reverse();
@@ -981,15 +981,13 @@ pub fn paste(argv: &[String]) -> i32 {
         let rows = sources.iter().map(Vec::len).max().unwrap_or(0);
         for r in 0..rows {
             let mut piece: Vec<u8> = Vec::new();
-            let mut used = 0usize;
-            for lines in &sources {
+            for (used, lines) in sources.iter().enumerate() {
                 if used > 0 {
                     piece.push(delims[(used - 1) % delims.len()]);
                 }
                 if let Some(l) = lines.get(r) {
                     piece.extend_from_slice(l);
                 }
-                used += 1;
             }
             piece.push(b'\n');
             let _ = out.write_all(&piece);
@@ -1027,11 +1025,7 @@ pub fn expand(argv: &[String]) -> i32 {
             s => files.push(s.to_string()),
         }
     }
-    let names: Vec<String> = if files.is_empty() {
-        vec![String::from("-")]
-    } else {
-        files
-    };
+    let names: Vec<String> = if files.is_empty() { vec![String::from("-")] } else { files };
     let stdout = io::stdout();
     let mut out = stdout.lock();
     let mut code = EXIT_OK;
@@ -1096,11 +1090,7 @@ pub fn fold(argv: &[String]) -> i32 {
             s => files.push(s.to_string()),
         }
     }
-    let names: Vec<String> = if files.is_empty() {
-        vec![String::from("-")]
-    } else {
-        files
-    };
+    let names: Vec<String> = if files.is_empty() { vec![String::from("-")] } else { files };
     let stdout = io::stdout();
     let mut out = stdout.lock();
     let mut code = EXIT_OK;

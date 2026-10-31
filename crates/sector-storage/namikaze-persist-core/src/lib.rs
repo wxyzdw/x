@@ -32,16 +32,12 @@ impl ArgonProfile {
         let quarter = (ram_kb / 4).min(u32::MAX as u64) as u32;
         let parallel = cpus.clamp(1, 4);
         match self {
-            ArgonProfile::LowMem => ArgonParams {
-                time_cost_ms: 500,
-                memory_kb: quarter.min(256 * 1024),
-                parallel,
-            },
-            ArgonProfile::Balanced => ArgonParams {
-                time_cost_ms: 800,
-                memory_kb: quarter.min(1024 * 1024),
-                parallel,
-            },
+            ArgonProfile::LowMem => {
+                ArgonParams { time_cost_ms: 500, memory_kb: quarter.min(256 * 1024), parallel }
+            }
+            ArgonProfile::Balanced => {
+                ArgonParams { time_cost_ms: 800, memory_kb: quarter.min(1024 * 1024), parallel }
+            }
             ArgonProfile::Paranoid => ArgonParams {
                 time_cost_ms: 2000,
                 memory_kb: (quarter * 2).min(2048 * 1024),
@@ -204,10 +200,7 @@ pub fn doctor_checks(s: &LuksSummary) -> Vec<(String, bool, String)> {
         (
             "cipher-is-aes-xts".to_string(),
             s.cipher.as_deref().map(|c| c.contains("aes")).unwrap_or(false)
-                && s.cipher_mode
-                    .as_deref()
-                    .map(|m| m.contains("xts"))
-                    .unwrap_or(false),
+                && s.cipher_mode.as_deref().map(|m| m.contains("xts")).unwrap_or(false),
             format!(
                 "{} / {}",
                 s.cipher.clone().unwrap_or_else(|| "unknown".into()),

@@ -5,7 +5,6 @@
 
 #![forbid(unsafe_code)]
 
-
 use namikaze_common::{init_tracing, Result};
 use namikaze_rt::args::Cli;
 
@@ -42,9 +41,7 @@ fn run() -> Result<()> {
             println!("session changes flushed to the persist volume");
         }
         "snapshot" => {
-            let upper = std::path::PathBuf::from(
-                cli.value_or("upper", "/run/persist/upper"),
-            );
+            let upper = std::path::PathBuf::from(cli.value_or("upper", "/run/persist/upper"));
             let out = std::path::PathBuf::from(
                 cli.value("out").unwrap_or_else(|| "upper.squashfs".into()),
             );
@@ -52,16 +49,10 @@ fn run() -> Result<()> {
             println!("snapshot written to {}", out.display());
         }
         "refresh" => {
-            let stack = std::path::PathBuf::from(
-                cli.value_or("stack", "/run/namikaze/pkg/stack"),
-            );
+            let stack = std::path::PathBuf::from(cli.value_or("stack", "/run/namikaze/pkg/stack"));
             let text = std::fs::read_to_string(&stack)?;
-            let lowers: Vec<String> = text
-                .trim()
-                .split(':')
-                .filter(|s| !s.is_empty())
-                .map(|s| s.to_string())
-                .collect();
+            let lowers: Vec<String> =
+                text.trim().split(':').filter(|s| !s.is_empty()).map(|s| s.to_string()).collect();
             namikaze_live::refresh_root(
                 &lowers,
                 std::path::Path::new("/run/persist/upper"),

@@ -51,10 +51,7 @@ pub struct FileEntry {
 }
 
 fn now_secs() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0)
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
 }
 
 fn bytes_to_hex(bytes: &[u8]) -> String {
@@ -70,9 +67,7 @@ fn unhex(s: &str) -> Option<Vec<u8>> {
     if s.is_empty() || s.len() % 2 != 0 || !s.bytes().all(|b| b.is_ascii_hexdigit()) {
         return None;
     }
-    (0..s.len() / 2)
-        .map(|i| u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).ok())
-        .collect()
+    (0..s.len() / 2).map(|i| u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).ok()).collect()
 }
 
 /// Constant-time equality for MAC comparisons.
@@ -84,10 +79,10 @@ fn macs_equal(a: &str, b: &str) -> bool {
 }
 
 fn resolve_key(cli: &Cli) -> Result<Vec<u8>> {
-    let hex = cli
-        .value("key")
-        .or_else(|| std::env::var("NK_ATTEST_KEY").ok())
-        .ok_or_else(|| Error::Crypto("no attestation key: pass --key or set NK_ATTEST_KEY".into()))?;
+    let hex =
+        cli.value("key").or_else(|| std::env::var("NK_ATTEST_KEY").ok()).ok_or_else(|| {
+            Error::Crypto("no attestation key: pass --key or set NK_ATTEST_KEY".into())
+        })?;
     unhex(&hex)
         .filter(|k| k.len() == 32)
         .ok_or_else(|| Error::Crypto("attestation key must be 32 bytes of hex".into()))
@@ -96,8 +91,8 @@ fn resolve_key(cli: &Cli) -> Result<Vec<u8>> {
 /// Recursively collect regular files (symlinks skipped) sorted by
 /// relative path for a deterministic manifest.
 fn collect_files(base: &Path, dir: &Path, out: &mut Vec<(String, PathBuf)>) -> Result<()> {
-    let entries = std::fs::read_dir(dir)
-        .map_err(|e| Error::Other(format!("walk {}: {e}", dir.display())))?;
+    let entries =
+        std::fs::read_dir(dir).map_err(|e| Error::Other(format!("walk {}: {e}", dir.display())))?;
     for entry in entries {
         let entry = entry.map_err(|e| Error::Other(format!("walk entry: {e}")))?;
         let path = entry.path();

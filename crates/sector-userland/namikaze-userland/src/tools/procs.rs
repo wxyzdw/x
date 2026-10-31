@@ -70,10 +70,7 @@ fn parse_meminfo(text: &str) -> BTreeMap<String, u64> {
     let mut map = BTreeMap::new();
     for line in text.lines() {
         let Some((key, rest)) = line.split_once(':') else { continue };
-        let val = rest
-            .split_whitespace()
-            .next()
-            .and_then(|v| v.parse::<u64>().ok());
+        let val = rest.split_whitespace().next().and_then(|v| v.parse::<u64>().ok());
         if let Some(v) = val {
             map.insert(key.trim().to_string(), v);
         }
@@ -128,7 +125,9 @@ fn render_free(map: &BTreeMap<String, u64>, flag: char) -> String {
         )
     };
     let mut out = String::new();
-    out.push_str("               total        used        free      shared  buff/cache   available\n");
+    out.push_str(
+        "               total        used        free      shared  buff/cache   available\n",
+    );
     out.push_str(&row("Mem", [total, used, free, shared, buff_cache]));
     out.push_str(&row("Swap", [0, 0, 0, 0, 0]));
     out.push_str(&format!("(available: {})\n", scale(avail)));
@@ -248,9 +247,9 @@ pub fn ps(argv: &[String]) -> i32 {
 
 /// POSIX signal names indexed by number (index 0 unused).
 const SIGNALS: [&str; 32] = [
-    "", "HUP", "INT", "QUIT", "ILL", "TRAP", "ABRT", "BUS", "FPE", "KILL", "USR1", "SEGV",
-    "USR2", "PIPE", "ALRM", "TERM", "STKFLT", "CHLD", "CONT", "STOP", "TSTP", "TTIN", "TTOU",
-    "URG", "XCPU", "XFSZ", "VTALRM", "PROF", "WINCH", "IO", "PWR", "SYS",
+    "", "HUP", "INT", "QUIT", "ILL", "TRAP", "ABRT", "BUS", "FPE", "KILL", "USR1", "SEGV", "USR2",
+    "PIPE", "ALRM", "TERM", "STKFLT", "CHLD", "CONT", "STOP", "TSTP", "TTIN", "TTOU", "URG",
+    "XCPU", "XFSZ", "VTALRM", "PROF", "WINCH", "IO", "PWR", "SYS",
 ];
 
 fn signal_number(name: &str) -> Option<i32> {
@@ -298,8 +297,8 @@ pub fn kill(argv: &[String]) -> i32 {
             let name = SIGNALS.get(*one as usize).copied().unwrap_or("");
             let _ = writeln!(out, "{name}");
         } else {
-            for n in 1..32 {
-                let _ = write!(out, "{:>8}", SIGNALS[n]);
+            for (n, name) in SIGNALS.iter().enumerate().skip(1) {
+                let _ = write!(out, "{:>8}", name);
                 if n % 8 == 0 {
                     let _ = writeln!(out);
                 }

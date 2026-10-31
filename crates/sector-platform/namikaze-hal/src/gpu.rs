@@ -124,12 +124,7 @@ pub fn wifi_select(report: &HardwareReport) -> WifiDriver {
 
 /// PCI vendor fallback for add-in and mini-PCIe cards.
 pub fn wifi_from_pci(report: &HardwareReport) -> WifiDriver {
-    let net = report
-        .pci
-        .iter()
-        .find(|d| d.class == 0x02)
-        .map(|d| d.vendor)
-        .unwrap_or(0);
+    let net = report.pci.iter().find(|d| d.class == 0x02).map(|d| d.vendor).unwrap_or(0);
     match net {
         0x8086 => WifiDriver::Iwlwifi,
         0x14c3 => WifiDriver::Mt76,

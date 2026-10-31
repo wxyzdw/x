@@ -45,7 +45,9 @@ impl SentinelState {
         json::obj(&[
             (
                 "failures",
-                json::Value::Arr(self.failures.iter().map(|t| json::Value::Int(*t as i64)).collect()),
+                json::Value::Arr(
+                    self.failures.iter().map(|t| json::Value::Int(*t as i64)).collect(),
+                ),
             ),
             ("tamper_flags", json::Value::Int(self.tamper_flags as i64)),
             ("chain_head", json::Value::Str(self.chain_head.clone())),
@@ -93,11 +95,9 @@ impl FailurePolicy {
 
     /// Decide what to do for the next failure, given past timestamps.
     pub fn decide(&self, state: &SentinelState, now: u64) -> Decision {
-        let in_window = state
-            .failures
-            .iter()
-            .filter(|t| now.saturating_sub(**t) <= self.window_secs)
-            .count() as u32;
+        let in_window =
+            state.failures.iter().filter(|t| now.saturating_sub(**t) <= self.window_secs).count()
+                as u32;
         // Threshold semantics: capture on the 4th failure (>3 wrong tries).
         if state.tamper_flags > 0 || in_window >= self.max_failures {
             Decision::Capture
@@ -232,11 +232,8 @@ mod tests {
 
     #[test]
     fn state_json_roundtrip() {
-        let state = SentinelState {
-            failures: vec![1, 2, 3],
-            tamper_flags: 2,
-            chain_head: "abc".into(),
-        };
+        let state =
+            SentinelState { failures: vec![1, 2, 3], tamper_flags: 2, chain_head: "abc".into() };
         let back = SentinelState::from_json(&state.to_json()).unwrap();
         assert_eq!(back, state);
     }

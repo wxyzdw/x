@@ -105,11 +105,8 @@ pub fn env(argv: &[String]) -> i32 {
         };
     }
     // print mode: the effective environment, sorted for determinism
-    let mut vars: BTreeMap<String, String> = if clear {
-        BTreeMap::new()
-    } else {
-        std::env::vars().collect()
-    };
+    let mut vars: BTreeMap<String, String> =
+        if clear { BTreeMap::new() } else { std::env::vars().collect() };
     for (k, v) in assigns {
         vars.insert(k, v);
     }
@@ -255,10 +252,8 @@ pub fn id(_argv: &[String]) -> i32 {
     };
     let (uid, gid, groups) = parse_ids(&status);
     let maps = load_names();
-    let group_list: Vec<String> = groups
-        .iter()
-        .map(|g| format!("{}({})", g, group_name(&maps, *g)))
-        .collect();
+    let group_list: Vec<String> =
+        groups.iter().map(|g| format!("{}({})", g, group_name(&maps, *g))).collect();
     println!(
         "uid={}({}) gid={}({}) groups={}",
         uid,
@@ -311,7 +306,11 @@ pub fn uname(argv: &[String]) -> i32 {
     }
     let sysname = {
         let t = read_kernel_field("ostype");
-        if t.is_empty() { String::from("Linux") } else { t }
+        if t.is_empty() {
+            String::from("Linux")
+        } else {
+            t
+        }
     };
     let release = read_kernel_field("osrelease");
     let version = read_kernel_field("version");
@@ -357,9 +356,7 @@ pub fn hostname(argv: &[String]) -> i32 {
 // ---------------------------------------------------------------- which ----
 
 fn is_executable(p: &std::path::Path) -> bool {
-    fs::metadata(p)
-        .map(|m| m.is_file() && m.permissions().mode() & 0o111 != 0)
-        .unwrap_or(false)
+    fs::metadata(p).map(|m| m.is_file() && m.permissions().mode() & 0o111 != 0).unwrap_or(false)
 }
 
 /// which: locate commands on PATH; -a lists every match.
@@ -460,15 +457,23 @@ pub fn fmt_mtime(secs: i64) -> String {
 }
 
 const DAY_NAMES: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const DAY_NAMES_FULL: [&str; 7] = [
-    "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
-];
-const MONTH_NAMES: [&str; 12] = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
+const DAY_NAMES_FULL: [&str; 7] =
+    ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTH_NAMES: [&str; 12] =
+    ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTH_NAMES_FULL: [&str; 12] = [
-    "January", "February", "March", "April", "May", "June", "July", "August",
-    "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
 ];
 
 /// Format a civil timestamp with a strftime-lite +FORMAT string.
@@ -555,12 +560,7 @@ pub fn date(argv: &[String]) -> i32 {
 /// the caller then prints the numeric uid. Pure and unit-testable.
 pub fn username_from_status(status: &str, passwd: &str) -> Option<String> {
     let uid_line = status.lines().find(|l| l.starts_with("Uid:"))?;
-    let real_uid = uid_line
-        .split(':')
-        .nth(1)?
-        .split_whitespace()
-        .next()?
-        .to_string();
+    let real_uid = uid_line.split(':').nth(1)?.split_whitespace().next()?.to_string();
     for entry in passwd.lines() {
         let fields: Vec<&str> = entry.split(':').collect();
         if fields.len() >= 3 && fields[2] == real_uid {

@@ -18,12 +18,12 @@ use namikaze_common::{init_tracing, Result};
 use namikaze_rt::args::Cli;
 
 const ADJECTIVES: &[&str] = &[
-    "swift", "calm", "bold", "quiet", "amber", "north", "east", "storm",
-    "river", "cedar", "iron", "glass", "fern", "salt", "dawn", "dusk",
+    "swift", "calm", "bold", "quiet", "amber", "north", "east", "storm", "river", "cedar", "iron",
+    "glass", "fern", "salt", "dawn", "dusk",
 ];
 const NOUNS: &[&str] = &[
-    "otter", "falcon", "maple", "harbor", "meadow", "canyon", "willow",
-    "granite", "copper", "juniper", "lantern", "beacon", "tundra", "basalt",
+    "otter", "falcon", "maple", "harbor", "meadow", "canyon", "willow", "granite", "copper",
+    "juniper", "lantern", "beacon", "tundra", "basalt",
 ];
 
 const USAGE: &[&str] = &[
@@ -61,9 +61,8 @@ fn physical_interfaces() -> Vec<String> {
 fn run_mac() {
     for iface in physical_interfaces() {
         let mac = random_mac();
-        let status = Command::new("/sbin/ip")
-            .args(["link", "set", "dev", &iface, "address", &mac])
-            .status();
+        let status =
+            Command::new("/sbin/ip").args(["link", "set", "dev", &iface, "address", &mac]).status();
         match status {
             Ok(s) if s.success() => println!("mac {iface} -> {mac}"),
             _ => println!("mac {iface} -> FAILED (interface busy?)"),

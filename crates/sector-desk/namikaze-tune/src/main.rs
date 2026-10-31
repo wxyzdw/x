@@ -4,8 +4,8 @@
 #![forbid(unsafe_code)]
 
 use namikaze_common::{init_tracing, Result};
-use namikaze_rt::args::Cli;
 use namikaze_persist_core::ArgonProfile;
+use namikaze_rt::args::Cli;
 use namikaze_tune::Profile;
 
 const USAGE: &[&str] = &[

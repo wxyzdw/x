@@ -5,6 +5,31 @@ the Keep a Changelog structure; the project uses pure semantic versioning.
 
 ## [3.0.0-alpha.3]
 
+### Added - CI hardening (post-release)
+
+- **CI gate unified**: the workflow now runs `cargo run -p xtask -- ci`,
+  the same command maintainers run locally: guards, workspace build,
+  tests, rustfmt check, clippy with warnings denied and the SBOM.
+- **version-guard (8th guard)**: fails on any manifest pinning its own
+  version, any component missing a current overlay ebuild, and any
+  stale ebuild version - workspace and overlay can no longer drift.
+- **xtask modularized**: `guards/`, `tasks/` and `util.rs` modules
+  replace the single-file xtask; new guards and tasks are registered in
+  one list.
+- **static musl matrix fixed**: aarch64-unknown-linux-musl builds now
+  link with the toolchain-bundled rust-lld via `.cargo/config.toml`
+  (the host system ld rejects target-specific flags); both musl targets
+  verified to build the full workspace.
+- **repository meta**: SECURITY.md policy, CONTRIBUTING.md (the house
+  rules the guards enforce), pull request and issue templates, and a
+  dependabot config for the workflow actions.
+- **crate docs**: SH, ANON, CLOAK, DNS, VAULT, SANDBOX, WATCH, LIVE,
+  PKG, DOCTOR, INIT and RT manuals added inside their crates.
+- **lint debt cleared**: rustfmt applied across the workspace and every
+  clippy warning fixed (including the `iter_skip_zero` denial in
+  namikaze-scrub); `cargo fmt --check` and `clippy -D warnings` are now
+  hard gates.
+
 ### Added - new components
 
 - **namikaze-trace (sector-observe)**: tamper-evident execution activity

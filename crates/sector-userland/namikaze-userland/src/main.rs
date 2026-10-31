@@ -36,11 +36,10 @@ fn main() -> ExitCode {
         return ExitCode::from(EXIT_USAGE as u8);
     };
 
-    let code = std::panic::catch_unwind(AssertUnwindSafe(|| dispatch(name, rest))).unwrap_or_else(
-        |_| {
+    let code =
+        std::panic::catch_unwind(AssertUnwindSafe(|| dispatch(name, rest))).unwrap_or_else(|_| {
             eprintln!("namikaze-userland: {name}: internal panic contained, exiting");
             EXIT_PANIC
-        },
-    );
+        });
     ExitCode::from(code as u8)
 }

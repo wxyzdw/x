@@ -84,16 +84,10 @@ pub fn parse_manifest(text: &str) -> Result<Vec<ManifestEntry>> {
             || name == ".."
             || name.starts_with('.')
         {
-            return Err(Error::Config(format!(
-                "manifest line {}: unsafe entry name",
-                idx + 1
-            )));
+            return Err(Error::Config(format!("manifest line {}: unsafe entry name", idx + 1)));
         }
         if out.iter().any(|e| e.name == name) {
-            return Err(Error::Config(format!(
-                "manifest line {}: duplicate entry",
-                idx + 1
-            )));
+            return Err(Error::Config(format!("manifest line {}: duplicate entry", idx + 1)));
         }
         out.push(ManifestEntry { name: name.to_string(), sha256: hash.to_ascii_lowercase() });
     }
@@ -134,8 +128,8 @@ pub fn verify_slot(dir: &Path) -> Result<Vec<ManifestEntry>> {
     let entries = parse_manifest(&text)?;
     for entry in &entries {
         let path = dir.join(&entry.name);
-        let actual = sha256_file(&path)
-            .map_err(|e| Error::Config(format!("{}: {e}", path.display())))?;
+        let actual =
+            sha256_file(&path).map_err(|e| Error::Config(format!("{}: {e}", path.display())))?;
         if actual != entry.sha256 {
             return Err(Error::Crypto(format!(
                 "{}: digest mismatch (expected {}, got {})",
@@ -297,8 +291,8 @@ mod tests {
 
     fn tempdir(tag: &str) -> PathBuf {
         let n = COUNTER.fetch_add(1, Ordering::SeqCst);
-        let dir = std::env::temp_dir()
-            .join(format!("secupdate-{}-{}-{tag}", std::process::id(), n));
+        let dir =
+            std::env::temp_dir().join(format!("secupdate-{}-{}-{tag}", std::process::id(), n));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         dir

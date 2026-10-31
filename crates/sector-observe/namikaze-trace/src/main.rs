@@ -46,10 +46,7 @@ pub struct ProcEvent {
 }
 
 fn now_secs() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0)
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
 }
 
 fn default_trace_file() -> PathBuf {
@@ -98,10 +95,7 @@ pub fn scan_once(proc_root: &Path) -> Result<Vec<ProcEvent>> {
 /// Diff a fresh scan against the previous snapshot: a pid is new when it
 /// was unseen before or when exe/start changed (PID reuse detection).
 pub fn diff_events(prev: &HashMap<u32, (String, u64)>, scan: &[ProcEvent]) -> Vec<ProcEvent> {
-    scan.iter()
-        .filter(|e| prev.get(&e.pid) != Some(&(e.exe.clone(), e.start)))
-        .cloned()
-        .collect()
+    scan.iter().filter(|e| prev.get(&e.pid) != Some(&(e.exe.clone(), e.start))).cloned().collect()
 }
 
 fn chain_head(file: &Path) -> String {
@@ -261,11 +255,8 @@ mod tests {
         let proc_root = dir.join("proc");
         let p42 = proc_root.join("42");
         std::fs::create_dir_all(&p42).unwrap();
-        std::fs::write(
-            p42.join("stat"),
-            "42 (sleep) S 1 1 1 0 -1 0 0 0 0 0 0 0 0 0 0 0 0 0 555 0",
-        )
-        .unwrap();
+        std::fs::write(p42.join("stat"), "42 (sleep) S 1 1 1 0 -1 0 0 0 0 0 0 0 0 0 0 0 0 0 555 0")
+            .unwrap();
         std::os::unix::fs::symlink("/usr/bin/sleep", p42.join("exe")).unwrap();
 
         let first = scan_once(&proc_root).unwrap();
@@ -279,11 +270,8 @@ mod tests {
         for ev in &first {
             prev.insert(ev.pid, (ev.exe.clone(), ev.start));
         }
-        std::fs::write(
-            p42.join("stat"),
-            "42 (curl) S 1 1 1 0 -1 0 0 0 0 0 0 0 0 0 0 0 0 0 999 0",
-        )
-        .unwrap();
+        std::fs::write(p42.join("stat"), "42 (curl) S 1 1 1 0 -1 0 0 0 0 0 0 0 0 0 0 0 0 0 999 0")
+            .unwrap();
         // the old exe symlink must go first: symlink() never overwrites
         std::fs::remove_file(p42.join("exe")).unwrap();
         std::os::unix::fs::symlink("/usr/bin/curl", p42.join("exe")).unwrap();

@@ -124,31 +124,19 @@ pub fn key_binds(o: &DeskOptions) -> Vec<(String, Bind)> {
     push("Mod+Page_Down".into(), Bind::Action("focus-workspace-down"));
     push("Mod+Ctrl+Page_Up".into(), Bind::Action("move-workspace-up"));
     push("Mod+Ctrl+Page_Down".into(), Bind::Action("move-workspace-down"));
-    push(
-        "Mod+Shift+Page_Up".into(),
-        Bind::Action("move-column-to-workspace-up"),
-    );
-    push(
-        "Mod+Shift+Page_Down".into(),
-        Bind::Action("move-column-to-workspace-down"),
-    );
+    push("Mod+Shift+Page_Up".into(), Bind::Action("move-column-to-workspace-up"));
+    push("Mod+Shift+Page_Down".into(), Bind::Action("move-column-to-workspace-down"));
 
     for i in 1u8..=9 {
         push(format!("Mod+{i}"), Bind::ActionIndex("focus-workspace", i));
     }
     for i in 1u8..=9 {
-        push(
-            format!("Mod+Shift+{i}"),
-            Bind::ActionIndex("move-column-to-workspace", i),
-        );
+        push(format!("Mod+Shift+{i}"), Bind::ActionIndex("move-column-to-workspace", i));
     }
 
     push("Mod+Minus".into(), Bind::ActionArg("set-column-width", "-10%"));
     push("Mod+Equal".into(), Bind::ActionArg("set-column-width", "+10%"));
-    push(
-        "Mod+Shift+Equal".into(),
-        Bind::ActionArg("set-column-width", "100%"),
-    );
+    push("Mod+Shift+Equal".into(), Bind::ActionArg("set-column-width", "100%"));
 
     push("Print".into(), Bind::Action("screenshot-screen"));
     push("Ctrl+Print".into(), Bind::Action("screenshot"));
@@ -156,25 +144,11 @@ pub fn key_binds(o: &DeskOptions) -> Vec<(String, Bind)> {
 
     push(
         "XF86AudioRaiseVolume".into(),
-        Bind::Spawn(vec![
-            "wpctl",
-            "set-volume",
-            "-l",
-            "1.0",
-            "@DEFAULT_AUDIO_SINK@",
-            "5%+",
-        ]),
+        Bind::Spawn(vec!["wpctl", "set-volume", "-l", "1.0", "@DEFAULT_AUDIO_SINK@", "5%+"]),
     );
     push(
         "XF86AudioLowerVolume".into(),
-        Bind::Spawn(vec![
-            "wpctl",
-            "set-volume",
-            "-l",
-            "1.0",
-            "@DEFAULT_AUDIO_SINK@",
-            "5%-",
-        ]),
+        Bind::Spawn(vec!["wpctl", "set-volume", "-l", "1.0", "@DEFAULT_AUDIO_SINK@", "5%-"]),
     );
     push(
         "XF86AudioMute".into(),
@@ -184,14 +158,8 @@ pub fn key_binds(o: &DeskOptions) -> Vec<(String, Bind)> {
         "XF86AudioMicMute".into(),
         Bind::Spawn(vec!["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle"]),
     );
-    push(
-        "XF86MonBrightnessUp".into(),
-        Bind::Spawn(vec!["brightnessctl", "set", "5%+"]),
-    );
-    push(
-        "XF86MonBrightnessDown".into(),
-        Bind::Spawn(vec!["brightnessctl", "set", "5%-"]),
-    );
+    push("XF86MonBrightnessUp".into(), Bind::Spawn(vec!["brightnessctl", "set", "5%+"]));
+    push("XF86MonBrightnessDown".into(), Bind::Spawn(vec!["brightnessctl", "set", "5%-"]));
 
     v
 }
@@ -423,10 +391,7 @@ pub fn artifacts(o: &DeskOptions) -> Vec<(PathBuf, String)> {
         (".config/fuzzel/fuzzel.ini".into(), FUZZEL_INI.to_string()),
         (".config/mako/config".into(), MAKO_CONF.to_string()),
         (".config/foot/foot.ini".into(), FOOT_INI.to_string()),
-        (
-            ".config/xdg-desktop-portal/portals.conf".into(),
-            PORTALS_CONF.to_string(),
-        ),
+        (".config/xdg-desktop-portal/portals.conf".into(), PORTALS_CONF.to_string()),
     ]
 }
 
@@ -450,9 +415,7 @@ fn in_path(bin: &str) -> bool {
     let Ok(path) = std::env::var("PATH") else {
         return false;
     };
-    std::env::split_paths(&path)
-        .map(|dir| dir.join(bin))
-        .any(|p| p.is_file())
+    std::env::split_paths(&path).map(|dir| dir.join(bin)).any(|p| p.is_file())
 }
 
 /// Presence checks for every binary the session needs, with an install hint.
@@ -526,10 +489,7 @@ mod tests {
             assert!(seen.insert(key.clone()), "duplicate bind key {key}");
             match bind {
                 Bind::Action(a) | Bind::ActionArg(a, _) | Bind::ActionIndex(a, _) => {
-                    assert!(
-                        ALLOWED_ACTIONS.contains(&a),
-                        "action outside the allowlist: {a}"
-                    );
+                    assert!(ALLOWED_ACTIONS.contains(&a), "action outside the allowlist: {a}");
                 }
                 Bind::Spawn(argv) => assert!(!argv.is_empty()),
             }
@@ -538,11 +498,7 @@ mod tests {
 
     #[test]
     fn options_flow_into_rendered_kdl() {
-        let o = DeskOptions {
-            gap: 24,
-            kb_layout: "tr",
-            ..DeskOptions::default()
-        };
+        let o = DeskOptions { gap: 24, kb_layout: "tr", ..DeskOptions::default() };
         let kdl = render_niri_kdl(&o);
         assert!(kdl.contains("gap 24"));
         assert!(kdl.contains("layout \"tr\""));
@@ -554,14 +510,8 @@ mod tests {
         assert!(WAYBAR_JSON.trim_end().ends_with('}'));
         assert!(WAYBAR_JSON.contains("niri/workspaces"));
         assert!(WAYBAR_JSON.contains("niri/window"));
-        assert_eq!(
-            WAYBAR_JSON.matches('{').count(),
-            WAYBAR_JSON.matches('}').count()
-        );
-        assert_eq!(
-            WAYBAR_JSON.matches('[').count(),
-            WAYBAR_JSON.matches(']').count()
-        );
+        assert_eq!(WAYBAR_JSON.matches('{').count(), WAYBAR_JSON.matches('}').count());
+        assert_eq!(WAYBAR_JSON.matches('[').count(), WAYBAR_JSON.matches(']').count());
     }
 
     #[test]

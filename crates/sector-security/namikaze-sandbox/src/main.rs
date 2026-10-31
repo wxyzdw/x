@@ -38,12 +38,7 @@ fn main() -> Result<()> {
     }
     let dir_arg = cli.value_or("dir", &format!("{ETC_DIR}/sandbox"));
     let dir = Path::new(&dir_arg);
-    let app_arg = || {
-        cli.free(&[])
-            .get(1)
-            .cloned()
-            .unwrap_or_default()
-    };
+    let app_arg = || cli.free(&[]).get(1).cloned().unwrap_or_default();
 
     match cli.sub().unwrap_or_default() {
         "compile" => {
@@ -62,9 +57,9 @@ fn main() -> Result<()> {
         }
         "doctor" => {
             let mut bad = 0;
-            for entry in fs::read_dir(dir).map_err(|e| {
-                namikaze_common::Error::Other(format!("{}: {e}", dir.display()))
-            })? {
+            for entry in fs::read_dir(dir)
+                .map_err(|e| namikaze_common::Error::Other(format!("{}: {e}", dir.display())))?
+            {
                 let path = entry?.path();
                 if path.extension().and_then(|e| e.to_str()) != Some("toml") {
                     continue;

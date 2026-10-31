@@ -120,10 +120,7 @@ mod tests {
     #[test]
     fn profiles_differ() {
         assert!(governor(Profile::Performance) != governor(Profile::Stealth));
-        let (a, b) = (
-            sysctl_values(Profile::Balanced),
-            sysctl_values(Profile::Stealth),
-        );
+        let (a, b) = (sysctl_values(Profile::Balanced), sysctl_values(Profile::Stealth));
         assert_ne!(a, b);
     }
 

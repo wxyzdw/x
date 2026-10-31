@@ -164,11 +164,7 @@ pub fn parse_persistence_conf(text: &str) -> std::result::Result<Vec<MountEntry>
             "overlay" => MountKind::Overlay,
             _ => return Err(ConfError::Line(idx + 1)),
         };
-        let entry = MountEntry {
-            path: path.to_string(),
-            kind,
-            optional,
-        };
+        let entry = MountEntry { path: path.to_string(), kind, optional };
         if !out.contains(&entry) {
             out.push(entry);
         }
@@ -208,19 +204,12 @@ pub fn build_plan(options: &LiveOptions, entries: &[MountEntry]) -> MountPlan {
 /// `lowers` are lower-layer paths in stack order (first = highest priority).
 pub fn overlay_options(lowers: &[String], upper: &str, work: &str) -> Result<String> {
     if lowers.is_empty() {
-        return Err(Error::Config(
-            "overlay needs at least one lower layer".into(),
-        ));
+        return Err(Error::Config("overlay needs at least one lower layer".into()));
     }
     if upper == work {
         return Err(Error::Config("overlay upper and work must differ".into()));
     }
-    Ok(format!(
-        "lowerdir={},upperdir={},workdir={}",
-        lowers.join(":"),
-        upper,
-        work
-    ))
+    Ok(format!("lowerdir={},upperdir={},workdir={}", lowers.join(":"), upper, work))
 }
 
 #[cfg(test)]

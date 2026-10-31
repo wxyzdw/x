@@ -25,9 +25,7 @@ fn main() -> Result<()> {
     match cli.sub().unwrap_or_default() {
         "status" => {
             let ver = tor.get_info("version").unwrap_or_else(|_| "?".into());
-            let circ = tor
-                .get_info("status/circuit-established")
-                .unwrap_or_else(|_| "0".into());
+            let circ = tor.get_info("status/circuit-established").unwrap_or_else(|_| "0".into());
             println!("tor version:            {ver}");
             println!("circuit established:    {circ}");
         }
@@ -36,9 +34,9 @@ fn main() -> Result<()> {
             println!("new circuit requested");
         }
         "onion" => {
-            let target = cli
-                .value("target")
-                .ok_or_else(|| namikaze_common::Error::Other("missing --target HOST:PORT".into()))?;
+            let target = cli.value("target").ok_or_else(|| {
+                namikaze_common::Error::Other("missing --target HOST:PORT".into())
+            })?;
             let port: u16 = cli.value_parse("port").ok().flatten().unwrap_or(80);
             let id = tor.add_onion(port, &target)?;
             println!("onion service active: {id}.onion:{port} -> {target}");

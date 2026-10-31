@@ -94,10 +94,8 @@ fn machine_tree() -> &'static str {
 
 /// Wait for the ISO medium and mount it. Retries while udev settles.
 fn mount_iso() -> Result<PathBuf> {
-    let candidates = [
-        PathBuf::from("/dev/disk/by-label").join(ISO_LABEL),
-        PathBuf::from("/dev/sr0"),
-    ];
+    let candidates =
+        [PathBuf::from("/dev/disk/by-label").join(ISO_LABEL), PathBuf::from("/dev/sr0")];
     std::fs::create_dir_all("/run/iso")?;
     for attempt in 0..15 {
         for cand in &candidates {
@@ -133,9 +131,7 @@ fn verity_open(sqfs: &Path, root_hash: &str) -> Result<PathBuf> {
         .status();
     match status {
         Ok(s) if s.success() => Ok(mapper),
-        _ => Err(Error::Other(
-            "veritysetup failed; refusing to mount unverified root".into(),
-        )),
+        _ => Err(Error::Other("veritysetup failed; refusing to mount unverified root".into())),
     }
 }
 
@@ -168,31 +164,21 @@ fn mount_rootfs(iso: &Path, items: &[(String, String)]) -> Result<()> {
 fn overlay_upper(choice: persist::UpperChoice) -> Result<()> {
     // upperdir and workdir must live on the SAME filesystem.
     let (upper, work) = match choice {
-        persist::UpperChoice::Persistent => (
-            PathBuf::from("/run/persist/upper"),
-            PathBuf::from("/run/persist/work"),
-        ),
+        persist::UpperChoice::Persistent => {
+            (PathBuf::from("/run/persist/upper"), PathBuf::from("/run/persist/work"))
+        }
         persist::UpperChoice::VolatileTmpfs | persist::UpperChoice::SessionTmpfs => {
             let base = PathBuf::from("/run/upper-volatile");
             std::fs::create_dir_all(&base)?;
             let flags = ffi::MS_NOSUID | ffi::MS_NODEV;
-            try_mount(
-                Some("tmpfs"),
-                base.to_str().unwrap_or_default(),
-                Some("tmpfs"),
-                flags,
-                None,
-            );
+            try_mount(Some("tmpfs"), base.to_str().unwrap_or_default(), Some("tmpfs"), flags, None);
             (base.join("u"), base.join("work"))
         }
     };
     std::fs::create_dir_all(&upper)?;
     std::fs::create_dir_all(&work)?;
-    let options = format!(
-        "lowerdir={NEW_ROOT},upperdir={},workdir={}",
-        upper.display(),
-        work.display()
-    );
+    let options =
+        format!("lowerdir={NEW_ROOT},upperdir={},workdir={}", upper.display(), work.display());
     do_mount(
         Some("overlay"),
         NEW_ROOT,

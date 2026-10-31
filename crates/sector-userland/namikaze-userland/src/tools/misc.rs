@@ -34,11 +34,7 @@ pub fn sha256sum(argv: &[String]) -> i32 {
     for name in &names {
         let data_res: Result<Vec<u8>, String> = if name == "-" {
             let mut data = Vec::new();
-            io::stdin()
-                .lock()
-                .read_to_end(&mut data)
-                .map(|_| data)
-                .map_err(|e| e.to_string())
+            io::stdin().lock().read_to_end(&mut data).map(|_| data).map_err(|e| e.to_string())
         } else {
             fs::read(name).map_err(|e| format!("cannot open {name}: {e}"))
         };
@@ -90,11 +86,7 @@ pub fn cmp(argv: &[String]) -> i32 {
     let read_one = |name: &str| -> Result<Vec<u8>, String> {
         if name == "-" {
             let mut data = Vec::new();
-            io::stdin()
-                .lock()
-                .read_to_end(&mut data)
-                .map(|_| data)
-                .map_err(|e| e.to_string())
+            io::stdin().lock().read_to_end(&mut data).map(|_| data).map_err(|e| e.to_string())
         } else {
             fs::read(name).map_err(|e| format!("cannot open {name}: {e}"))
         }
@@ -128,11 +120,8 @@ pub fn cmp(argv: &[String]) -> i32 {
             }
             None => {
                 // one input is a strict prefix of the other
-                let (shorter, longer) = if a.len() < b.len() {
-                    (&files[0], &files[1])
-                } else {
-                    (&files[1], &files[0])
-                };
+                let (shorter, longer) =
+                    if a.len() < b.len() { (&files[0], &files[1]) } else { (&files[1], &files[0]) };
                 let _ = writeln!(
                     out,
                     "cmp: EOF on {shorter} which is shorter than {longer} after byte {common}"
@@ -198,26 +187,20 @@ pub fn comm(argv: &[String]) -> i32 {
     while i < a.len() && j < b.len() {
         match a[i].cmp(&b[j]) {
             std::cmp::Ordering::Less => {
-                if !suppress[0] {
-                    if emit(&mut out, 1, &a[i]).is_err() {
-                        code = fail("comm", "stdout write failed");
-                    }
+                if !suppress[0] && emit(&mut out, 1, &a[i]).is_err() {
+                    code = fail("comm", "stdout write failed");
                 }
                 i += 1;
             }
             std::cmp::Ordering::Greater => {
-                if !suppress[1] {
-                    if emit(&mut out, 2, &b[j]).is_err() {
-                        code = fail("comm", "stdout write failed");
-                    }
+                if !suppress[1] && emit(&mut out, 2, &b[j]).is_err() {
+                    code = fail("comm", "stdout write failed");
                 }
                 j += 1;
             }
             std::cmp::Ordering::Equal => {
-                if !suppress[2] {
-                    if emit(&mut out, 3, &a[i]).is_err() {
-                        code = fail("comm", "stdout write failed");
-                    }
+                if !suppress[2] && emit(&mut out, 3, &a[i]).is_err() {
+                    code = fail("comm", "stdout write failed");
                 }
                 i += 1;
                 j += 1;

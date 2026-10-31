@@ -8,7 +8,6 @@
 
 #![forbid(unsafe_code)]
 
-
 use namikaze_common::{init_tracing, Result};
 use namikaze_rt::args::Cli;
 
@@ -85,22 +84,13 @@ fn run() -> Result<()> {
 fn hal_report_json(r: &namikaze_hal::HardwareReport) -> namikaze_rt::json::Value {
     use namikaze_rt::json::{obj, Value};
     obj(&[
-        (
-            "arch",
-            r.arch.map(|a| Value::Str(a.as_tag().to_string())).unwrap_or(Value::Null),
-        ),
+        ("arch", r.arch.map(|a| Value::Str(a.as_tag().to_string())).unwrap_or(Value::Null)),
         (
             "dt_compatibles",
             Value::Arr(r.dt_compatibles.iter().map(|s| Value::Str(s.clone())).collect()),
         ),
-        (
-            "dmi_board_name",
-            r.dmi_board_name.clone().map(Value::Str).unwrap_or(Value::Null),
-        ),
-        (
-            "dmi_board_vendor",
-            r.dmi_board_vendor.clone().map(Value::Str).unwrap_or(Value::Null),
-        ),
+        ("dmi_board_name", r.dmi_board_name.clone().map(Value::Str).unwrap_or(Value::Null)),
+        ("dmi_board_vendor", r.dmi_board_vendor.clone().map(Value::Str).unwrap_or(Value::Null)),
         ("cpu_model", r.cpu_model.clone().map(Value::Str).unwrap_or(Value::Null)),
         ("ram_kb", Value::Int(r.ram_kb as i64)),
     ])

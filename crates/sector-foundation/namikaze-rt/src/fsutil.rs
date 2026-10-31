@@ -35,11 +35,7 @@ impl TempDir {
     pub fn new(pfx: &str) -> crate::Result<Self> {
         let base = std::env::temp_dir();
         for _ in 0..64 {
-            let name = format!(
-                "{pfx}-{}-{}",
-                std::process::id(),
-                crate::random::id_hex()?
-            );
+            let name = format!("{pfx}-{}-{}", std::process::id(), crate::random::id_hex()?);
             let path = base.join(name);
             match std::fs::create_dir(&path) {
                 Ok(()) => return Ok(Self { path }),
@@ -131,10 +127,8 @@ mod tests {
         std::fs::write(t.path().join("a/1"), b"").unwrap();
         std::fs::write(t.path().join("z"), b"").unwrap();
         let files = walk_files(t.path());
-        let names: Vec<String> = files
-            .iter()
-            .map(|p| p.file_name().unwrap().to_string_lossy().to_string())
-            .collect();
+        let names: Vec<String> =
+            files.iter().map(|p| p.file_name().unwrap().to_string_lossy().to_string()).collect();
         assert_eq!(names, vec!["1", "2", "z"]);
     }
 

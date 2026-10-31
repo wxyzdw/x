@@ -76,17 +76,15 @@ pub fn find_persist_device(uuid_hint: Option<&str>) -> Option<PathBuf> {
         .flatten()
         .map(|e| e.path())
         .filter(|p| {
-            p.file_name()
-                .map(|n| n.to_string_lossy() == "namikaze-persist")
-                .unwrap_or(false)
+            p.file_name().map(|n| n.to_string_lossy() == "namikaze-persist").unwrap_or(false)
         })
         .collect();
     candidates.sort();
     match uuid_hint {
         None => candidates.into_iter().next(),
-        Some(hint) => candidates.into_iter().find(|p| {
-            p.to_string_lossy().ends_with(hint) || fs::read_link(p).is_ok()
-        }),
+        Some(hint) => candidates
+            .into_iter()
+            .find(|p| p.to_string_lossy().ends_with(hint) || fs::read_link(p).is_ok()),
     }
 }
 
@@ -209,11 +207,8 @@ fn write_live_env(options: &LiveOptions, choice: UpperChoice) -> Result<()> {
 /// Write the live env for an explicit volatile boot (no persist attempt).
 pub fn write_volatile_env() -> Result<()> {
     let _ = fs::create_dir_all("/run/namikaze");
-    fs::write(
-        LIVE_ENV,
-        "MODE=volatile\nUPPER=/run/upper-volatile/u\nPERSIST=\nCONF=\n",
-    )
-    .map_err(Error::Io)
+    fs::write(LIVE_ENV, "MODE=volatile\nUPPER=/run/upper-volatile/u\nPERSIST=\nCONF=\n")
+        .map_err(Error::Io)
 }
 
 /// Apply the allowlist mounts under NEW_ROOT after the root overlay exists.
@@ -267,10 +262,7 @@ mod tests {
     #[test]
     fn fallback_policy_volatile() {
         let mut o = LiveOptions::default();
-        assert_eq!(
-            resolve_mode(&o, false).unwrap(),
-            LiveMode::Volatile
-        );
+        assert_eq!(resolve_mode(&o, false).unwrap(), LiveMode::Volatile);
         o.fallback_volatile = false;
         assert!(resolve_mode(&o, false).is_err());
         o.mode = LiveMode::Volatile;
@@ -281,10 +273,7 @@ mod tests {
     fn session_mode_keeps_data_concealed_on_failure() {
         // Session without a persist volume must degrade to volatile tmpfs,
         // never destroy or expose anything.
-        let o = LiveOptions {
-            mode: LiveMode::Session,
-            ..Default::default()
-        };
+        let o = LiveOptions { mode: LiveMode::Session, ..Default::default() };
         assert_eq!(resolve_mode(&o, false).unwrap(), LiveMode::Session);
     }
 }

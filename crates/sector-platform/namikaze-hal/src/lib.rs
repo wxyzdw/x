@@ -166,11 +166,7 @@ impl HardwareReport {
     pub fn from_sysfs() -> Result<HardwareReport> {
         let mut r = HardwareReport::default();
         if let Ok(t) = fs::read_to_string("/proc/device-tree/compatible") {
-            r.dt_compatibles = t
-                .split('\0')
-                .filter(|s| !s.is_empty())
-                .map(String::from)
-                .collect();
+            r.dt_compatibles = t.split('\0').filter(|s| !s.is_empty()).map(String::from).collect();
         }
         let dmi = |f: &str| -> Option<String> {
             fs::read_to_string(format!("/sys/class/dmi/id/{f}"))
@@ -183,12 +179,8 @@ impl HardwareReport {
         if let Ok(t) = fs::read_to_string("/proc/meminfo") {
             for line in t.lines() {
                 if let Some(rest) = line.strip_prefix("MemTotal:") {
-                    r.ram_kb = rest
-                        .trim()
-                        .trim_end_matches(" kB")
-                        .replace(',', "")
-                        .parse()
-                        .unwrap_or(0);
+                    r.ram_kb =
+                        rest.trim().trim_end_matches(" kB").replace(',', "").parse().unwrap_or(0);
                 }
             }
         }
@@ -265,10 +257,7 @@ pub fn apply(report: &HardwareReport, run_dir: &Path) -> Result<AppliedPlan> {
         udev_rules: udev_rules.display().to_string(),
         modules_load: modules_load.display().to_string(),
     };
-    fs::write(
-        run_dir.join("hardware-plan.json"),
-        plan_to_json(&plan).to_pretty(),
-    )?;
+    fs::write(run_dir.join("hardware-plan.json"), plan_to_json(&plan).to_pretty())?;
     Ok(plan)
 }
 
@@ -298,11 +287,7 @@ pub fn firmware_plan(board_id: &str) -> Result<Vec<String>> {
         .iter()
         .find(|b| b.id == board_id)
         .ok_or_else(|| Error::Config(format!("unknown board: {board_id}")))?;
-    let mut set: Vec<String> = board
-        .firmware_dirs
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
+    let mut set: Vec<String> = board.firmware_dirs.iter().map(|s| s.to_string()).collect();
     for extra in gpu::firmware_dirs(board.soc, gpu::select_for_soc(board.soc)) {
         if !set.iter().any(|s| s == extra) {
             set.push(extra.to_string());

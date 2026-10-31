@@ -146,7 +146,8 @@ fn tzif_offset(data: &[u8], at_utc: i64) -> Option<i64> {
     let mut pos = 44usize;
     // v1 uses 32-bit times; v2+ block is skipped and re-read in 64-bit form
     if version >= b'2' {
-        let v1_len = timecnt * 4 + timecnt + typecnt * 6 + charcnt + leapcnt * 8 + isstdcnt + isutcnt;
+        let v1_len =
+            timecnt * 4 + timecnt + typecnt * 6 + charcnt + leapcnt * 8 + isstdcnt + isutcnt;
         pos += v1_len;
         if pos + 44 > data.len() || &data[pos..pos + 4] != b"TZif" {
             return None;
@@ -166,8 +167,14 @@ fn tzif_offset(data: &[u8], at_utc: i64) -> Option<i64> {
         for i in 0..timecnt {
             let o = pos + i * 8;
             transitions.push(i64::from_be_bytes([
-                data[o], data[o + 1], data[o + 2], data[o + 3],
-                data[o + 4], data[o + 5], data[o + 6], data[o + 7],
+                data[o],
+                data[o + 1],
+                data[o + 2],
+                data[o + 3],
+                data[o + 4],
+                data[o + 5],
+                data[o + 6],
+                data[o + 7],
             ]));
         }
         pos += timecnt * 8;
@@ -250,7 +257,17 @@ mod tests {
         let z = Zone { offset_secs: 3 * 3600 };
         let local = z.local(1_700_000_000);
         assert_eq!(local.hour, 22 + 3 - 24); // 22:13 UTC -> 01:13 local
-        assert_eq!(z.utc_from_local(&Civil { year: local.year, month: local.month, day: local.day, hour: local.hour, minute: local.minute, second: local.second }), 1_700_000_000);
+        assert_eq!(
+            z.utc_from_local(&Civil {
+                year: local.year,
+                month: local.month,
+                day: local.day,
+                hour: local.hour,
+                minute: local.minute,
+                second: local.second
+            }),
+            1_700_000_000
+        );
     }
 
     #[test]

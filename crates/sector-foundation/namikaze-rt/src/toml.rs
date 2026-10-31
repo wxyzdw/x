@@ -99,18 +99,16 @@ pub fn parse(text: &str) -> crate::Result<BTreeMap<String, Value>> {
             continue;
         }
         if let Some(body) = line.strip_prefix("[[") {
-            let body = body
-                .strip_suffix("]]")
-                .ok_or_else(|| err(line_no, "unterminated [[header]]"))?;
+            let body =
+                body.strip_suffix("]]").ok_or_else(|| err(line_no, "unterminated [[header]]"))?;
             let path = split_key(body, line_no)?;
             open_table_arr(&mut root, &path, line_no)?;
             target = Target::ArrElem(path);
             continue;
         }
         if let Some(body) = line.strip_prefix('[') {
-            let body = body
-                .strip_suffix(']')
-                .ok_or_else(|| err(line_no, "unterminated [header]"))?;
+            let body =
+                body.strip_suffix(']').ok_or_else(|| err(line_no, "unterminated [header]"))?;
             let path = split_key(body, line_no)?;
             open_table(&mut root, &path, line_no)?;
             target = Target::Table(path);
@@ -191,10 +189,7 @@ fn split_key(text: &str, line_no: usize) -> crate::Result<Vec<String>> {
         if p.starts_with('"') && p.ends_with('"') && p.len() >= 2 {
             out.push(p[1..p.len() - 1].to_string());
         } else {
-            if !p
-                .bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
-            {
+            if !p.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-') {
                 return Err(err(line_no, &format!("invalid bare key {p:?}")));
             }
             out.push(p.to_string());
@@ -205,9 +200,7 @@ fn split_key(text: &str, line_no: usize) -> crate::Result<Vec<String>> {
 
 fn parse_value(text: &str, line_no: usize) -> crate::Result<Value> {
     if let Some(rest) = text.strip_prefix('"') {
-        let body = rest
-            .strip_suffix('"')
-            .ok_or_else(|| err(line_no, "unterminated string"))?;
+        let body = rest.strip_suffix('"').ok_or_else(|| err(line_no, "unterminated string"))?;
         return Ok(Value::Str(unescape(body, line_no)?));
     }
     match text {
@@ -282,8 +275,8 @@ fn unescape(body: &str, line_no: usize) -> crate::Result<String> {
             Some('\\') => out.push('\\'),
             Some('u') => {
                 let hex: String = chars.by_ref().take(4).collect();
-                let code = u32::from_str_radix(&hex, 16)
-                    .map_err(|_| err(line_no, "bad \\u escape"))?;
+                let code =
+                    u32::from_str_radix(&hex, 16).map_err(|_| err(line_no, "bad \\u escape"))?;
                 out.push(char::from_u32(code).unwrap_or('\u{fffd}'));
             }
             _ => return Err(err(line_no, "unknown escape")),
@@ -299,9 +292,7 @@ fn table_at<'a>(
 ) -> crate::Result<&'a mut BTreeMap<String, Value>> {
     let mut cur = root;
     for part in path {
-        let entry = cur
-            .entry(part.clone())
-            .or_insert_with(|| Value::Table(BTreeMap::new()));
+        let entry = cur.entry(part.clone()).or_insert_with(|| Value::Table(BTreeMap::new()));
         match entry {
             Value::Table(t) => cur = t,
             _ => return Err(err(line_no, &format!("key {part:?} is not a table"))),
@@ -334,9 +325,7 @@ fn open_table_arr(
 ) -> crate::Result<()> {
     let (last, parents) = path.split_last().ok_or_else(|| err(line_no, "empty header"))?;
     let parent = table_at(root, parents, line_no)?;
-    let entry = parent
-        .entry(last.clone())
-        .or_insert_with(|| Value::TableArr(Vec::new()));
+    let entry = parent.entry(last.clone()).or_insert_with(|| Value::TableArr(Vec::new()));
     match entry {
         Value::TableArr(a) => {
             a.push(BTreeMap::new());
@@ -360,15 +349,11 @@ fn insert(
             insert_into_table(table, key, value, line_no)
         }
         Target::ArrElem(path) => {
-            let (last, parents) = path
-                .split_last()
-                .ok_or_else(|| err(line_no, "empty header"))?;
+            let (last, parents) = path.split_last().ok_or_else(|| err(line_no, "empty header"))?;
             let parent = table_at(root, parents, line_no)?;
             match parent.get_mut(last) {
                 Some(Value::TableArr(items)) => {
-                    let t = items
-                        .last_mut()
-                        .ok_or_else(|| err(line_no, "no active table"))?;
+                    let t = items.last_mut().ok_or_else(|| err(line_no, "no active table"))?;
                     insert_into_table(t, key, value, line_no)
                 }
                 _ => Err(err(line_no, "header lost its table array")),
@@ -386,9 +371,7 @@ fn insert_into_table(
     let (leaf, base) = key.split_last().ok_or_else(|| err(line_no, "empty key"))?;
     let mut cur = table;
     for part in base {
-        let entry = cur
-            .entry(part.clone())
-            .or_insert_with(|| Value::Table(BTreeMap::new()));
+        let entry = cur.entry(part.clone()).or_insert_with(|| Value::Table(BTreeMap::new()));
         match entry {
             Value::Table(t) => cur = t,
             _ => return Err(err(line_no, "dotted key crosses a non-table")),
@@ -447,10 +430,7 @@ transport = "doh"
     #[test]
     fn arrays_and_escapes() {
         let root = parse("env = [\"LANG\", \"LC_ALL\"]\ns = \"a\\nb\"\n").unwrap();
-        assert_eq!(
-            root.get("env").unwrap().as_arr().unwrap()[1].as_str(),
-            Some("LC_ALL")
-        );
+        assert_eq!(root.get("env").unwrap().as_arr().unwrap()[1].as_str(), Some("LC_ALL"));
         assert_eq!(root.get("s").unwrap().as_str(), Some("a\nb"));
     }
 

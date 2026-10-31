@@ -127,7 +127,10 @@ pub fn append_log(path: &Path, line: &str) -> Result<()> {
         fs::create_dir_all(parent)?;
     }
     let mut f = fs::OpenOptions::new().create(true).append(true).open(path)?;
-    { use std::io::Write; writeln!(f, "{line}")?; }
+    {
+        use std::io::Write;
+        writeln!(f, "{line}")?;
+    }
     Ok(())
 }
 

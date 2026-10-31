@@ -96,10 +96,7 @@ impl Ledger {
     /// reported by `verify_text` instead, so display stays useful on a
     /// corrupted file.
     pub fn parse_text(raw: &str) -> Vec<Record> {
-        raw.lines()
-            .filter(|l| !l.trim().is_empty())
-            .filter_map(|l| record_from_json(l))
-            .collect()
+        raw.lines().filter(|l| !l.trim().is_empty()).filter_map(record_from_json).collect()
     }
 
     /// Verify the full chain; Ok(record count) when intact.
@@ -150,7 +147,12 @@ mod tests {
                 kind: "persist-open".into(),
                 fact: format!("volume sealed-open #{seq}"),
                 prev: prev.clone(),
-                hash: record_hash(seq, "persist-open", &format!("volume sealed-open #{seq}"), &prev),
+                hash: record_hash(
+                    seq,
+                    "persist-open",
+                    &format!("volume sealed-open #{seq}"),
+                    &prev,
+                ),
             };
             out.push_str(&record_to_json(&r));
             out.push('\n');

@@ -82,10 +82,8 @@ pub fn find_boot_device(bootid: Option<&str>) -> Result<PathBuf> {
 /// end. Used by toram mode; the 4 MiB buffer bounds peak memory usage.
 pub fn copy_to_ram(src: &Path, stage_dir: &Path) -> Result<PathBuf> {
     fs::create_dir_all(stage_dir)?;
-    let dest = stage_dir.join(
-        src.file_name()
-            .ok_or_else(|| Error::Other("source has no file name".into()))?,
-    );
+    let dest = stage_dir
+        .join(src.file_name().ok_or_else(|| Error::Other("source has no file name".into()))?);
     io::copy(&mut fs::File::open(src)?, &mut fs::File::create(&dest)?)?;
     let writer = fs::OpenOptions::new().write(true).open(&dest)?;
     writer.sync_all()?;
@@ -145,10 +143,7 @@ pub fn apply_persistence(merged_root: &Path, persist: &Path, plan: &MountPlan) -
 /// leaves down. Best-effort by design; a failing unmount never blocks power
 /// off but is reported.
 pub fn eject() -> Result<()> {
-    let _ = Command::new("/usr/sbin/swapoff")
-        .arg("-a")
-        .env_clear()
-        .status();
+    let _ = Command::new("/usr/sbin/swapoff").arg("-a").env_clear().status();
     namikaze_ffi::do_sync();
     let mut mounts: Vec<(String, String)> = fs::read_to_string("/proc/mounts")?
         .lines()
@@ -157,7 +152,7 @@ pub fn eject() -> Result<()> {
             Some((f.next()?.to_string(), f.next()?.to_string()))
         })
         .collect();
-    mounts.sort_by(|a, b| b.1.len().cmp(&a.1.len()));
+    mounts.sort_by_key(|m| std::cmp::Reverse(m.1.len()));
     let mut last_err = None;
     for (_, target) in mounts {
         if target.starts_with("/run/persist")
@@ -182,9 +177,8 @@ pub fn session_flush() -> Result<()> {
         Error::Other(format!("{} unreadable (not a session boot?): {e}", LIVE_ENV_FILE))
     })?;
     let get = |key: &str| -> Option<String> {
-        env.lines().find_map(|l| {
-            l.split_once('=').filter(|(k, _)| *k == key).map(|(_, v)| v.to_string())
-        })
+        env.lines()
+            .find_map(|l| l.split_once('=').filter(|(k, _)| *k == key).map(|(_, v)| v.to_string()))
     };
     let (Some(upper), Some(persist)) = (get("UPPER"), get("PERSIST")) else {
         return Err(Error::Other("live.env lacks UPPER/PERSIST".into()));
@@ -239,13 +233,7 @@ pub fn refresh_root(lowers: &[String], upper: &Path, work: &Path) -> Result<()> 
         work.to_str().unwrap_or_default(),
     )?;
     fs::create_dir_all("/run/merged-next")?;
-    do_mount(
-        Some("overlay"),
-        "/run/merged-next",
-        Some("overlay"),
-        0,
-        Some(data.as_str()),
-    )?;
+    do_mount(Some("overlay"), "/run/merged-next", Some("overlay"), 0, Some(data.as_str()))?;
     fs::create_dir_all("/run/merged-next/oldroot")?;
     namikaze_ffi::pivot_root(Path::new("/run/merged-next"), Path::new("/run/merged-next/oldroot"))?;
     std::env::set_current_dir("/")?;

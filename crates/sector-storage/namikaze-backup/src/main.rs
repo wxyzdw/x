@@ -65,7 +65,9 @@ fn load_manifest(repo: &Path) -> Manifest {
                             k,
                             v.as_arr()
                                 .map(|a| {
-                                    a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect()
+                                    a.iter()
+                                        .filter_map(|x| x.as_str().map(str::to_string))
+                                        .collect()
                                 })
                                 .unwrap_or_default(),
                         )
@@ -80,10 +82,7 @@ fn store_manifest(repo: &Path, m: &Manifest) -> Result<()> {
     let obj = Value::Obj(
         m.iter()
             .map(|(k, ids)| {
-                (
-                    k.clone(),
-                    Value::Arr(ids.iter().map(|i| Value::Str(i.clone())).collect()),
-                )
+                (k.clone(), Value::Arr(ids.iter().map(|i| Value::Str(i.clone())).collect()))
             })
             .collect(),
     );
@@ -149,9 +148,8 @@ fn run_get(repo: &Path, path: &str, out: &Path) -> Result<()> {
     let salt = std::fs::read(salt_path(repo))?;
     let vault = derive_key(std::str::from_utf8(pass.as_slice()).unwrap_or(""), &salt)?;
     let manifest = load_manifest(repo);
-    let ids = manifest
-        .get(path)
-        .ok_or_else(|| Error::Other(format!("path {path} not in repository")))?;
+    let ids =
+        manifest.get(path).ok_or_else(|| Error::Other(format!("path {path} not in repository")))?;
     let mut plain = Vec::new();
     for id in ids {
         let sealed = std::fs::read(repo.join("chunks").join(id))?;
@@ -173,9 +171,7 @@ fn main() -> Result<()> {
     if cli.wants_help() || cli.sub().is_none() {
         cli.usage_exit(USAGE);
     }
-    let repo = std::path::PathBuf::from(
-        cli.value("repo").unwrap_or_else(|| "backup-repo".into()),
-    );
+    let repo = std::path::PathBuf::from(cli.value("repo").unwrap_or_else(|| "backup-repo".into()));
     let free = cli.free(&["repo"]);
     match cli.sub().unwrap_or_default() {
         "init" => run_init(&repo)?,

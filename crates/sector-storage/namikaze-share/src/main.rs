@@ -67,14 +67,10 @@ fn handle(req: &Request, root: &Path) -> Response {
     match resolve(root, &req.path) {
         Some(file) => {
             let mut data = Vec::new();
-            let ok = std::fs::File::open(&file)
-                .and_then(|mut f| f.read_to_end(&mut data))
-                .is_ok();
+            let ok = std::fs::File::open(&file).and_then(|mut f| f.read_to_end(&mut data)).is_ok();
             if ok {
-                let name = file
-                    .file_name()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_default();
+                let name =
+                    file.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
                 return Response::bytes(200, content_type(&name), data);
             }
             Response::text(404, "not found")

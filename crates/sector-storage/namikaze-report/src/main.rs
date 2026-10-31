@@ -104,9 +104,7 @@ fn html_report() -> Result<()> {
     }
     html.push_str("</table>");
     let (events, valid) = namikaze_sentinel::audit_verify().unwrap_or((0, false));
-    html.push_str(&format!(
-        "<p>sentinel audit chain: {events} events, valid={valid}</p>"
-    ));
+    html.push_str(&format!("<p>sentinel audit chain: {events} events, valid={valid}</p>"));
     std::fs::write("namikaze-report.html", html)?;
     println!("written: namikaze-report.html");
     Ok(())

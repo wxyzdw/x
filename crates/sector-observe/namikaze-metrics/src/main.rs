@@ -35,9 +35,8 @@ fn read_first_field(path: &str, prefix: &str, field: usize) -> Option<String> {
 fn snapshot() -> Value {
     let load1 = read_first_field("/proc/loadavg", "", 0).unwrap_or_default();
     let load5 = read_first_field("/proc/loadavg", "", 1).unwrap_or_default();
-    let mem_total_kb: u64 = read_first_field("/proc/meminfo", "MemTotal:", 1)
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(0);
+    let mem_total_kb: u64 =
+        read_first_field("/proc/meminfo", "MemTotal:", 1).and_then(|v| v.parse().ok()).unwrap_or(0);
     let mem_free_kb: u64 = read_first_field("/proc/meminfo", "MemAvailable:", 1)
         .and_then(|v| v.parse().ok())
         .unwrap_or(0);
@@ -103,7 +102,8 @@ fn main() {
                 if let Some(parent) = file.parent() {
                     let _ = std::fs::create_dir_all(parent);
                 }
-                if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&file) {
+                if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&file)
+                {
                     let _ = writeln!(f, "{}", snapshot().to_compact());
                 }
                 sleep(Duration::from_secs(interval));

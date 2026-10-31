@@ -80,11 +80,7 @@ fn store_baseline(b: &Baseline) -> Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let obj = Value::Obj(
-        b.iter()
-            .map(|(k, v)| (k.clone(), Value::Str(v.clone())))
-            .collect(),
-    );
+    let obj = Value::Obj(b.iter().map(|(k, v)| (k.clone(), Value::Str(v.clone()))).collect());
     std::fs::write(&path, obj.to_pretty().into_bytes())?;
     Ok(())
 }
@@ -139,11 +135,7 @@ fn run_check(roots: &[PathBuf]) -> Result<()> {
 
 fn run_daemon(roots: &[PathBuf], interval: u64) -> Result<()> {
     let mut seen = hash_tree(roots);
-    println!(
-        "watching {} root(s) with a {}s poll interval",
-        roots.len(),
-        interval
-    );
+    println!("watching {} root(s) with a {}s poll interval", roots.len(), interval);
     for root in roots {
         println!("watching {}", root.display());
     }
@@ -211,9 +203,7 @@ mod tests {
         // pure encode/decode path of the baseline map
         let mut map: Baseline = BTreeMap::new();
         map.insert("/etc/namikaze/system.toml".into(), "deadbeef".into());
-        let obj = Value::Obj(
-            map.iter().map(|(k, v)| (k.clone(), Value::Str(v.clone()))).collect(),
-        );
+        let obj = Value::Obj(map.iter().map(|(k, v)| (k.clone(), Value::Str(v.clone()))).collect());
         let text = obj.to_pretty();
         let back = json::parse(&text).unwrap();
         assert_eq!(

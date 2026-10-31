@@ -56,10 +56,7 @@ fn main() -> Result<()> {
                 )));
             }
             let seq = records.len() + 1;
-            let prev = records
-                .last()
-                .map(|r| r.hash.clone())
-                .unwrap_or_else(|| "0".repeat(64));
+            let prev = records.last().map(|r| r.hash.clone()).unwrap_or_else(|| "0".repeat(64));
             let record = chain::Record {
                 seq,
                 kind: kind.clone(),

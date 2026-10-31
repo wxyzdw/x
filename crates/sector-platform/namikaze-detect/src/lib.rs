@@ -105,10 +105,8 @@ fn arm_hwcaps_level() -> Profile {
     let Ok(cpuinfo) = fs::read_to_string("/proc/cpuinfo") else {
         return Profile::Other;
     };
-    let Some(features) = cpuinfo
-        .lines()
-        .find(|l| l.starts_with("Features"))
-        .and_then(|l| l.split(':').nth(1))
+    let Some(features) =
+        cpuinfo.lines().find(|l| l.starts_with("Features")).and_then(|l| l.split(':').nth(1))
     else {
         return Profile::Other;
     };
@@ -170,13 +168,7 @@ impl DetectionReport {
             ("profile", Value::Str(self.profile.as_tag().to_string())),
             ("vendor", Value::Str(self.vendor.clone())),
             ("product", Value::Str(self.product.clone())),
-            (
-                "guest",
-                self.guest
-                    .clone()
-                    .map(Value::Str)
-                    .unwrap_or(Value::Null),
-            ),
+            ("guest", self.guest.clone().map(Value::Str).unwrap_or(Value::Null)),
             ("virtio", Value::Bool(self.virtio)),
         ])
     }

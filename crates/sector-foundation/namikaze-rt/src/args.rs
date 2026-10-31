@@ -15,9 +15,7 @@ impl Cli {
     /// Capture argv (excluding argv[0]). Prints help and exits when the
     /// user asked for `-h`/`--help` and `about` is provided.
     pub fn capture() -> Cli {
-        Cli {
-            raw: std::env::args().skip(1).collect(),
-        }
+        Cli { raw: std::env::args().skip(1).collect() }
     }
 
     /// True when the user passed `-h` or `--help`.
@@ -66,9 +64,10 @@ impl Cli {
     pub fn value_parse<T: std::str::FromStr>(&self, name: &str) -> crate::Result<Option<T>> {
         match self.value(name) {
             None => Ok(None),
-            Some(v) => v.parse::<T>().map(Some).map_err(|_| {
-                crate::Error::Invalid(format!("--{name}: cannot parse {v:?}"))
-            }),
+            Some(v) => v
+                .parse::<T>()
+                .map(Some)
+                .map_err(|_| crate::Error::Invalid(format!("--{name}: cannot parse {v:?}"))),
         }
     }
 

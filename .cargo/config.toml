@@ -1,0 +1,11 @@
+# NamikazeOS cargo configuration.
+#
+# Cross-compiling the pure-Rust workspace for aarch64 musl needs the
+# toolchain-bundled rust-lld as the linker: the host system linker rejects
+# target-specific flags such as --fix-cortex-a53-843419 emitted for aarch64
+# musl builds. rust-lld ships inside the toolchain sysroot; CI adds its
+# directory to PATH (see .github/workflows/ci.yml). For local aarch64
+# builds export the same PATH entry:
+#   $(rustc --print sysroot)/lib/rustlib/<host-triple>/bin
+[target.aarch64-unknown-linux-musl]
+linker = "rust-lld"

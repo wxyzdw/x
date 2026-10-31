@@ -198,7 +198,8 @@ pub fn ls(argv: &[String]) -> i32 {
     let mut long = false;
     let mut paths: Vec<String> = Vec::new();
     for a in argv {
-        let short_flags = a.starts_with('-') && a.len() > 1 && a[1..].chars().all(|c| "aAl1".contains(c));
+        let short_flags =
+            a.starts_with('-') && a.len() > 1 && a[1..].chars().all(|c| "aAl1".contains(c));
         if a == "--" {
             continue;
         } else if short_flags {
@@ -423,7 +424,8 @@ pub fn rm(argv: &[String]) -> i32 {
     let mut force = false;
     let mut paths: Vec<String> = Vec::new();
     for a in argv {
-        let short_flags = a.starts_with('-') && a.len() > 1 && a[1..].chars().all(|c| "rf".contains(c));
+        let short_flags =
+            a.starts_with('-') && a.len() > 1 && a[1..].chars().all(|c| "rf".contains(c));
         if a == "--" {
             continue;
         } else if short_flags {
@@ -511,11 +513,7 @@ pub fn mkdir(argv: &[String]) -> i32 {
     }
     let mut code = EXIT_OK;
     for p in &paths {
-        let r = if parents {
-            fs::create_dir_all(p)
-        } else {
-            fs::create_dir(p)
-        };
+        let r = if parents { fs::create_dir_all(p) } else { fs::create_dir(p) };
         if let Err(e) = r {
             code = fail("mkdir", &format!("cannot create '{p}': {e}"));
             continue;
@@ -574,7 +572,8 @@ pub fn ln(argv: &[String]) -> i32 {
     let mut force = false;
     let mut paths: Vec<String> = Vec::new();
     for a in argv {
-        let short_flags = a.starts_with('-') && a.len() > 1 && a[1..].chars().all(|c| "sf".contains(c));
+        let short_flags =
+            a.starts_with('-') && a.len() > 1 && a[1..].chars().all(|c| "sf".contains(c));
         if a == "--" {
             continue;
         } else if short_flags {
@@ -643,10 +642,7 @@ pub fn touch(argv: &[String]) -> i32 {
                 continue;
             }
         }
-        let r = fs::OpenOptions::new()
-            .write(true)
-            .open(p)
-            .and_then(|f| f.set_modified(now));
+        let r = fs::OpenOptions::new().write(true).open(p).and_then(|f| f.set_modified(now));
         if let Err(e) = r {
             code = fail("touch", &format!("cannot update times for '{p}': {e}"));
         }
@@ -850,11 +846,7 @@ fn steps_of(path: &Path) -> Vec<Step> {
 /// Resolve `p` fully, following at most `budget` symlinks. The final
 /// component may be missing (readlink -f semantics).
 fn realpath_max(p: &Path, budget: u32) -> io::Result<PathBuf> {
-    let mut cur = if p.is_absolute() {
-        PathBuf::from("/")
-    } else {
-        std::env::current_dir()?
-    };
+    let mut cur = if p.is_absolute() { PathBuf::from("/") } else { std::env::current_dir()? };
     let mut pending: Vec<Vec<Step>> = vec![steps_of(p)];
     let mut budget = budget;
     while let Some(steps) = pending.pop() {

@@ -154,23 +154,13 @@ impl Default for Anonymity {
 
 impl Default for Sentinel {
     fn default() -> Self {
-        Self {
-            enabled: false,
-            max_failures: 3,
-            failure_window_secs: 300,
-            retention_days: 30,
-        }
+        Self { enabled: false, max_failures: 3, failure_window_secs: 300, retention_days: 30 }
     }
 }
 
 impl Default for Memory {
     fn default() -> Self {
-        Self {
-            zram: true,
-            zram_algorithm: "zstd".into(),
-            mglru: true,
-            thp: "madvise".into(),
-        }
+        Self { zram: true, zram_algorithm: "zstd".into(), mglru: true, thp: "madvise".into() }
     }
 }
 
@@ -314,11 +304,7 @@ fn parse_pbkdf(t: &BTreeMap<String, Value>) -> Result<Pbkdf> {
 }
 
 fn parse_anonymity(t: &BTreeMap<String, Value>) -> Result<Anonymity> {
-    check_keys(
-        t,
-        &["level", "transparent_tor", "block_non_tor_egress", "ipv6"],
-        "anonymity",
-    )?;
+    check_keys(t, &["level", "transparent_tor", "block_non_tor_egress", "ipv6"], "anonymity")?;
     Ok(Anonymity {
         level: as_str_field(t, "level", "anonymity")?,
         transparent_tor: as_bool_field(t, "transparent_tor", "anonymity")?,
@@ -400,11 +386,7 @@ fn parse_live(t: &BTreeMap<String, Value>) -> Result<Live> {
 }
 
 fn parse_privacy(t: &BTreeMap<String, Value>) -> Result<Privacy> {
-    check_keys(
-        t,
-        &["destructive_tools", "machine_id_policy", "hostname_mode"],
-        "privacy",
-    )?;
+    check_keys(t, &["destructive_tools", "machine_id_policy", "hostname_mode"], "privacy")?;
     Ok(Privacy {
         destructive_tools: as_bool_field(t, "destructive_tools", "privacy")?,
         machine_id_policy: as_str_field(t, "machine_id_policy", "privacy")?,
@@ -414,9 +396,7 @@ fn parse_privacy(t: &BTreeMap<String, Value>) -> Result<Privacy> {
 
 fn parse_vault(t: &BTreeMap<String, Value>) -> Result<Vault> {
     check_keys(t, &["idle_unmount_secs"], "vault")?;
-    Ok(Vault {
-        idle_unmount_secs: as_int_field(t, "idle_unmount_secs", "vault")? as u64,
-    })
+    Ok(Vault { idle_unmount_secs: as_int_field(t, "idle_unmount_secs", "vault")? as u64 })
 }
 
 impl SystemConfig {
@@ -424,29 +404,7 @@ impl SystemConfig {
     pub fn load(path: &Path) -> Result<Self> {
         let raw = std::fs::read_to_string(path)
             .map_err(|e| Error::Config(format!("cannot read {}: {e}", path.display())))?;
-        Self::from_str(&raw)
-    }
-
-    /// Parse configuration text (strict schema, unknown keys rejected).
-    pub fn from_str(raw: &str) -> Result<Self> {
-        let root = namikaze_rt::toml::parse(raw)?;
-        check_keys(
-            &root,
-            &["storage", "anonymity", "sentinel", "memory", "desktop", "privacy", "vault", "live"],
-            "system",
-        )?;
-        let cfg = SystemConfig {
-            storage: parse_storage(as_table_field(&root, "storage", "system")?)?,
-            anonymity: parse_anonymity(as_table_field(&root, "anonymity", "system")?)?,
-            sentinel: parse_sentinel(as_table_field(&root, "sentinel", "system")?)?,
-            memory: parse_memory(as_table_field(&root, "memory", "system")?)?,
-            desktop: parse_desktop(as_table_field(&root, "desktop", "system")?)?,
-            privacy: parse_privacy(as_table_field(&root, "privacy", "system")?)?,
-            vault: parse_vault(as_table_field(&root, "vault", "system")?)?,
-            live: parse_live(as_table_field(&root, "live", "system")?)?,
-        };
-        cfg.validate()?;
-        Ok(cfg)
+        raw.parse()
     }
 
     /// Load /etc/namikaze/system.toml, falling back to defaults if absent.
@@ -463,10 +421,7 @@ impl SystemConfig {
         out.push_str(&format!("boot_tier = \"{}\"\n", self.storage.boot_tier));
         out.push_str(&format!("header_backup = \"{}\"\n", self.storage.header_backup));
         out.push_str(&format!("recovery_code = {}\n", self.storage.recovery_code));
-        out.push_str(&format!(
-            "per_user_encryption = \"{}\"\n",
-            self.storage.per_user_encryption
-        ));
+        out.push_str(&format!("per_user_encryption = \"{}\"\n", self.storage.per_user_encryption));
         out.push_str(&format!("tpm_sealing = \"{}\"\n", self.storage.tpm_sealing));
         out.push_str(&format!("hibernation = {}\n", self.storage.hibernation));
         out.push_str("\n[storage.pbkdf]\n");
@@ -477,18 +432,12 @@ impl SystemConfig {
         out.push_str("\n[anonymity]\n");
         out.push_str(&format!("level = \"{}\"\n", self.anonymity.level));
         out.push_str(&format!("transparent_tor = {}\n", self.anonymity.transparent_tor));
-        out.push_str(&format!(
-            "block_non_tor_egress = {}\n",
-            self.anonymity.block_non_tor_egress
-        ));
+        out.push_str(&format!("block_non_tor_egress = {}\n", self.anonymity.block_non_tor_egress));
         out.push_str(&format!("ipv6 = \"{}\"\n", self.anonymity.ipv6));
         out.push_str("\n[sentinel]\n");
         out.push_str(&format!("enabled = {}\n", self.sentinel.enabled));
         out.push_str(&format!("max_failures = {}\n", self.sentinel.max_failures));
-        out.push_str(&format!(
-            "failure_window_secs = {}\n",
-            self.sentinel.failure_window_secs
-        ));
+        out.push_str(&format!("failure_window_secs = {}\n", self.sentinel.failure_window_secs));
         out.push_str(&format!("retention_days = {}\n", self.sentinel.retention_days));
         out.push_str("\n[memory]\n");
         out.push_str(&format!("zram = {}\n", self.memory.zram));
@@ -509,20 +458,14 @@ impl SystemConfig {
         out.push_str(&format!("greeter_user = \"{}\"\n", self.desktop.greeter_user));
         out.push_str("\n[privacy]\n");
         out.push_str(&format!("destructive_tools = {}\n", self.privacy.destructive_tools));
-        out.push_str(&format!(
-            "machine_id_policy = \"{}\"\n",
-            self.privacy.machine_id_policy
-        ));
+        out.push_str(&format!("machine_id_policy = \"{}\"\n", self.privacy.machine_id_policy));
         out.push_str(&format!("hostname_mode = \"{}\"\n", self.privacy.hostname_mode));
         out.push_str("\n[vault]\n");
         out.push_str(&format!("idle_unmount_secs = {}\n", self.vault.idle_unmount_secs));
         out.push_str("\n[live]\n");
         out.push_str(&format!("default_mode = \"{}\"\n", self.live.default_mode));
         out.push_str(&format!("persist_label = \"{}\"\n", self.live.persist_label));
-        out.push_str(&format!(
-            "max_pass_attempts = {}\n",
-            self.live.max_pass_attempts
-        ));
+        out.push_str(&format!("max_pass_attempts = {}\n", self.live.max_pass_attempts));
         out.push_str(&format!("fallback = \"{}\"\n", self.live.fallback));
         out.push_str(&format!("trim = {}\n", self.live.trim));
         Ok(out)
@@ -602,6 +545,32 @@ impl SystemConfig {
     }
 }
 
+impl std::str::FromStr for SystemConfig {
+    type Err = Error;
+
+    /// Parse configuration text (strict schema, unknown keys rejected).
+    fn from_str(raw: &str) -> std::result::Result<Self, Self::Err> {
+        let root = namikaze_rt::toml::parse(raw)?;
+        check_keys(
+            &root,
+            &["storage", "anonymity", "sentinel", "memory", "desktop", "privacy", "vault", "live"],
+            "system",
+        )?;
+        let cfg = SystemConfig {
+            storage: parse_storage(as_table_field(&root, "storage", "system")?)?,
+            anonymity: parse_anonymity(as_table_field(&root, "anonymity", "system")?)?,
+            sentinel: parse_sentinel(as_table_field(&root, "sentinel", "system")?)?,
+            memory: parse_memory(as_table_field(&root, "memory", "system")?)?,
+            desktop: parse_desktop(as_table_field(&root, "desktop", "system")?)?,
+            privacy: parse_privacy(as_table_field(&root, "privacy", "system")?)?,
+            vault: parse_vault(as_table_field(&root, "vault", "system")?)?,
+            live: parse_live(as_table_field(&root, "live", "system")?)?,
+        };
+        cfg.validate()?;
+        Ok(cfg)
+    }
+}
+
 /// Emit the hardening sysctl content for a profile.
 pub fn hardening_sysctl(profile: HardenProfile) -> String {
     let mut out = String::from("# Generated by namikaze-config harden\n");
@@ -656,8 +625,8 @@ mod tests {
 
     #[test]
     fn shipped_system_toml_matches_schema() {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../../sysroot/etc/namikaze/system.toml");
+        let path =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../sysroot/etc/namikaze/system.toml");
         let cfg = SystemConfig::load(&path)
             .expect("sysroot/etc/namikaze/system.toml must parse against the schema");
         assert_eq!(cfg.desktop.environment, "niri");
@@ -677,17 +646,17 @@ mod tests {
 
     #[test]
     fn roundtrip_preserves_values() {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../../sysroot/etc/namikaze/system.toml");
+        let path =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../sysroot/etc/namikaze/system.toml");
         let cfg = SystemConfig::load(&path).unwrap();
         let text = cfg.to_toml().unwrap();
-        let again = SystemConfig::from_str(&text).unwrap();
+        let again = text.parse::<SystemConfig>().unwrap();
         assert_eq!(cfg, again);
     }
 
     #[test]
     fn unknown_key_fails_loudly() {
-        let err = SystemConfig::from_str("[storage]\nmode = \"live\"\nnope = 1\n").unwrap_err();
+        let err = "[storage]\nmode = \"live\"\nnope = 1\n".parse::<SystemConfig>().unwrap_err();
         assert!(err.to_string().contains("unknown key"));
     }
 }

@@ -107,10 +107,7 @@ pub fn find_groups(roots: &[PathBuf], min_size: u64) -> Result<(Vec<DupeGroup>, 
             if full.is_empty() {
                 continue;
             }
-            stage2
-                .entry((size, full))
-                .or_default()
-                .push(path.to_string_lossy().into_owned());
+            stage2.entry((size, full)).or_default().push(path.to_string_lossy().into_owned());
         }
     }
     let mut groups: Vec<DupeGroup> = stage2
@@ -226,9 +223,7 @@ fn main() -> Result<()> {
             }
         }
         "zero" => {
-            let report = PathBuf::from(
-                cli.value_or("report", "dupe-report.jsonl"),
-            );
+            let report = PathBuf::from(cli.value_or("report", "dupe-report.jsonl"));
             let apply = cli.flag("apply");
             let raw = std::fs::read_to_string(&report)
                 .map_err(|e| Error::Other(format!("read {}: {e}", report.display())))?;
@@ -238,11 +233,7 @@ fn main() -> Result<()> {
                 let copies: Vec<String> = v
                     .get("copies")
                     .and_then(|x| x.as_arr())
-                    .map(|a| {
-                        a.iter()
-                            .filter_map(|c| c.as_str().map(str::to_string))
-                            .collect()
-                    })
+                    .map(|a| a.iter().filter_map(|c| c.as_str().map(str::to_string)).collect())
                     .unwrap_or_default();
                 if copies.len() < 2 {
                     continue;
@@ -300,7 +291,7 @@ mod tests {
         assert_eq!(skipped, 0);
         assert_eq!(groups.len(), 1, "groups: {groups:?}");
         assert_eq!(groups[0].copies.len(), 3);
-        assert!(groups[0].copies.contains(&"tmp/secret.bin".to_string()) == false);
+        assert!(!groups[0].copies.contains(&"tmp/secret.bin".to_string()));
         assert!(groups[0].copies.iter().any(|c| c.ends_with("secret.bin")));
         assert_eq!(groups[0].size, 512);
         let _ = std::fs::remove_dir_all(&dir);

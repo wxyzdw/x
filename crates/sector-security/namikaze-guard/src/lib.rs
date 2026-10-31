@@ -40,16 +40,19 @@ pub fn uid_of(user: &str) -> Result<u32> {
     for line in passwd.lines() {
         let fields: Vec<&str> = line.split(':').collect();
         if fields.len() >= 3 && fields[0] == user {
-            return fields[2]
-                .parse()
-                .map_err(|e| Error::Other(format!("bad uid for {user}: {e}")));
+            return fields[2].parse().map_err(|e| Error::Other(format!("bad uid for {user}: {e}")));
         }
     }
     Err(Error::Other(format!("user {user} not found")))
 }
 
 impl GuardParams {
-    pub fn resolve(tor_user: &str, trans_port: u16, dns_port: u16, kill_switch: bool) -> Result<Self> {
+    pub fn resolve(
+        tor_user: &str,
+        trans_port: u16,
+        dns_port: u16,
+        kill_switch: bool,
+    ) -> Result<Self> {
         let tor_uid = uid_of(tor_user)?;
         Ok(Self { tor_uid, trans_port, dns_port, kill_switch })
     }

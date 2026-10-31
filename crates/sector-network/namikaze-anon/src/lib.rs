@@ -79,9 +79,8 @@ impl TorControl {
 
     /// Create an ephemeral onion v3 service. Returns the service id.
     pub fn add_onion(&mut self, virt_port: u16, target: &str) -> Result<String> {
-        let reply = self.cmd(&format!(
-            "ADD_ONION NEW:BEST Port={virt_port},{target} Flags=DiscardPK"
-        ))?;
+        let reply =
+            self.cmd(&format!("ADD_ONION NEW:BEST Port={virt_port},{target} Flags=DiscardPK"))?;
         for token in reply.split_whitespace() {
             if let Some(id) = token.strip_prefix("ServiceID=") {
                 return Ok(id.to_string());
@@ -114,10 +113,7 @@ mod tests {
     fn parse_add_onion_reply() {
         // Directly exercise the parsing logic through a formatted reply.
         let reply = "ServiceID=abcdefghijklmnop.onionPrivateKey=";
-        let found = reply
-            .split_whitespace()
-            .find_map(|t| t.strip_prefix("ServiceID="))
-            .unwrap();
+        let found = reply.split_whitespace().find_map(|t| t.strip_prefix("ServiceID=")).unwrap();
         assert_eq!(found, "abcdefghijklmnop.onionPrivateKey=");
     }
 }

@@ -32,11 +32,7 @@ fn build_index(dir: &Path) -> Result<Value> {
             continue;
         }
         let digest = sha256_file_hex(&path)?;
-        let rel = path
-            .strip_prefix(dir)
-            .unwrap_or(&path)
-            .to_string_lossy()
-            .to_string();
+        let rel = path.strip_prefix(dir).unwrap_or(&path).to_string_lossy().to_string();
         let size = path.metadata().map(|m| m.len()).unwrap_or(0);
         files.push(obj(&[
             ("path", Value::Str(rel)),
@@ -60,21 +56,22 @@ fn serve(dir: PathBuf, addr: String, port: u16) -> Result<()> {
     let index = build_index(&dir)?;
     println!("serving {} on {addr}:{port}", dir.display());
     let server = Server::bind(&addr, port)?;
-    server.serve(move |req: &Request| {
-        if req.path == "/index.json" {
-            return Response::bytes(200, "application/json", index.to_pretty().into_bytes());
-        }
-        let rel = req.path.trim_start_matches('/');
-        if rel.is_empty() || rel.contains("..") || rel.contains("//") {
-            return Response::text(403, "forbidden");
-        }
-        let full = dir.join(rel);
-        match std::fs::read(&full) {
-            Ok(data) => Response::bytes(200, "application/octet-stream", data),
-            Err(_) => Response::text(404, "not found"),
-        }
-    })
-    .map_err(Error::from)
+    server
+        .serve(move |req: &Request| {
+            if req.path == "/index.json" {
+                return Response::bytes(200, "application/json", index.to_pretty().into_bytes());
+            }
+            let rel = req.path.trim_start_matches('/');
+            if rel.is_empty() || rel.contains("..") || rel.contains("//") {
+                return Response::text(403, "forbidden");
+            }
+            let full = dir.join(rel);
+            match std::fs::read(&full) {
+                Ok(data) => Response::bytes(200, "application/octet-stream", data),
+                Err(_) => Response::text(404, "not found"),
+            }
+        })
+        .map_err(Error::from)
 }
 
 fn main() -> Result<()> {

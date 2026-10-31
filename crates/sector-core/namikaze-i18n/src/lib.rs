@@ -53,10 +53,8 @@ pub fn available() -> Vec<&'static str> {
 /// to en, then to the id itself.
 pub fn translate(lang: &str, id: &str, args: &[(&str, String)]) -> String {
     let map = catalogs();
-    let pattern = map
-        .get(lang)
-        .and_then(|b| b.get(id))
-        .or_else(|| map.get("en").and_then(|b| b.get(id)));
+    let pattern =
+        map.get(lang).and_then(|b| b.get(id)).or_else(|| map.get("en").and_then(|b| b.get(id)));
     let Some(pattern) = pattern else {
         return id.to_string();
     };

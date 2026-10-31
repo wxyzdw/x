@@ -24,26 +24,19 @@ pub const LABEL_PERSIST: &str = "namikaze-persist";
 
 fn run(argv: &[&str], stdin: Option<&str>) -> Result<()> {
     let mut cmd = Command::new(argv[0]);
-    cmd.args(&argv[1..])
-        .env_clear()
-        .stdin(if stdin.is_some() {
-            Stdio::piped()
-        } else {
-            Stdio::null()
-        });
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| Error::Other(format!("spawn {}: {e}", argv[0])))?;
+    cmd.args(&argv[1..]).env_clear().stdin(if stdin.is_some() {
+        Stdio::piped()
+    } else {
+        Stdio::null()
+    });
+    let mut child = cmd.spawn().map_err(|e| Error::Other(format!("spawn {}: {e}", argv[0])))?;
     if let (Some(mut stdin), Some(script)) = (child.stdin.take(), stdin) {
         use std::io::Write;
         stdin.write_all(script.as_bytes())?;
     }
     let status = child.wait()?;
     if !status.success() {
-        return Err(Error::Other(format!(
-            "{} failed with {status}",
-            argv[0]
-        )));
+        return Err(Error::Other(format!("{} failed with {status}", argv[0])));
     }
     Ok(())
 }
@@ -95,13 +88,7 @@ pub fn render_limine(
 }
 
 /// Partition, format and populate the target device from a staged payload.
-pub fn usb(
-    device: &Path,
-    payload: &Path,
-    persist: bool,
-    _argon: &str,
-    yes: bool,
-) -> Result<()> {
+pub fn usb(device: &Path, payload: &Path, persist: bool, _argon: &str, yes: bool) -> Result<()> {
     if !yes {
         return Err(Error::Config(
             "installing overwrites the target; pass --yes to confirm".into(),
@@ -109,10 +96,7 @@ pub fn usb(
     }
     let bootid = gen_bootid()?;
     let script = sfdisk_script(6, persist);
-    run(
-        &["/usr/sbin/sfdisk", device.to_str().unwrap_or_default()],
-        Some(script.as_str()),
-    )?;
+    run(&["/usr/sbin/sfdisk", device.to_str().unwrap_or_default()], Some(script.as_str()))?;
 
     let base = device
         .file_name()
@@ -129,10 +113,7 @@ pub fn usb(
     let boot = part(2);
 
     run(&["/usr/sbin/mkfs.vfat", "-F", "32", "-n", LABEL_ESP, &esp], None)?;
-    run(
-        &["/usr/sbin/mkfs.ext4", "-L", LABEL_BOOT, "-E", "lazy_itable_init=0", &boot],
-        None,
-    )?;
+    run(&["/usr/sbin/mkfs.ext4", "-L", LABEL_BOOT, "-E", "lazy_itable_init=0", &boot], None)?;
 
     // Copy the staged payload (built by CI: boot/<arch> trees + ESP files).
     copy_tree(payload, Path::new("/run/namikaze-install/esp"))?;
@@ -152,10 +133,7 @@ pub fn usb(
 pub fn stamp_bootid(boot_mount: &Path, bootid: &str) -> Result<()> {
     let f = boot_mount.join(".bootid");
     std::fs::write(&f, format!("{bootid}\n"))?;
-    std::fs::set_permissions(
-        &f,
-        std::os::unix::fs::PermissionsExt::from_mode(0o444),
-    )?;
+    std::fs::set_permissions(&f, std::os::unix::fs::PermissionsExt::from_mode(0o444))?;
     Ok(())
 }
 

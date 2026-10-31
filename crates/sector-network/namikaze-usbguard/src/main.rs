@@ -171,7 +171,10 @@ pub fn enforce_once() -> Result<usize> {
             (true, _) | (false, true) => {
                 if dev.authorized.as_deref() != Some("0") {
                     write_authorized(&dev, "0")?;
-                    let line = format!("denied device {} (vid {} pid {})", dev.name, dev.vendor, dev.product);
+                    let line = format!(
+                        "denied device {} (vid {} pid {})",
+                        dev.name, dev.vendor, dev.product
+                    );
                     log_warn!("{line}");
                     append_log(&var_path(EVENTS), &line)?;
                     actions += 1;
@@ -198,31 +201,35 @@ fn main() -> Result<()> {
         "list" => {
             let policy = load_policy();
             for dev in scan() {
-                let state = if is_allowed(&policy, &dev) {
-                    "allowed"
-                } else {
-                    "unknown"
-                };
+                let state = if is_allowed(&policy, &dev) { "allowed" } else { "unknown" };
                 println!(
                     "{:12} vid={} pid={} serial={:20} storage={:5} auth={:?} [{}]",
-                    dev.name, dev.vendor, dev.product, dev.serial, dev.mass_storage, dev.authorized, state
+                    dev.name,
+                    dev.vendor,
+                    dev.product,
+                    dev.serial,
+                    dev.mass_storage,
+                    dev.authorized,
+                    state
                 );
             }
         }
         "authorize" => {
             let device = free.get(1).cloned().unwrap_or_default();
-            let target = scan().into_iter().find(|d| d.name == device).ok_or_else(|| {
-                Error::Other(format!("device {device} not found"))
-            })?;
+            let target = scan()
+                .into_iter()
+                .find(|d| d.name == device)
+                .ok_or_else(|| Error::Other(format!("device {device} not found")))?;
             write_authorized(&target, "1")?;
             append_log(&var_path(EVENTS), &format!("authorized {device} (manual)"))?;
             println!("authorized {device}");
         }
         "deny" => {
             let device = free.get(1).cloned().unwrap_or_default();
-            let target = scan().into_iter().find(|d| d.name == device).ok_or_else(|| {
-                Error::Other(format!("device {device} not found"))
-            })?;
+            let target = scan()
+                .into_iter()
+                .find(|d| d.name == device)
+                .ok_or_else(|| Error::Other(format!("device {device} not found")))?;
             write_authorized(&target, "0")?;
             append_log(&var_path(EVENTS), &format!("denied {device} (manual)"))?;
             println!("denied {device}");

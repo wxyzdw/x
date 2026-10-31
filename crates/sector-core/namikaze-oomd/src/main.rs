@@ -49,11 +49,7 @@ fn page_size() -> u64 {
 
 fn rss_pages(statm: &str) -> u64 {
     // field 1 of /proc/<pid>/statm is the resident set in pages
-    statm
-        .split_ascii_whitespace()
-        .nth(1)
-        .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(0)
+    statm.split_ascii_whitespace().nth(1).and_then(|v| v.parse::<u64>().ok()).unwrap_or(0)
 }
 
 fn sample() -> Vec<Victim> {
@@ -71,11 +67,7 @@ fn sample() -> Vec<Victim> {
         let name = fs::read_to_string(entry.path().join("comm"))
             .map(|s| s.trim().to_string())
             .unwrap_or_default();
-        out.push(Victim {
-            pid,
-            name,
-            rss_mb: rss_pages(&statm) * page / (1024 * 1024),
-        });
+        out.push(Victim { pid, name, rss_mb: rss_pages(&statm) * page / (1024 * 1024) });
     }
     out
 }

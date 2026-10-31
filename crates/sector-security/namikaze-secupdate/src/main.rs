@@ -37,10 +37,7 @@ fn print_status(status: &UpdateStatus) {
 }
 
 fn run(cli: &Cli) -> namikaze_common::Result<()> {
-    let pool = cli
-        .value("pool")
-        .map(PathBuf::from)
-        .unwrap_or_else(default_pool);
+    let pool = cli.value("pool").map(PathBuf::from).unwrap_or_else(default_pool);
     let mgr = UpdateManager::new(&pool);
     let bundle_opt = || -> namikaze_common::Result<PathBuf> {
         cli.value("bundle")
@@ -51,8 +48,12 @@ fn run(cli: &Cli) -> namikaze_common::Result<()> {
         "verify" => {
             let bundle = bundle_opt()?;
             let entries = namikaze_secupdate::verify_slot(&bundle)?;
-            println!("verified {} manifest entr{} in {}", entries.len(),
-                if entries.len() == 1 { "y" } else { "ies" }, bundle.display());
+            println!(
+                "verified {} manifest entr{} in {}",
+                entries.len(),
+                if entries.len() == 1 { "y" } else { "ies" },
+                bundle.display()
+            );
         }
         "stage" => {
             let bundle = bundle_opt()?;

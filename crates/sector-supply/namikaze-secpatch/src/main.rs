@@ -35,11 +35,7 @@ struct OsvVuln {
 fn vuln_from_json(v: &Value) -> Option<OsvVuln> {
     Some(OsvVuln {
         id: v.get("id")?.as_str()?.to_string(),
-        summary: v
-            .get("summary")
-            .and_then(|x| x.as_str())
-            .unwrap_or_default()
-            .to_string(),
+        summary: v.get("summary").and_then(|x| x.as_str()).unwrap_or_default().to_string(),
     })
 }
 

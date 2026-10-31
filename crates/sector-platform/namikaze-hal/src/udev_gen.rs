@@ -23,9 +23,9 @@ pub fn generate(report: &HardwareReport) -> String {
             "KERNEL==\"vcio\",          GROUP=\"video\", MODE=\"0660\"\n\
              KERNEL==\"gpiomem\",       GROUP=\"gpio\",  MODE=\"0660\"\n",
         ),
-        "rock-5b" | "orangepi-5" | "rock-3a" => rules.push_str(
-            "KERNEL==\"mali*\",         GROUP=\"video\", MODE=\"0660\"\n",
-        ),
+        "rock-5b" | "orangepi-5" | "rock-3a" => {
+            rules.push_str("KERNEL==\"mali*\",         GROUP=\"video\", MODE=\"0660\"\n")
+        }
         _ => {}
     }
     rules
@@ -38,10 +38,7 @@ mod tests {
 
     #[test]
     fn base_rules_always_present() {
-        let r = HardwareReport {
-            arch: Some(Arch::X86_64),
-            ..Default::default()
-        };
+        let r = HardwareReport { arch: Some(Arch::X86_64), ..Default::default() };
         let s = generate(&r);
         assert!(s.contains("render*"));
         assert!(s.contains("uaccess"));

@@ -41,8 +41,8 @@ pub fn decompress(data: &[u8]) -> crate::Result<Vec<u8>> {
         if data.len() < pos + 4 {
             return Err(crate::Error::Invalid("truncated block length".into()));
         }
-        let blen = u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]])
-            as usize;
+        let blen =
+            u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
         pos += 4;
         if data.len() < pos + blen {
             return Err(crate::Error::Invalid("truncated block".into()));

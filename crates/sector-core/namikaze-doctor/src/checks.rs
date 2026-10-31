@@ -76,11 +76,8 @@ impl Check {
     /// Bundle of sysctl verdicts collapsed into one check entry.
     pub fn sysctls(raw: Vec<(String, String)>) -> Check {
         let verdicts = sysctl_verdicts(&raw);
-        let failed: Vec<&str> = verdicts
-            .iter()
-            .filter(|(_, ok, _)| !ok)
-            .map(|(k, _, _)| k.as_str())
-            .collect();
+        let failed: Vec<&str> =
+            verdicts.iter().filter(|(_, ok, _)| !ok).map(|(k, _, _)| k.as_str()).collect();
         Check::new(
             "hardening-sysctls",
             failed.is_empty(),
@@ -105,10 +102,7 @@ mod tests {
     use super::*;
 
     fn snap(pairs: &[(&str, &str)]) -> Vec<(String, String)> {
-        pairs
-            .iter()
-            .map(|(k, v)| (k.to_string(), v.to_string()))
-            .collect()
+        pairs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect()
     }
 
     #[test]

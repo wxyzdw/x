@@ -77,17 +77,12 @@ impl DnsPolicy {
             Some(Value::TableArr(items)) => {
                 for t in items {
                     let get = |k: &str| {
-                        t.get(k)
-                            .and_then(|v| v.as_str())
-                            .map(str::to_string)
-                            .unwrap_or_default()
+                        t.get(k).and_then(|v| v.as_str()).map(str::to_string).unwrap_or_default()
                     };
                     let name = get("name");
                     let transport = match t.get("transport").and_then(|v| v.as_str()) {
                         Some(tr) => Transport::parse(tr),
-                        None => Err(Error::Config(format!(
-                            "upstream {name}: missing transport"
-                        ))),
+                        None => Err(Error::Config(format!("upstream {name}: missing transport"))),
                     };
                     match transport {
                         Ok(tr) => upstreams.push(Upstream {

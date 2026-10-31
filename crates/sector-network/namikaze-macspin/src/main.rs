@@ -67,15 +67,13 @@ fn main() -> Result<()> {
     }
     if mode == "apply" {
         for (iface, mac) in &plan {
-            let down = Command::new("/usr/sbin/ip")
-                .args(["link", "set", "dev", iface, "down"])
-                .status();
+            let down =
+                Command::new("/usr/sbin/ip").args(["link", "set", "dev", iface, "down"]).status();
             let set = Command::new("/usr/sbin/ip")
                 .args(["link", "set", "dev", iface, "address", mac])
                 .status();
-            let up = Command::new("/usr/sbin/ip")
-                .args(["link", "set", "dev", iface, "up"])
-                .status();
+            let up =
+                Command::new("/usr/sbin/ip").args(["link", "set", "dev", iface, "up"]).status();
             let ok = down.map(|s| s.success()).unwrap_or(false)
                 && set.map(|s| s.success()).unwrap_or(false)
                 && up.map(|s| s.success()).unwrap_or(false);

@@ -8,7 +8,8 @@
 //! from that policy:
 //!   - /run/namikaze/dns/resolv.conf      (127.0.0.1 loopback stub)
 //!   - /run/namikaze/dns/upstreams.conf   (resolver drop-in, rendered)
-//! and refuses to emit anything when the policy would leak plaintext DNS.
+//!
+//! Refuses to emit anything when the policy would leak plaintext DNS.
 
 #![forbid(unsafe_code)]
 

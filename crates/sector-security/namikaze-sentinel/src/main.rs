@@ -31,11 +31,7 @@ fn main() -> Result<()> {
     }
     match cli.sub().unwrap_or_default() {
         "decide" => {
-            let failures: u32 = cli
-                .free(&[])
-                .get(1)
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(4);
+            let failures: u32 = cli.free(&[]).get(1).and_then(|s| s.parse().ok()).unwrap_or(4);
             let policy = namikaze_sentinel::FailurePolicy::new(3, 300);
             let mut state = namikaze_sentinel::load_state();
             let t = now();
@@ -43,7 +39,11 @@ fn main() -> Result<()> {
                 let decision = policy.decide(&state, t + u64::from(i));
                 state.failures.push(t + u64::from(i));
                 println!("failure {} -> {decision:?}", i + 1);
-                let _ = namikaze_sentinel::audit_append(&mut state, "simulate", &format!("failure {i}"));
+                let _ = namikaze_sentinel::audit_append(
+                    &mut state,
+                    "simulate",
+                    &format!("failure {i}"),
+                );
             }
             namikaze_sentinel::store_state(&state)?;
         }
@@ -61,11 +61,7 @@ fn main() -> Result<()> {
             }
         }
         "flag" => {
-            let reason = cli
-                .free(&[])
-                .get(1)
-                .cloned()
-                .unwrap_or_else(|| "unspecified".to_string());
+            let reason = cli.free(&[]).get(1).cloned().unwrap_or_else(|| "unspecified".to_string());
             let mut state = namikaze_sentinel::load_state();
             state.tamper_flags += 1;
             namikaze_sentinel::audit_append(&mut state, "flag", &reason)?;

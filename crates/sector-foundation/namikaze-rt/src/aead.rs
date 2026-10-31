@@ -143,13 +143,19 @@ impl Poly1305 {
         let t1 = u32::from_le_bytes(t[4..8].try_into().unwrap());
         let t2 = u32::from_le_bytes(t[8..12].try_into().unwrap());
         let t3 = u32::from_le_bytes(t[12..16].try_into().unwrap());
-        self.h[0] += t0 & 0x3fff_fff;
-        self.h[1] += ((t0 >> 26) | (t1 << 6)) & 0x3fff_fff;
-        self.h[2] += ((t1 >> 20) | (t2 << 12)) & 0x3fff_fff;
-        self.h[3] += ((t2 >> 14) | (t3 << 18)) & 0x3fff_fff;
+        self.h[0] += t0 & 0x03ff_ffff;
+        self.h[1] += ((t0 >> 26) | (t1 << 6)) & 0x03ff_ffff;
+        self.h[2] += ((t1 >> 20) | (t2 << 12)) & 0x03ff_ffff;
+        self.h[3] += ((t2 >> 14) | (t3 << 18)) & 0x03ff_ffff;
         self.h[4] += (t3 >> 8) | hibit;
 
-        let h = [self.h[0] as u64, self.h[1] as u64, self.h[2] as u64, self.h[3] as u64, self.h[4] as u64];
+        let h = [
+            self.h[0] as u64,
+            self.h[1] as u64,
+            self.h[2] as u64,
+            self.h[3] as u64,
+            self.h[4] as u64,
+        ];
         let r = [
             u64::from(self.r[0]),
             u64::from(self.r[1]),
@@ -261,7 +267,7 @@ impl Poly1305 {
         }
         while data.len() >= 16 {
             let (block, rest) = data.split_at(16);
-            self.block(block.try_into().unwrap(), false);
+            self.block(block, false);
             data = rest;
         }
         if !data.is_empty() {
@@ -407,9 +413,7 @@ pub fn open(key: &[u8; 32], sealed: &[u8], aad: &[u8]) -> crate::Result<Vec<u8>>
     // constant-time-ish comparison without unsafe: fold the difference
     let diff = want.iter().zip(tag).fold(0u8, |acc, (a, b)| acc | (a ^ b));
     if diff != 0 {
-        return Err(crate::Error::Invalid(
-            "authentication failed; wrong passphrase?".into(),
-        ));
+        return Err(crate::Error::Invalid("authentication failed; wrong passphrase?".into()));
     }
     let mut plain = ct.to_vec();
     chacha20_xor(&subkey, &xnonce, 1, &mut plain);
@@ -424,14 +428,12 @@ mod tests {
     #[test]
     fn rfc8439_block_vector() {
         // RFC 8439 section 2.3.2
-        let key: [u8; 32] = hex::decode(
-            "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
-        )
-        .unwrap()
-        .try_into()
-        .unwrap();
-        let nonce: [u8; 12] =
-            hex::decode("000000090000004a00000000").unwrap().try_into().unwrap();
+        let key: [u8; 32] =
+            hex::decode("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f")
+                .unwrap()
+                .try_into()
+                .unwrap();
+        let nonce: [u8; 12] = hex::decode("000000090000004a00000000").unwrap().try_into().unwrap();
         let block = chacha20_block(&key, 1, &nonce);
         assert_eq!(
             hex::encode(&block[..64]),
@@ -443,14 +445,12 @@ mod tests {
     #[test]
     fn rfc8439_encryption_vector() {
         // RFC 8439 section 2.4.2
-        let key: [u8; 32] = hex::decode(
-            "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
-        )
-        .unwrap()
-        .try_into()
-        .unwrap();
-        let nonce: [u8; 12] =
-            hex::decode("000000000000004a00000000").unwrap().try_into().unwrap();
+        let key: [u8; 32] =
+            hex::decode("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f")
+                .unwrap()
+                .try_into()
+                .unwrap();
+        let nonce: [u8; 12] = hex::decode("000000000000004a00000000").unwrap().try_into().unwrap();
         let plaintext = b"Ladies and Gentlemen of the class of '99: If I could offer you \
 only one tip for the future, sunscreen would be it.";
         let mut data = plaintext.to_vec();
@@ -464,12 +464,11 @@ only one tip for the future, sunscreen would be it.";
 
     #[test]
     fn poly1305_rfc8439_vector() {
-        let key: [u8; 32] = hex::decode(
-            "85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b",
-        )
-        .unwrap()
-        .try_into()
-        .unwrap();
+        let key: [u8; 32] =
+            hex::decode("85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b")
+                .unwrap()
+                .try_into()
+                .unwrap();
         let tag = poly1305(&key, b"Cryptographic Forum Research Group");
         assert_eq!(hex::encode(&tag), "a8061dc1305136c6c22b8baf0c0127a9");
     }
@@ -477,14 +476,12 @@ only one tip for the future, sunscreen would be it.";
     #[test]
     fn rfc8439_aead_vector() {
         // RFC 8439 section 2.8.2
-        let key: [u8; 32] = hex::decode(
-            "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
-        )
-        .unwrap()
-        .try_into()
-        .unwrap();
-        let nonce: [u8; 12] =
-            hex::decode("070000004041424344454647").unwrap().try_into().unwrap();
+        let key: [u8; 32] =
+            hex::decode("808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f")
+                .unwrap()
+                .try_into()
+                .unwrap();
+        let nonce: [u8; 12] = hex::decode("070000004041424344454647").unwrap().try_into().unwrap();
         let aad = hex::decode("50515253c0c1c2c3c4c5c6c7").unwrap();
         let plaintext = b"Ladies and Gentlemen of the class of '99: If I could offer you \
 only one tip for the future, sunscreen would be it.";

@@ -20,10 +20,7 @@ pub struct Request {
 impl Request {
     #[allow(dead_code)]
     fn header(&self, name: &str) -> Option<&str> {
-        self.headers
-            .iter()
-            .find(|(k, _)| k == name)
-            .map(|(_, v)| v.as_str())
+        self.headers.iter().find(|(k, _)| k == name).map(|(_, v)| v.as_str())
     }
 }
 

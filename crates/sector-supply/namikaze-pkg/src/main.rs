@@ -99,7 +99,11 @@ fn run_check_collision() -> Result<()> {
     let mut owners: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for pkg in installed_packages() {
         let contents = pkg.join("CONTENTS");
-        let pkg_name = pkg.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default().to_string();
+        let pkg_name = pkg
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default()
+            .to_string();
         for path in contents_paths(&contents) {
             owners.entry(path).or_default().push(pkg_name.clone());
         }

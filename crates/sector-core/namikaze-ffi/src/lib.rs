@@ -59,8 +59,8 @@ mod sys {
 /// (x86_64, aarch64, riscv64, armv7 all use the asm-generic table value).
 const SYS_PIVOT_ROOT: i64 = 218;
 
-const ECHO: u32 = 0o0000_010;
-const ICANON: u32 = 0o0000_002;
+const ECHO: u32 = 0o0_000_010;
+const ICANON: u32 = 0o0_000_002;
 const TCSANOW: i32 = 0;
 const MNT_DETACH: i32 = 2;
 
@@ -111,11 +111,7 @@ fn cstring_of(path: &Path) -> std::result::Result<CString, FfiError> {
 
 fn check(name: &'static str, rc: i32) -> Result<()> {
     if rc != 0 {
-        return Err(FfiError::Syscall {
-            name,
-            source: std::io::Error::last_os_error(),
-        }
-        .into());
+        return Err(FfiError::Syscall { name, source: std::io::Error::last_os_error() }.into());
     }
     Ok(())
 }
@@ -171,11 +167,11 @@ pub fn mount(
     flags: u64,
     data: Option<&str>,
 ) -> Result<()> {
-    let src_c = src.map(CString::new).transpose().map_err(|_| {
-        FfiError::InvalidPath(src.unwrap_or_default().to_string())
-    })?;
-    let tgt_c = CString::new(target)
-        .map_err(|_| FfiError::InvalidPath(target.to_string()))?;
+    let src_c = src
+        .map(CString::new)
+        .transpose()
+        .map_err(|_| FfiError::InvalidPath(src.unwrap_or_default().to_string()))?;
+    let tgt_c = CString::new(target).map_err(|_| FfiError::InvalidPath(target.to_string()))?;
     let fs_c = fstype
         .map(CString::new)
         .transpose()
@@ -198,8 +194,7 @@ pub fn mount(
 /// # SAFETY
 /// `target` points into a CString that outlives the call.
 pub fn umount2_detached(target: &str) -> Result<()> {
-    let tgt_c =
-        CString::new(target).map_err(|_| FfiError::InvalidPath(target.to_string()))?;
+    let tgt_c = CString::new(target).map_err(|_| FfiError::InvalidPath(target.to_string()))?;
     // SAFETY: the pointer refers to `tgt_c`, alive for the call.
     let rc = unsafe { sys::umount2(tgt_c.as_ptr(), MNT_DETACH) };
     check("umount2", rc)
@@ -243,20 +238,14 @@ pub fn read_password(file: &mut File) -> Result<Vec<u8>> {
     // SAFETY: `fd` is owned by `file`, kept open for the whole call; the
     // pointer refers to our stack-allocated `saved`.
     if unsafe { sys::tcgetattr(fd, &mut saved) } != 0 {
-        return Err(Error::Other(format!(
-            "tcgetattr: {}",
-            std::io::Error::last_os_error()
-        )));
+        return Err(Error::Other(format!("tcgetattr: {}", std::io::Error::last_os_error())));
     }
     let mut raw = saved;
     raw.c_lflag &= !ECHO;
     raw.c_lflag &= !ICANON;
     // SAFETY: as above; the pointer refers to `raw`, alive for the call.
     if unsafe { sys::tcsetattr(fd, TCSANOW, &raw) } != 0 {
-        return Err(Error::Other(format!(
-            "tcsetattr: {}",
-            std::io::Error::last_os_error()
-        )));
+        return Err(Error::Other(format!("tcsetattr: {}", std::io::Error::last_os_error())));
     }
     let mut out = Vec::new();
     let mut buf = [0u8; 1];
@@ -280,10 +269,7 @@ pub fn read_password(file: &mut File) -> Result<Vec<u8>> {
 
 /// Read a passphrase from the controlling terminal (/dev/tty).
 pub fn read_password_tty() -> Result<Vec<u8>> {
-    let mut tty = std::fs::OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open("/dev/tty")?;
+    let mut tty = std::fs::OpenOptions::new().read(true).write(true).open("/dev/tty")?;
     let pass = read_password(&mut tty)?;
     use std::io::Write;
     let _ = tty.write_all(b"\n");

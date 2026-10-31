@@ -1,33 +1,97 @@
 name: ci
+
 on:
   push:
     branches: [main]
     tags: ["v*"]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  verify:
+  # One job, one command: the xtask ci gate runs the exact sequence the
+  # maintainers run locally (guards, build, tests, fmt, clippy, sbom).
+  gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Build workspace
-        run: cargo build --workspace --all-targets
-      - name: Unit tests
-        run: cargo test --workspace
-      - name: Tree guards
-        run: cargo run -p xtask -- verify-all
-      - name: SBOM
-        run: cargo run -p xtask -- sbom
+        with:
+          components: clippy, rustfmt
+      - name: Cache cargo state
+        uses: Swatinem/rust-cache@v2
+      - name: Full gate (guards + build + tests + fmt + clippy + sbom)
+        run: cargo run -p xtask -- ci
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: dist/sbom.json
 
+  # Static cross builds for the musl targets. All crates are pure Rust,
+  # so the bundled rust-lld links them without any external toolchain:
+  # the sysroot bin directory just needs to be on PATH (aarch64 musl
+  # emits linker flags the host system ld rejects).
   static:
     strategy:
+      fail-fast: false
       matrix:
         target: [x86_64-unknown-linux-musl, aarch64-unknown-linux-musl]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: rustup target add ${{ matrix.target }}
-      - name: Static build
+      - name: Put the bundled rust-lld on PATH
+        run: echo "$(rustc --print sysroot)"/lib/rustlib/*/bin >> "$GITHUB_PATH"
+      - name: Static release build
         run: cargo build --release --workspace --target ${{ matrix.target }}
+      - name: Collect binaries
+        run: |
+          mkdir -p "dist/bin-${{ matrix.target }}"
+          for b in target/${{ matrix.target }}/release/namikaze-*; do
+            if [ -x "$b" ]; then
+              cp "$b" "dist/bin-${{ matrix.target }}/"
+            fi
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: namikaze-bin-${{ matrix.target }}
+          path: dist/bin-${{ matrix.target }}
+
+  # Tag pushes cut a release: seal id, SBOM and checksums as artifacts.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [gate, static]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Dist artifacts (bootid + sbom + checksums)
+        run: |
+          cargo run -p xtask -- bootid
+          cargo run -p xtask -- sbom
+          cargo run -p xtask -- verify
+      - name: Create release with artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "NamikazeOS $GITHUB_REF_NAME" \
+            --generate-notes \
+            dist/sbom.json dist/bootid dist/SHA256SUMS \
+            || gh release upload "$GITHUB_REF_NAME" --clobber \
+                 dist/sbom.json dist/bootid dist/SHA256SUMS
