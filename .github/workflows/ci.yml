@@ -97,6 +97,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          targets: x86_64-unknown-none
       - name: Dist artifacts (bootid + sbom + checksums)
         run: |
           cargo run -p xtask -- bootid
