@@ -9,7 +9,9 @@ pub(crate) mod dep;
 pub(crate) mod desk;
 pub(crate) mod gnu;
 pub(crate) mod license;
+pub(crate) mod modes;
 pub(crate) mod naming;
+pub(crate) mod secrets;
 pub(crate) mod tools;
 pub(crate) mod version;
 
@@ -30,6 +32,8 @@ pub(crate) const GUARDS: &[(&str, GuardFn)] = &[
     ("desk-guard", desk::run),
     ("tools-guard", tools::run),
     ("version-guard", version::run),
+    ("secrets-guard", secrets::run),
+    ("modes-guard", modes::run),
 ];
 
 /// Run every guard; report all failures, fail at the end.

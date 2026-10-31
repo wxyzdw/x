@@ -37,6 +37,11 @@ it passes in CI (same steps, same order).
    sync byte-for-byte (desk-guard).
 9. Userland tools must exist in three places at once: the `TOOLS` file,
    `src/registry.rs` and the userland ebuild symlink loop (tools-guard).
+10. No credential-shaped strings anywhere in tracked files, and no
+    `.env` / `*.pem` / `*.key` blobs tracked at all (secrets-guard).
+11. Git index hygiene: docs and configs are plain 100644; executable
+    bits only for scripts and init.d entries, and no symlinks or
+    submodule/gitlink entries anywhere (modes-guard).
 
 ## Rust style
 

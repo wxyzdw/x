@@ -67,13 +67,15 @@ impl Node {
         }
     }
 
-    /// Exact byte length of this directory's extent (records + padding).
+    /// Byte length of this directory's extent as published: records plus
+    /// zero padding up to a whole block, per ECMA-119 6.8 (a directory's
+    /// extent length is always a multiple of the logical block size).
     fn dir_extent_len(&self) -> u64 {
         let mut len = self.self_record_len() as u64 + self.parent_record_len() as u64;
         for child in &self.children {
             len += child.record_len() as u64;
         }
-        len
+        len.div_ceil(BLOCK as u64) * BLOCK as u64
     }
 
     /// Serialized record length (33 header + id + SUSP, padded to even).
@@ -260,9 +262,12 @@ fn push_pvd(
     put_a(img, at + 8, "NAMIKAZEOS");
     put_a(img, at + 40, label);
     put_lebe32(img, at + 80, space as u32);
-    put_lebe32(img, at + 120, 1); // volume set size
-    put_lebe32(img, at + 124, 1); // volume sequence number
-    put_lebe32(img, at + 128, BLOCK as u32);
+    // volume set size, sequence number and logical block size are 4-byte
+    // both-endian fields (u16 little-endian + u16 big-endian); a u32 pair
+    // here would spill the big-endian half into the next field.
+    put_lebe16(img, at + 120, 1); // volume set size
+    put_lebe16(img, at + 124, 1); // volume sequence number
+    put_lebe16(img, at + 128, BLOCK as u16);
     put_lebe32(img, at + 132, pt_len as u32);
     img[at + 140..at + 144].copy_from_slice(&(pt_l as u32).to_le_bytes());
     img[at + 144..at + 148].copy_from_slice(&(pt_l as u32).to_le_bytes());
@@ -276,10 +281,10 @@ fn push_pvd(
     if let Some(license) = tree.children.iter().find(|c| c.real == "LICENSE") {
         put_a(img, at + 702, &format!("{};1", license.iso)); // copyright file
     }
-    for off in [810, 826, 842, 858] {
+    for off in [813, 830, 847, 864] {
         img[at + off..at + off + 17].copy_from_slice(&EPOCH_STAMP[..]);
     }
-    img[at + 874] = 0x01; // file structure version
+    img[at + 881] = 0x01; // file structure version
 }
 
 /// 34-byte root directory record embedded in the PVD.
@@ -652,5 +657,110 @@ mod tests {
         let mut cand = file_identifier("limine-bios-cd.bin");
         dedupe(&kids, &mut cand);
         assert_eq!(cand, "LIMINE_1.BIN");
+    }
+
+    fn file_node(real: &str, lba: u64, data: &[u8]) -> Node {
+        Node {
+            real: real.into(),
+            iso: file_identifier(real),
+            lba,
+            data: data.to_vec(),
+            children: Vec::new(),
+            is_dir: false,
+        }
+    }
+
+    fn root_with_boot_payloads() -> Node {
+        Node {
+            real: String::new(),
+            iso: String::new(),
+            lba: 0,
+            data: Vec::new(),
+            children: vec![
+                file_node("limine-bios-cd.bin", 40, &[0u8; 512]),
+                file_node("limine-uefi-cd.bin", 41, &[0u8; 512]),
+            ],
+            is_dir: true,
+        }
+    }
+
+    #[test]
+    fn boot_record_carries_catalog_pointer_at_offset_71() {
+        let mut img = Vec::new();
+        push_boot_record(&mut img, 19);
+        let at = 17 * BLOCK;
+        let ptr = u32::from_le_bytes([img[at + 71], img[at + 72], img[at + 73], img[at + 74]]);
+        assert_eq!(ptr, 19);
+        assert_eq!(&img[at + 72..at + 75], &[0, 0, 0]);
+    }
+
+    #[test]
+    fn catalog_validation_entry_follows_spec_layout() {
+        let root = root_with_boot_payloads();
+        let mut img = Vec::new();
+        push_catalog(&mut img, &root);
+        let at = img.len() - BLOCK;
+        assert_eq!(&img[at..at + 2], &[0x01, 0x00]); // header id 0x0001
+        assert_eq!(&img[at + 2..at + 4], &[0x00, 0x00]); // platform id: BIOS
+        assert_eq!(&img[at + 4..at + 28], b"NAMIKAZEOS ONEISO       ");
+        assert_eq!(&img[at + 30..at + 32], &[0x55, 0xAA]); // key
+        let words: u32 = (0..16usize)
+            .map(|i| u32::from(u16::from_le_bytes([img[at + i * 2], img[at + i * 2 + 1]])))
+            .sum();
+        assert_eq!(words % 0x1_0000, 0); // additive checksum sums to zero
+        assert_eq!(img[at + 32], 0x88); // initial entry: bootable
+        let bios_secs = u16::from_le_bytes([img[at + 38], img[at + 39]]);
+        assert_eq!(bios_secs, 1); // 512-byte payload = 1 virtual sector
+        assert_eq!(&img[at + 64..at + 66], &[0x91, 0xEF]); // last section, UEFI
+        assert_eq!(&img[at + 128..at + 160], &[0u8; 32]); // no phantom entries
+    }
+
+    #[test]
+    fn pvd_follows_ecma119_field_offsets() {
+        let root = Node {
+            real: String::new(),
+            iso: String::new(),
+            lba: 22,
+            data: Vec::new(),
+            children: Vec::new(),
+            is_dir: true,
+        };
+        let mut img = Vec::new();
+        push_pvd(&mut img, "TEST", &root, 99, 20, 21, 184);
+        let at = 16 * BLOCK;
+        assert_eq!(img[at + 881], 0x01); // file structure version
+                                         // 4-byte both-endian fields: little-endian and big-endian halves agree
+        assert_eq!(u16::from_le_bytes([img[at + 120], img[at + 121]]), 1);
+        assert_eq!(u16::from_be_bytes([img[at + 122], img[at + 123]]), 1);
+        assert_eq!(u16::from_le_bytes([img[at + 124], img[at + 125]]), 1);
+        assert_eq!(u16::from_be_bytes([img[at + 126], img[at + 127]]), 1);
+        assert_eq!(u16::from_le_bytes([img[at + 128], img[at + 129]]), 2048);
+        assert_eq!(u16::from_be_bytes([img[at + 130], img[at + 131]]), 2048);
+        let pt = u32::from_le_bytes([img[at + 132], img[at + 133], img[at + 134], img[at + 135]]);
+        assert_eq!(pt, 184);
+        assert_eq!(
+            u32::from_be_bytes([img[at + 136], img[at + 137], img[at + 138], img[at + 139]]),
+            184
+        );
+        // root record: extent halves agree
+        let ext = u32::from_le_bytes([img[at + 158], img[at + 159], img[at + 160], img[at + 161]]);
+        assert_eq!(
+            u32::from_be_bytes([img[at + 162], img[at + 163], img[at + 164], img[at + 165]]),
+            ext
+        );
+    }
+
+    #[test]
+    fn directory_extents_publish_block_aligned_lengths() {
+        let dir = Node {
+            real: "manifest".into(),
+            iso: "MANIFEST".into(),
+            lba: 30,
+            data: Vec::new(),
+            children: vec![file_node("oneiso.toml", 31, &[0u8; 100])],
+            is_dir: true,
+        };
+        assert_eq!(dir.dir_extent_len() % BLOCK as u64, 0);
+        assert_eq!(dir.sectors() * BLOCK as u64, dir.dir_extent_len());
     }
 }

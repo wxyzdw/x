@@ -44,7 +44,8 @@ const USAGE: &[&str] = &[
     "cargo xtask: NamikazeOS build orchestration (std-only)",
     "",
     "guards: ascii-guard | naming-guard | license-guard | gnu-guard | dep-guard",
-    "        desk-guard | tools-guard | version-guard | verify-all",
+    "        desk-guard | tools-guard | version-guard | secrets-guard |",
+    "        modes-guard | verify-all",
     "tasks:  ci | sbom | verify | kernel-check [<.config>] | kernel-fragments",
     "        iso | ebuilds | bootid | release <out-dir>",
     "",
@@ -69,6 +70,8 @@ fn main() -> Result<()> {
         "desk-guard" => guards::desk::run(&root),
         "tools-guard" => guards::tools::run(&root),
         "version-guard" => guards::version::run(&root),
+        "secrets-guard" => guards::secrets::run(&root),
+        "modes-guard" => guards::modes::run(&root),
         "verify-all" => guards::verify_all(&root),
         // tasks
         "ci" => tasks::ci::run(&root),

@@ -18,6 +18,8 @@ env:
 
 # The repository root carries only project meta; the Rust workspace and
 # every xtask task live under NamikazeOS/, so all run steps execute there.
+# Every action is pinned to the exact commit it was audited at (the ref
+# name is kept as a comment) and checkouts persist no credentials.
 defaults:
   run:
     working-directory: NamikazeOS
@@ -29,18 +31,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
           components: clippy, rustfmt
       - name: Cache cargo state
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           workspaces: NamikazeOS
       - name: Full gate (guards + build + tests + fmt + clippy + sbom)
         run: cargo run -p xtask -- ci
       - name: Upload SBOM
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: sbom
           path: NamikazeOS/dist/sbom.json
@@ -57,8 +61,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
       - run: rustup target add ${{ matrix.target }}
       - name: Put the bundled rust-lld on PATH
         run: echo "$(rustc --print sysroot)"/lib/rustlib/*/bin >> "$GITHUB_PATH"
@@ -72,7 +78,7 @@ jobs:
               cp "$b" "dist/bin-${{ matrix.target }}/"
             fi
           done
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: namikaze-bin-${{ matrix.target }}
           path: NamikazeOS/dist/bin-${{ matrix.target }}
@@ -86,8 +92,10 @@ jobs:
       contents: write
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
       - name: Dist artifacts (bootid + sbom + checksums)
         run: |
           cargo run -p xtask -- bootid

@@ -5,6 +5,28 @@ the Keep a Changelog structure; the project uses pure semantic versioning.
 
 ## [3.0.0-alpha.3]
 
+### Changed - field hardening (post-release)
+
+- **ISO writer audited against the spec**: directory extents are now
+  published block-aligned (ECMA-119 6.8), the volume set size, volume
+  sequence number and logical block size fields carry correct 4-byte
+  both-endian values instead of a spilled u32 pair, the four volume
+  dates sit at their spec offsets and the file structure version byte
+  (offset 881) is written as 1. The independent validator grew M path
+  table, Rock Ridge, extent-overlap and limine.lock supply-chain
+  checks and passes 24/24 against the rebuilt image.
+- **two new guards (10 total)**: `secrets-guard` fails on
+  credential-shaped strings in any tracked file and on tracked
+  `.env`/`*.pem`/`*.key` names; `modes-guard` enforces git index
+  hygiene - executable bits only for scripts and init.d entries, and
+  symlinks or submodule/gitlink entries never.
+- **CI supply chain hardened**: every workflow action is pinned to the
+  exact audited commit (ref name kept as a comment) and checkouts run
+  with `persist-credentials: false`.
+- **regression tests**: the El Torito boot record, the catalog
+  validation entry, the ECMA-119 PVD field layout and directory extent
+  alignment are pinned by unit tests in the xtask ISO module.
+
 ### Changed - repository restructure (post-release)
 
 - **role-based layout**: the repository root now carries only project
