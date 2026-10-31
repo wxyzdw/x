@@ -1,0 +1,34 @@
+name: build
+on:
+  push:
+    tags: ["v*"]
+jobs:
+  tools:
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-musl, aarch64-unknown-linux-musl]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: rustup target add ${{ matrix.target }}
+      - name: Build static host tools
+        run: cargo build --release --workspace --target ${{ matrix.target }}
+      - name: SBOM + checksums
+        run: |
+          cargo run -p xtask -- sbom
+          cargo run -p xtask -- verify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: namikazeos-tools-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/namikaze-*
+
+  iso:
+    needs: tools
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stage OneISO (distro pipeline activates after freeze)
+        run: cargo run -p xtask -- iso
+      - name: Note
+        run: echo "Full ISO assembly reuses the frozen v2.2.0 CI pipeline; this job stages and validates manifests."

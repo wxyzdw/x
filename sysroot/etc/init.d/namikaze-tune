@@ -1,0 +1,13 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# namikaze-tune: adaptive performance and power profile.
+
+description="NamikazeOS tuning profile"
+command="/usr/bin/namikaze-tune"
+command_args="apply balanced"
+output_logger="/usr/bin/logger -t namikaze-tune --"
+error_logger="/usr/bin/logger -t namikaze-tune --"
+
+depend() {
+    after localmount
+}

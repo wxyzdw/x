@@ -1,0 +1,12 @@
+[package]
+name = "namikaze-rt"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+# zero dependencies: std-only by design
+
+[lib]
+path = "src/lib.rs"

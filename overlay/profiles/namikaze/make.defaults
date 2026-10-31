@@ -1,0 +1,18 @@
+# ::namikaze profile make.defaults (hardened toolchain defaults)
+# The target system is musl + LLVM/Clang end to end: the musl/llvm Gentoo
+# profiles select clang as the system compiler, so no C compiler from the
+# legacy stack is ever installed. Baseline is generic so one binhost serves
+# every CPU; runtime microarch optimization is handled by ifunc-style
+# dispatch in the userland and Rust feature detection (namikaze-detect).
+CFLAGS="-O2 -pipe -fstack-protector-strong -D_FORTIFY_SOURCE=3 -ftrivial-auto-var-init=zero -fPIE"
+CXXFLAGS="${CFLAGS}"
+FCFLAGS="${CFLAGS}"
+FFLAGS="${CFLAGS}"
+LDFLAGS="-Wl,-O1 -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,-z,separate-code -pie"
+
+# Security-relevant USE policy
+USE="${USE} pam apparmor seccomp -telemetry -webkit"
+
+# Binpkg policy: never compile on target machines
+FEATURES="${FEATURE} getbinpkg -collision-protect protect-owned unmerge-orphans"
+ACCEPT_LICENSE="-* @FREE"

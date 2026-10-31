@@ -1,0 +1,12 @@
+#%PAM-1.0
+# NamikazeOS greetd PAM chain: faillock throttles brute force, the sentinel
+# module observes only when the user opted in (consent marker file), and
+# pam_unix does the actual password check. Without the sentinel module
+# installed the optional line degrades to a no-op.
+auth       required      pam_faillock.so preauth
+auth       optional      pam_namikaze_sentinel.so
+auth       include       system-local-login
+auth       [default=die] pam_faillock.so authfail
+account    include       system-local-login
+password   include       system-local-login
+session    include       system-local-login

@@ -1,0 +1,13 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# namikaze-cloak: MAC/hostname anonymization before any network comes up.
+
+description="NamikazeOS hardware identity anonymization"
+command="/usr/bin/namikaze-cloak"
+command_args="apply"
+output_logger="/usr/bin/logger -t namikaze-cloak --"
+error_logger="/usr/bin/logger -t namikaze-cloak --"
+
+depend() {
+    before net
+}

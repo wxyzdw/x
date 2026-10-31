@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# namikaze-hal: write the hardware plan for the running machine.
+
+description="NamikazeOS hardware adaptation layer"
+command="/usr/bin/namikaze-hal"
+command_args="apply"
+output_logger="/usr/bin/logger -t namikaze-hal --"
+error_logger="/usr/bin/logger -t namikaze-hal --"
+
+depend() {
+    after udev-settle
+    before xdm
+}

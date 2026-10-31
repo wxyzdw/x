@@ -1,0 +1,17 @@
+# AppArmor profile: namikaze-vault
+# Enforced via apparmor; ships with the ::namikaze overlay.
+
+#include <tunables/global>
+
+/usr/local/bin/namikaze-vault {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  /etc/namikaze/** r,
+  /var/lib/namikaze/vault/** rwk,
+  /var/lib/namikaze/sentinel/** rw,
+  capability ipc_lock,
+  deny /home/**/* r,
+  network inet stream,
+  network inet6 stream,
+}

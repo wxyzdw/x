@@ -1,0 +1,20 @@
+[package]
+name = "namikaze-persist"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+namikaze-common = { path = "../../sector-core/namikaze-common" }
+namikaze-rt = { path = "../../sector-foundation/namikaze-rt" }
+namikaze-ffi = { path = "../../sector-core/namikaze-ffi" }
+namikaze-live-core = { path = "../namikaze-live-core" }
+namikaze-persist-core = { path = "../namikaze-persist-core" }
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "namikaze-persist"
+path = "src/main.rs"

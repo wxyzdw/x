@@ -1,0 +1,4 @@
+#!/bin/sh
+# SPDX-License-Identifier: MPL-2.0
+# Weekly security update check and application (delta layers only).
+/usr/bin/namikaze-secpatch apply --all --quiet || true

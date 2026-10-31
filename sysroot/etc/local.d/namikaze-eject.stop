@@ -1,0 +1,4 @@
+#!/bin/sh
+# SPDX-License-Identifier: MPL-2.0
+# Release live mounts on local shutdown so removable media can be pulled.
+/usr/bin/namikaze-live eject 2>/dev/null || true

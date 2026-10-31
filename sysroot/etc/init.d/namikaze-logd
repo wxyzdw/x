@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# Tamper-evident system logging for NamikazeOS.
+
+description="NamikazeOS log daemon (hash-chained JSONL)"
+command="/usr/bin/namikaze-logd"
+command_args="serve --socket /run/namikaze/logd.sock --file /var/log/namikaze/log.jsonl"
+command_background="yes"
+pidfile="/run/namikaze/logd.pid"
+directory="/run/namikaze"
+
+depend() {
+    after localmount
+}

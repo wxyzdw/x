@@ -1,0 +1,15 @@
+[package]
+name = "namikaze-watch"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+namikaze-common = { path = "../../sector-core/namikaze-common" }
+namikaze-vault = { path = "../namikaze-vault" }
+namikaze-rt = { path = "../../sector-foundation/namikaze-rt" }
+
+[[bin]]
+name = "namikaze-watch"
+path = "src/main.rs"

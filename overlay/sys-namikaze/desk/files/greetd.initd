@@ -1,0 +1,18 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# greetd: starts the greeter on vt 7; agreety launches the Niri session via
+# /usr/bin/namikaze-session. Seat management is provided by elogind (the
+# libseat backend), the session bus by dbus.
+
+description="greetd greeter daemon (launches the Niri Wayland session)"
+command="/usr/bin/greetd"
+command_background="yes"
+pidfile="/run/greetd.pid"
+output_log="/var/log/greetd.log"
+error_log="/var/log/greetd.err"
+
+depend() {
+    need localmount
+    use dbus elogind
+    after bootmisc namikaze-guard namikaze-hal namikaze-firstboot
+}

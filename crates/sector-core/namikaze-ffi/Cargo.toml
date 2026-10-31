@@ -1,0 +1,12 @@
+[package]
+name = "namikaze-ffi"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+namikaze-common = { path = "../namikaze-common" }
+
+[lib]
+path = "src/lib.rs"

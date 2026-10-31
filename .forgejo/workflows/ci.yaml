@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: MPL-2.0
+# NamikazeOS CI: hygiene gates, build, and kernel audit on every push.
+# Runs on the forge runner with a Rust stable toolchain; kernel and ISO
+# assembly stages are invoked manually per QUICKSTART.md once the forge
+# storage freeze is lifted.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  guards:
+    name: source hygiene gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ascii-guard
+        run: cargo xtask ascii-guard
+      - name: naming-guard
+        run: cargo xtask naming-guard
+      - name: license-guard
+        run: cargo xtask license-guard
+      - name: gnu-guard
+        run: cargo xtask gnu-guard
+      - name: desk-guard
+        run: cargo xtask desk-guard
+      - name: userland-guard
+        run: cargo xtask userland-guard
+
+  build:
+    name: workspace build and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo build --workspace
+      - run: cargo test --workspace
+
+  offline-verify:
+    name: offline verification battery
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/verify_all.py

@@ -1,0 +1,30 @@
+# Desktop profile: Niri Wayland session, privacy-defaulted
+sys-namikaze/namikaze-firstboot
+sys-namikaze/namikaze-sentinel
+sys-namikaze/namikaze-backup
+sys-namikaze/namikaze-report
+sys-namikaze/namikaze-guest
+sys-namikaze/namikaze-secpatch
+sys-namikaze/namikaze-i18n
+sys-namikaze/namikaze-tune
+sys-namikaze/namikaze-desk
+gui-wm/niri
+gui-apps/greetd
+gui-apps/foot
+gui-apps/waybar
+gui-apps/fuzzel
+gui-apps/mako
+gui-apps/grim
+gui-apps/slurp
+gui-apps/swaylock
+gui-apps/swayidle
+gui-apps/wl-clipboard
+gui-libs/xdg-desktop-portal-gtk
+gui-libs/xdg-desktop-portal-gnome
+media-sound/pipewire
+media-sound/wireplumber
+media-fonts/dejavu
+sys-auth/elogind
+sys-power/brightnessctl
+# niri's built-in Xwayland support launches xwayland-satellite on demand
+x11-misc/xwayland-satellite

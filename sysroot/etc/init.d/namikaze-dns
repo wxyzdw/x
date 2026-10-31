@@ -1,0 +1,30 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# Render and install the encrypted DNS resolver artifacts from
+# /etc/namikaze/dns.toml. One-shot: the artifacts are regenerated at boot
+# and on manual restart; the loopback stub makes plaintext DNS impossible.
+
+description="NamikazeOS encrypted DNS policy renderer"
+
+depend() {
+    need localmount
+    use dbus
+    after bootmisc namikaze-guard
+}
+
+start_pre() {
+    command -v /usr/bin/namikaze-dns >/dev/null 2>&1 || return 1
+}
+
+start() {
+    ebegin "Applying encrypted DNS policy"
+    /usr/bin/namikaze-dns apply
+    eend $? "namikaze-dns failed to apply the policy"
+}
+
+stop() {
+    # /run is tmpfs; nothing to tear down beyond the artifacts themselves.
+    ebegin "Removing rendered DNS artifacts"
+    rm -f /run/namikaze/dns/resolv.conf /run/namikaze/dns/upstreams.conf
+    eend 0
+}

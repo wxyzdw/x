@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: MPL-2.0
+# NamikazeOS encrypted DNS policy (rendered by namikaze-dns).
+#
+# Only the upstreams listed here may ever receive DNS queries, and only
+# over an encrypted transport. The loopback stub is what applications see;
+# the actual resolution happens inside the policy engine on 127.0.0.1.
+# Blocked zones are answered locally (NXDOMAIN) and never leave the host.
+
+stub = "127.0.0.1"
+
+[[upstreams]]
+name = "primary"
+transport = "dot"
+address = "9.9.9.9"
+sni = "dns.quad9.net"
+
+[[upstreams]]
+name = "fallback"
+transport = "doh"
+address = "https://cloudflare-dns.com/dns-query"
+sni = "cloudflare-dns.com"
+
+[[blocklist]]
+zone = "telemetry.invalid"
+
+[[blocklist]]
+zone = "metrics.invalid"

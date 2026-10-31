@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# namikaze-desk: render the Niri Wayland session config into /etc/skel
+# (template for new users) and /root. Existing users re-run it manually:
+#   namikaze-desk apply "$HOME"
+
+description="NamikazeOS Niri desktop factory"
+command="/usr/bin/namikaze-desk"
+command_args="apply /etc/skel"
+output_logger="/usr/bin/logger -t namikaze-desk --"
+error_logger="/usr/bin/logger -t namikaze-desk --"
+
+depend() {
+    after localmount namikaze-firstboot
+}
+
+start_post() {
+    /usr/bin/namikaze-desk apply /root || ewarn "skel apply for /root failed"
+}

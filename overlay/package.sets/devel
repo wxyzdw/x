@@ -1,0 +1,11 @@
+# Development and compliance tooling
+sys-namikaze/xtask
+sys-namikaze/namikaze-mirror
+sys-namikaze/namikaze-secpatch
+sys-namikaze/namikaze-rescue
+dev-vcs/git
+app-arch/zstd
+app-crypt/gnupg
+app-crypt/sbctl
+sys-apps/dmidecode
+sys-namikaze/namikaze-install

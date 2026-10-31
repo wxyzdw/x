@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MPL-2.0
+# Example namikaze-sandbox confinement profile.
+#
+# Copy this file per application (e.g. /etc/namikaze/sandbox/viewer.toml)
+# and compile it with:  namikaze-sandbox compile viewer
+# Everything not granted here is denied: the sandbox starts with a private
+# tmpfs, no network, no D-Bus and an empty environment.
+
+exec = "/usr/bin/example-viewer"
+network = false
+dbus = false
+env = ["LANG", "TERM"]
+
+[[paths]]
+path = "/usr/share/example-viewer"
+read_only = true
+
+[[paths]]
+path = "/var/lib/example-viewer"

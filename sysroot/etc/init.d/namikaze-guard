@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# namikaze-guard: apply the nftables policy early (kill switch included).
+
+description="NamikazeOS firewall policy"
+command="/usr/bin/namikaze-guard"
+command_args="apply"
+output_logger="/usr/bin/logger -t namikaze-guard --"
+error_logger="/usr/bin/logger -t namikaze-guard --"
+
+depend() {
+    before net
+    provide firewall
+}

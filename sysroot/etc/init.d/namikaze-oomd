@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# namikaze-oomd: pressure-based memory guardian.
+
+description="NamikazeOS out-of-memory guardian"
+command="/usr/bin/namikaze-oomd"
+command_background="yes"
+pidfile="/run/namikaze-oomd.pid"
+output_logger="/usr/bin/logger -t namikaze-oomd --"
+error_logger="/usr/bin/logger -t namikaze-oomd --"
+
+depend() {
+    need localmount
+    after bootmisc
+}

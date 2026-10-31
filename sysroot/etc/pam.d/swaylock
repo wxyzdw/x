@@ -1,0 +1,3 @@
+#%PAM-1.0
+# NamikazeOS swaylock PAM chain (screen unlock inside the Niri session).
+auth       include       system-local-login

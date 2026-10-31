@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# namikaze-sentinel: wrong-passphrase camera policy (opt-in via firstboot).
+
+description="NamikazeOS sentinel event monitor"
+command="/usr/bin/namikaze-sentinel"
+command_args="watch"
+command_background="yes"
+pidfile="/run/namikaze-sentinel.pid"
+output_logger="/usr/bin/logger -t namikaze-sentinel --"
+error_logger="/usr/bin/logger -t namikaze-sentinel --"
+
+depend() {
+    after localmount
+}

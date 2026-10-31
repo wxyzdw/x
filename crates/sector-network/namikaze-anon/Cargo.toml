@@ -1,0 +1,17 @@
+[package]
+name = "namikaze-anon"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+namikaze-common = { path = "../../sector-core/namikaze-common" }
+namikaze-rt = { path = "../../sector-foundation/namikaze-rt" }
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "namikaze-anon"
+path = "src/main.rs"

@@ -1,0 +1,6 @@
+/target
+/dist
+*.img
+*.iso
+*.log
+Cargo.lock.bak

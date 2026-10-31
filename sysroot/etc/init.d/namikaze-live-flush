@@ -1,0 +1,10 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# namikaze-live-flush: persist session-mode changes on clean shutdown.
+
+description="NamikazeOS live session flush"
+
+stop() {
+    /usr/bin/namikaze-live session-flush || true
+    return 0
+}

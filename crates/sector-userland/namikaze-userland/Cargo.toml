@@ -1,0 +1,17 @@
+[package]
+name = "namikaze-userland"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+namikaze-rt = { path = "../../sector-foundation/namikaze-rt" }
+namikaze-ffi = { path = "../../sector-core/namikaze-ffi" }
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "namikaze-userland"
+path = "src/main.rs"

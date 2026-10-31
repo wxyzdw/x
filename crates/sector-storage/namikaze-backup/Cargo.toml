@@ -1,0 +1,16 @@
+[package]
+name = "namikaze-backup"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+namikaze-common = { path = "../../sector-core/namikaze-common" }
+namikaze-rt = { path = "../../sector-foundation/namikaze-rt" }
+namikaze-ffi = { path = "../../sector-core/namikaze-ffi" }
+namikaze-vault = { path = "../../sector-security/namikaze-vault" }
+
+[[bin]]
+name = "namikaze-backup"
+path = "src/main.rs"

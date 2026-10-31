@@ -1,0 +1,4 @@
+# NamikazeOS SNTP configuration (consumed by namikaze-ntp)
+# servers are passed positionally; the defaults below are the vendor pool.
+servers = ["0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org"]
+interval_secs = 600

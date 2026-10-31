@@ -1,0 +1,65 @@
+# NamikazeOS default system configuration
+# Schema: crates/namikaze-config/src/lib.rs (unknown keys are rejected)
+
+[storage]
+mode = "persistent"          # persistent | live
+root_fs = "ext4"             # ext4 | f2fs | btrfs
+boot_tier = "A"              # A | B | C
+header_backup = "none"       # none | optional-usb | required-usb
+recovery_code = true
+per_user_encryption = "fscrypt"
+tpm_sealing = "pin"          # off | pin | auto
+hibernation = false
+
+[storage.pbkdf]
+algo = "argon2id"
+memory_kb = 1048576          # 1 GiB memory cost per unlock attempt
+iterations = 4
+parallel = 4
+
+[anonymity]
+level = "hardened"           # standard | hardened | maximum
+transparent_tor = true
+block_non_tor_egress = true
+ipv6 = "privacy"             # off | privacy | full
+
+[sentinel]
+enabled = false              # opt-in via first-boot wizard (KVKK/GDPR consent)
+max_failures = 3
+failure_window_secs = 300
+retention_days = 30
+
+[memory]
+zram = true
+zram_algorithm = "zstd"
+mglru = true
+thp = "madvise"
+
+[desktop]
+environment = "niri"         # v3 ships exactly one Wayland session: niri
+compositor = true
+terminal = "foot"
+launcher = "fuzzel"
+bar = "waybar"
+notifications = "mako"
+lock = "swaylock"
+kb_layout = "us"
+gap = 12
+autologin = false            # true + [initial_session] in /etc/greetd/config.toml
+greeter_user = "greeter"
+
+[privacy]
+destructive_tools = false    # panic/wipe tools are opt-in; data is preserved
+machine_id_policy = "ephemeral"
+hostname_mode = "random"
+
+[vault]
+idle_unmount_secs = 600
+
+[live]
+# Live boot policy for the single-ISO medium (namikaze.init live stage).
+default_mode = "persist"     # persist | volatile | session
+persist_label = "namikaze-persist"
+max_pass_attempts = 5
+fallback = "volatile"        # volatile | panic
+trim = false                 # trade flash wear against usage-pattern leakage

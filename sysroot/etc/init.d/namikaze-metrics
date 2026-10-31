@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# /proc sampler writing JSONL snapshots.
+
+description="NamikazeOS metrics sampler"
+command="/usr/bin/namikaze-metrics"
+command_args="daemon --interval 10 --file /var/log/namikaze/metrics.jsonl"
+command_background="yes"
+pidfile="/run/namikaze/metrics.pid"
+directory="/run/namikaze"
+
+depend() {
+    after localmount
+}

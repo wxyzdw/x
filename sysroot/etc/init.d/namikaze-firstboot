@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# namikaze-firstboot: one-shot wizard on the first persistent boot.
+
+description="NamikazeOS first boot wizard"
+command="/usr/bin/namikaze-firstboot"
+command_args="--on-boot"
+output_logger="/usr/bin/logger -t namikaze-firstboot --"
+error_logger="/usr/bin/logger -t namikaze-firstboot --"
+
+depend() {
+    after namikaze-hal
+    before xdm
+}

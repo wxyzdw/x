@@ -1,0 +1,23 @@
+#!/bin/sh
+# SPDX-License-Identifier: MPL-2.0
+# namikaze-session: Niri session entry point for NamikazeOS (OpenRC, no
+# systemd dependency). Started by greetd (agreety --cmd) or the
+# [initial_session] autologin hook.
+set -eu
+
+: "${HOME:?namikaze-session requires HOME}"
+
+export XDG_SESSION_TYPE=wayland
+export XDG_SESSION_DESKTOP=niri
+export XDG_CURRENT_DESKTOP=niri
+export DESKTOP_SESSION=niri
+export MOZ_ENABLE_WAYLAND=1
+export QT_QPA_PLATFORM=wayland
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+export ELECTRON_OZONE_PLATFORM_HINT=wayland
+
+mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}" "$HOME/Pictures/Screenshots"
+
+# dbus-run-session guarantees a session bus even before any login manager
+# environment sync; niri inherits it and portals attach to the same bus.
+exec dbus-run-session -- niri

@@ -1,0 +1,31 @@
+# Core system services (mandatory for every profile)
+# The complete core userland is self-hosted Rust: namikaze-userland (50
+# multi-call tools) plus namikaze-sh (login shell). No third-party userland
+# source is shipped or pinned.
+sys-namikaze/namikaze-common
+sys-namikaze/namikaze-config
+sys-namikaze/namikaze-userland
+sys-namikaze/namikaze-sh
+sys-namikaze/namikaze-detect
+sys-namikaze/namikaze-guard
+sys-namikaze/namikaze-cloak
+sys-namikaze/namikaze-watch
+sys-namikaze/namikaze-seal
+sys-namikaze/namikaze-oomd
+sys-namikaze/namikaze-wipe
+sys-namikaze/namikaze-pkg
+sys-namikaze/namikaze-usbguard
+sys-namikaze/namikaze-chrono
+sys-namikaze/namikaze-ntp
+sys-namikaze/namikaze-logd
+sys-namikaze/namikaze-metrics
+sys-namikaze/namikaze-hal
+sys-namikaze/namikaze-live
+sys-namikaze/namikaze-persist
+sys-namikaze/namikaze-secupdate
+sys-auth/elogind
+sys-fs/e2fsprogs
+net-firewall/nftables
+sys-apps/util-linux
+sys-fs/cryptsetup
+sys-fs/squashfs-tools

@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# SNTP clock discipline for NamikazeOS.
+
+description="NamikazeOS SNTP client"
+command="/usr/bin/namikaze-ntp"
+command_args="daemon --interval 600 --file /run/namikaze/ntp/offset.json"
+command_background="yes"
+pidfile="/run/namikaze/ntp.pid"
+directory="/run/namikaze"
+
+depend() {
+    need net
+    after ntp-client
+}

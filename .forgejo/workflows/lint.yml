@@ -1,0 +1,31 @@
+name: lint
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Format check
+        run: cargo fmt --all -- --check
+      - name: Clippy (deny warnings)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: ASCII source guard (emoji ban)
+        run: cargo run -p xtask -- ascii-guard
+      - name: Naming guard (zero theme in engineering)
+        run: cargo run -p xtask -- naming-guard
+      - name: License guard (MPL-2.0 SPDX on every source)
+        run: cargo run -p xtask -- license-guard
+      - name: Unsafe confinement (audited exceptions only)
+        run: |
+          # Real unsafe declarations are allowed ONLY in: the audited syscall
+          # boundary (namikaze-ffi) and the opt-in PAM service-module ABI hook
+          # (namikaze-sentinel, feature pam-module, SAFETY-commented).
+          ! grep -rnE '\bunsafe[[:space:]]+(fn|impl|\{)' crates \
+            --include='*.rs' \
+            | grep -v 'sector-core/namikaze-ffi' \
+            | grep -v 'sector-security/namikaze-sentinel/src/pam.rs'
+      - name: Unit tests
+        run: cargo test --workspace
