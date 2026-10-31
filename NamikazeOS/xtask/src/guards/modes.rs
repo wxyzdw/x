@@ -36,8 +36,23 @@ fn verdict(mode: u32, path: &str) -> Option<&'static str> {
     }
 }
 
-fn index_entries() -> Result<Vec<(u32, String)>> {
+/// The repository toplevel: index paths are toplevel-relative, so the
+/// allowlist matches no matter which directory the tasks run from.
+fn repo_toplevel() -> Result<PathBuf> {
     let out = Command::new("git")
+        .args(["rev-parse", "--show-toplevel"])
+        .output()
+        .map_err(|e| Error::Other(format!("modes-guard: cannot run git: {e}")))?;
+    if !out.status.success() {
+        return Err(Error::Other("modes-guard: not a git repository".into()));
+    }
+    Ok(PathBuf::from(String::from_utf8_lossy(&out.stdout).trim().to_owned()))
+}
+
+fn index_entries(top: &Path) -> Result<Vec<(u32, String)>> {
+    let out = Command::new("git")
+        .arg("-C")
+        .arg(top)
         .args(["ls-files", "-s", "-z", ":/"])
         .output()
         .map_err(|e| Error::Other(format!("modes-guard: cannot run git: {e}")))?;
@@ -56,13 +71,11 @@ fn index_entries() -> Result<Vec<(u32, String)>> {
 }
 
 pub(crate) fn run(_root: &Path) -> Result<()> {
-    let entries: Vec<(u32, PathBuf)> =
-        index_entries()?.into_iter().map(|(mode, path)| (mode, PathBuf::from(path))).collect();
-    let violations: Vec<String> = entries
+    let top = repo_toplevel()?;
+    let violations: Vec<String> = index_entries(&top)?
         .iter()
         .filter_map(|(mode, path)| {
-            verdict(*mode, &path.to_string_lossy())
-                .map(|why| format!("{}: {why} ({mode:#07o})", path.display()))
+            verdict(*mode, path).map(|why| format!("{path}: {why} ({mode:#07o})"))
         })
         .collect();
     violations_report("modes-guard (git index permission hygiene)", &violations)

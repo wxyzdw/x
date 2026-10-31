@@ -18,6 +18,10 @@ use crate::util::violations_report;
 /// characters and the character class of the body.
 type TokenRule = (&'static str, usize, fn(u8) -> bool);
 
+/// PEM marker halves, kept apart so the guard never matches itself.
+const PEM_BEGIN: &str = "-----BEGIN";
+const PEM_KEY: &str = "PRIVATE KEY";
+
 const TOKEN_RULES: &[TokenRule] = &[
     ("ghp_", 20, is_token_char),
     ("github_pat_", 20, is_token_char),
@@ -59,19 +63,35 @@ fn contains_token(text: &str) -> bool {
             from = start;
         }
     }
-    // key material: BEGIN and PRIVATE KEY on the same line
+    // key material: BEGIN and PRIVATE KEY on the same line; the two
+    // literals live in separate constants so this file never matches
+    // its own rule
     for line in text.lines() {
-        if line.contains("-----BEGIN") && line.contains("PRIVATE KEY") {
+        if line.contains(PEM_BEGIN) && line.contains(PEM_KEY) {
             return true;
         }
     }
     false
 }
 
-/// All tracked paths in the repository, regardless of the current
-/// working directory inside it.
-fn tracked_files() -> Result<Vec<PathBuf>> {
+/// The repository toplevel, so git paths resolve regardless of the
+/// working directory the tasks run from.
+fn repo_toplevel() -> Result<PathBuf> {
     let out = Command::new("git")
+        .args(["rev-parse", "--show-toplevel"])
+        .output()
+        .map_err(|e| Error::Other(format!("secrets-guard: cannot run git: {e}")))?;
+    if !out.status.success() {
+        return Err(Error::Other("secrets-guard: not a git repository".into()));
+    }
+    Ok(PathBuf::from(String::from_utf8_lossy(&out.stdout).trim().to_owned()))
+}
+
+/// All tracked paths in the repository, relative to the toplevel.
+fn tracked_files(top: &Path) -> Result<Vec<PathBuf>> {
+    let out = Command::new("git")
+        .arg("-C")
+        .arg(top)
         .args(["ls-files", "-z", ":/"])
         .output()
         .map_err(|e| Error::Other(format!("secrets-guard: cannot run git: {e}")))?;
@@ -87,16 +107,17 @@ fn tracked_files() -> Result<Vec<PathBuf>> {
 }
 
 pub(crate) fn run(_root: &Path) -> Result<()> {
+    let top = repo_toplevel()?;
     let mut violations = Vec::new();
-    for path in tracked_files()? {
-        let rel = path.to_string_lossy().replace('\\', "/");
-        let name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
-        if FORBIDDEN_NAMES.contains(&name.as_str()) || forbidden_suffix(&rel) {
-            violations.push(format!("{rel}: secret-bearing file name tracked"));
+    for rel in tracked_files(&top)? {
+        let rel_text = rel.to_string_lossy().replace('\\', "/");
+        let name = rel.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+        if FORBIDDEN_NAMES.contains(&name.as_str()) || forbidden_suffix(&rel_text) {
+            violations.push(format!("{rel_text}: secret-bearing file name tracked"));
         }
-        let Ok(text) = std::fs::read_to_string(&path) else { continue };
+        let Ok(text) = std::fs::read_to_string(top.join(&rel)) else { continue };
         if contains_token(&text) {
-            violations.push(format!("{rel}: credential-shaped string found"));
+            violations.push(format!("{rel_text}: credential-shaped string found"));
         }
     }
     violations_report("secrets-guard (credential leak scan)", &violations)
@@ -112,7 +133,9 @@ mod tests {
         assert!(contains_token(&gh));
         let aws = format!("AKIA{}", "A".repeat(16));
         assert!(contains_token(&aws));
-        assert!(contains_token("line -----BEGIN and PRIVATE KEY"));
+        // built at runtime so this source line never matches the rule
+        let pem = format!("{}BEGIN {} {}", "-----", "PRIVATE", "KEY");
+        assert!(contains_token(&pem));
     }
 
     #[test]
