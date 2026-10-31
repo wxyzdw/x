@@ -15,13 +15,18 @@ use crate::util::violations_report;
 const MODE_PLAIN: u32 = 0o100644;
 const MODE_EXEC: u32 = 0o100755;
 
-/// Paths allowed to carry the executable bit in the index.
+/// Paths allowed to carry the executable bit in the index. Matching is
+/// done on the product-relative path (a leading `NamikazeOS/` repo
+/// prefix is stripped) so the rules read exactly like the tree layout.
 fn exec_allowed(path: &str) -> bool {
-    path.starts_with("sysroot/etc/init.d/")
-        || path.starts_with("sysroot/etc/cron.")
-        || path.starts_with("sysroot/usr/bin/")
-        || path.ends_with(".sh")
-        || path.ends_with(".py")
+    let p = path.strip_prefix("NamikazeOS/").unwrap_or(path);
+    p.starts_with("sysroot/etc/init.d/")
+        || p.starts_with("sysroot/etc/cron.")
+        || p.starts_with("sysroot/etc/local.d/")
+        || p.starts_with("sysroot/usr/bin/")
+        || p.starts_with("overlay/sys-namikaze/desk/files/")
+        || p.ends_with(".sh")
+        || p.ends_with(".py")
 }
 
 /// Index-entry verdict: None when acceptable, else the reason.

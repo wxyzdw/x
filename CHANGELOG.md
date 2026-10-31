@@ -5,6 +5,33 @@ the Keep a Changelog structure; the project uses pure semantic versioning.
 
 ## [3.0.0-alpha.3]
 
+### Added - bare-metal kernel stage (post-release)
+
+- **namikaze-kernel**: a freestanding `no_std`, zero-dependency Rust
+  kernel stage under `kernel/namikaze-kernel/`, booted by Limine through
+  the boot protocol (base revision 2) and painting the OneISO boot
+  splash on the firmware framebuffer: a nine-tailed chakra fox over a
+  dark warm field (the project's namesake mood), the NAMIKAZE title in
+  block glyphs, the version, the bootid seal parsed from the kernel
+  command line and an animated progress bar, mirrored onto COM1. The
+  crate stays outside the workspace by design and carries its own lib
+  target for unit tests (font coverage, protocol constants, ELF
+  validation, boot option parsing).
+- **`cargo xtask kernel`**: builds the kernel for x86_64-unknown-none,
+  runs its lib tests, fmt and clippy, validates the ELF (class,
+  machine, entry point) and proves the Limine request markers survived
+  linking, then stages the artifact. The step is part of the `ci` gate
+  and of the CI workflow (the target is installed there).
+- **ISO boots the splash**: `iso` stages a built kernel at
+  `boot/namikaze-kernel`, activating the new first entry of
+  `iso/limine/limine.conf` (`protocol: limine`); Limine hides the entry
+  when no kernel was staged. The dep-guard now also scans the kernel
+  crate's manifest for third-party dependencies.
+- **workspace tidy**: file modes across the tree renormalized again
+  after an environment recycle re-flagged executables (modes-guard
+  rules), and the independent ISO validator is persisted under
+  `scripts/` with its full deep-check suite.
+
 ### Changed - field hardening (post-release)
 
 - **ISO writer audited against the spec**: directory extents are now

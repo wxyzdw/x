@@ -13,7 +13,7 @@ use crate::util::violations_report;
 pub(crate) fn run(root: &Path) -> Result<()> {
     let mut violations = Vec::new();
     let mut manifests = Vec::new();
-    for group in ["lib", "services", "tools"] {
+    for group in ["lib", "services", "tools", "kernel/namikaze-kernel"] {
         manifests.extend(walk_files(&root.join(group)));
     }
     manifests.push(root.join("xtask/Cargo.toml"));

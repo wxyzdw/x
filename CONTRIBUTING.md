@@ -42,6 +42,11 @@ it passes in CI (same steps, same order).
 11. Git index hygiene: docs and configs are plain 100644; executable
     bits only for scripts and init.d entries, and no symlinks or
     submodule/gitlink entries anywhere (modes-guard).
+12. The bare-metal kernel (`kernel/namikaze-kernel`) is built only by
+    `cargo xtask kernel` for `x86_64-unknown-none` and stays excluded
+    from the workspace; never depend on it from userland or add it to
+    workspace members (the freestanding entry point must not link on a
+    hosted target).
 
 ## Rust style
 

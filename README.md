@@ -86,7 +86,8 @@ NamikazeOS/
 │                 -pkg, -install, -rescue, -attest, -chrono
 ├── xtask/        build orchestration + 10 CI guards (std-only)
 ├── iso/          OneISO payload: Limine binaries, manifests, limine.conf
-├── kernel/       mainline LTS configuration fragments (KSPP + per-arch)
+├── kernel/       bare-metal no_std Rust kernel (Limine splash stage)
+│                 plus the mainline LTS Linux config fragments
 ├── overlay/      the ::namikaze Gentoo overlay (ebuilds, package sets)
 ├── sysroot/      rootfs skeleton: etc/init.d services, greetd, namikaze
 │                 system configuration
@@ -104,6 +105,7 @@ cargo build --workspace          # the entire OS userland
 cargo test  --workspace          # 203 unit tests (crypto vectors included)
 cargo run -p xtask -- verify-all # the 10 CI guards
 cargo run -p xtask -- sbom       # dist/sbom.json (declares 0 third-party deps)
+cargo run -p xtask -- kernel     # bare-metal kernel: build + validate + stage
 cargo run -p xtask -- kernel-fragments   # per-arch kernel configs
 cargo run -p xtask -- kernel-check dist/kernel-configs/x86_64.config
 cargo run -p xtask -- bootid     # dist/bootid boot seal

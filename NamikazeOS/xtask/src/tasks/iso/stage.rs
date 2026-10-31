@@ -35,12 +35,29 @@ pub(crate) fn populate(root: &Path, staging: &Path) -> Result<(Vec<Section>, Str
     stage_limine(root, staging)?;
     stage_boot_config(root, staging, &label, &bootid)?;
     stage_boot_trees(staging, &manifest)?;
+    stage_kernel(root, staging)?;
     stage_docs(root, staging, &label, &bootid)?;
     stage_manifests(root, staging)?;
     stage_sbom(root, staging)?;
     stage_checksums(staging)?;
 
     Ok((manifest, bootid))
+}
+
+/// Stage the bare-metal Rust kernel when it has been built
+/// (`cargo xtask kernel` -> dist/kernel/namikaze-kernel). Absence is not
+/// an error: the ISO then simply carries no kernel entry payload, and
+/// Limine hides the unresolvable menu entry.
+fn stage_kernel(root: &Path, staging: &Path) -> Result<()> {
+    let built = root.join("dist/kernel/namikaze-kernel");
+    if !built.exists() {
+        return Ok(());
+    }
+    super::super::rust_kernel::validate_elf(&std::fs::read(&built)?)
+        .map_err(|e| Error::Other(format!("staged kernel rejected: {e}")))?;
+    std::fs::copy(&built, staging.join("boot/namikaze-kernel"))?;
+    println!("stage: bare-metal kernel staged at boot/namikaze-kernel");
+    Ok(())
 }
 
 /// Reuse the dist/bootid seal when present so repeated builds of the same

@@ -1,6 +1,9 @@
 [workspace]
 resolver = "2"
 members = ["lib/*", "services/*", "tools/*", "xtask"]
+# The bare-metal kernel targets x86_64-unknown-none and must not build
+# for the host workspace targets; `cargo xtask kernel` drives it.
+exclude = ["kernel/namikaze-kernel"]
 
 [workspace.package]
 version = "3.0.0-alpha.3"

@@ -2,8 +2,9 @@
 //! ci: the whole CI gate as one local command.
 //!
 //! `cargo run -p xtask -- ci` runs exactly what the workflow runs, in the
-//! same order: tree guards, workspace build, tests, rustfmt, clippy, SBOM.
-//! CI and local development share this single source of truth.
+//! same order: tree guards, workspace build, tests, rustfmt, clippy, the
+//! bare-metal kernel, SBOM. CI and local development share this single
+//! source of truth.
 
 use std::path::Path;
 use std::process::Command;
@@ -11,7 +12,7 @@ use std::process::Command;
 use namikaze_common::{Error, Result};
 
 use crate::guards;
-use crate::tasks::sbom;
+use crate::tasks::{rust_kernel, sbom};
 
 /// The cargo invocations of the gate, in CI order.
 const CARGO_STEPS: &[&[&str]] = &[
@@ -22,10 +23,10 @@ const CARGO_STEPS: &[&[&str]] = &[
 ];
 
 pub(crate) fn run(root: &Path) -> Result<()> {
-    println!("ci [1/3]: tree guards");
+    println!("ci [1/4]: tree guards");
     guards::verify_all(root)?;
     for step in CARGO_STEPS {
-        println!("ci [2/3]: cargo {}", step.join(" "));
+        println!("ci [2/4]: cargo {}", step.join(" "));
         let status = Command::new("cargo")
             .args(*step)
             .current_dir(root)
@@ -35,7 +36,9 @@ pub(crate) fn run(root: &Path) -> Result<()> {
             return Err(Error::Other(format!("cargo {} failed", step.join(" "))));
         }
     }
-    println!("ci [3/3]: sbom");
+    println!("ci [3/4]: bare-metal kernel (build, validate, stage)");
+    rust_kernel::run(root)?;
+    println!("ci [4/4]: sbom");
     sbom::run(root)?;
     println!("ci: ALL STEPS PASS");
     Ok(())

@@ -37,11 +37,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
           components: clippy, rustfmt
+          targets: x86_64-unknown-none
       - name: Cache cargo state
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           workspaces: NamikazeOS
-      - name: Full gate (guards + build + tests + fmt + clippy + sbom)
+      - name: Full gate (guards + build + tests + fmt + clippy + kernel + sbom)
         run: cargo run -p xtask -- ci
       - name: Upload SBOM
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -100,6 +101,7 @@ jobs:
         run: |
           cargo run -p xtask -- bootid
           cargo run -p xtask -- sbom
+          cargo run -p xtask -- kernel
           cargo run -p xtask -- verify
       - name: OneISO image (pure-Rust ISO9660 + El Torito writer)
         run: cargo run -p xtask -- iso

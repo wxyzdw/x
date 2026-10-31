@@ -47,10 +47,12 @@ const USAGE: &[&str] = &[
     "        desk-guard | tools-guard | version-guard | secrets-guard |",
     "        modes-guard | verify-all",
     "tasks:  ci | sbom | verify | kernel-check [<.config>] | kernel-fragments",
-    "        iso | ebuilds | bootid | release <out-dir>",
+    "        kernel | iso | ebuilds | bootid | release <out-dir>",
     "",
     "iso builds the OneISO image end to end (staging, ISO9660 + El Torito",
-    "serialization, round-trip verification, SHA-256 seal) into dist/.",
+    "serialization, round-trip verification, SHA-256 seal) into dist/. The",
+    "kernel task builds the bare-metal no_std kernel for x86_64-unknown-none,",
+    "validates its ELF + Limine markers and stages it for the ISO.",
 ];
 
 fn main() -> Result<()> {
@@ -83,6 +85,7 @@ fn main() -> Result<()> {
             tasks::kernel::check(&config)
         }
         "kernel-fragments" => tasks::kernel::fragments(&root),
+        "kernel" => tasks::rust_kernel::run(&root),
         "iso" => tasks::iso::run(&root),
         "ebuilds" => tasks::ebuilds::run(&root),
         "bootid" => tasks::bootid::run(&root),

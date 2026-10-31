@@ -7,5 +7,6 @@ pub(crate) mod ebuilds;
 pub(crate) mod iso;
 pub(crate) mod kernel;
 pub(crate) mod release;
+pub(crate) mod rust_kernel;
 pub(crate) mod sbom;
 pub(crate) mod verify;
