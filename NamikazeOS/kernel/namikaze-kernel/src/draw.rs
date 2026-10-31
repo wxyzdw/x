@@ -210,6 +210,7 @@ fn draw_micro(fb: &Framebuffer, text: &str, cx: i64, y: i64, scale: u64, rgb: (u
 pub struct Splash<'a> {
     pub version: &'a str,
     pub bootid: Option<&'a str>,
+    pub namfs: Option<&'a str>,
 }
 
 fn bar_geometry(fb: &Framebuffer) -> (i64, i64, u64, u64) {
@@ -257,6 +258,7 @@ pub fn splash(fb: &Framebuffer, info: &Splash) {
     let micro_scale = (h / 180).max(2);
     let line_gap = (h * 8 / 540).max(4) as i64;
     draw_micro(fb, info.version, cx, title_y + 7 * scale as i64 + line_gap, micro_scale, WHITE);
+    let mut footer_line = 2u64;
     if let Some(seal) = info.bootid {
         let mut line = ArrayString::from("BOOTID ");
         line.push_str(seal);
@@ -264,7 +266,20 @@ pub fn splash(fb: &Framebuffer, info: &Splash) {
             fb,
             line.as_str(),
             cx,
-            title_y + 7 * scale as i64 + 2 * line_gap,
+            title_y + 7 * scale as i64 + footer_line as i64 * line_gap,
+            micro_scale,
+            FUR_MID,
+        );
+        footer_line += 1;
+    }
+    if let Some(label) = info.namfs {
+        let mut line = ArrayString::from("NAMFS ");
+        line.push_str(label);
+        draw_micro(
+            fb,
+            line.as_str(),
+            cx,
+            title_y + 7 * scale as i64 + footer_line as i64 * line_gap,
             micro_scale,
             FUR_MID,
         );

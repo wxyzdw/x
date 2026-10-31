@@ -51,6 +51,10 @@ pub extern "C" fn _start() -> ! {
     if boot.safe_mode() {
         serial::line("limine: namikaze.safe=yes detected");
     }
+    if let Some(label) = boot.namfs_label() {
+        serial::line("limine: NamFS persistent layer label present");
+        let _ = label;
+    }
 
     let Some(info) = limine::framebuffer() else {
         serial::line("limine: no framebuffer granted, nothing to paint");
@@ -62,7 +66,11 @@ pub extern "C" fn _start() -> ! {
     };
 
     let version = draw::ArrayString::from(env!("CARGO_PKG_VERSION")).ascii_upper();
-    let splash_info = draw::Splash { version: version.as_str(), bootid: boot.ref_str() };
+    let splash_info = draw::Splash {
+        version: version.as_str(),
+        bootid: boot.ref_str(),
+        namfs: boot.namfs_label(),
+    };
 
     draw::splash(&surface, &splash_info);
     serial::line("splash: frame painted");

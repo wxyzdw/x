@@ -1,12 +1,13 @@
 [workspace]
 resolver = "2"
-members = ["lib/*", "services/*", "tools/*", "xtask"]
+members = ["lib/*", "services/*", "tools/*"]
 # The bare-metal kernel targets x86_64-unknown-none and must not build
-# for the host workspace targets; `cargo xtask kernel` drives it.
+# for the host workspace targets; the namikaze tool's build script (part
+# of every plain `cargo build`) drives it.
 exclude = ["kernel/namikaze-kernel"]
 
 [workspace.package]
-version = "3.0.0-alpha.3"
+version = "3.0.0-alpha.4"
 edition = "2021"
 rust-version = "1.75"
 license = "MPL-2.0"
@@ -23,6 +24,10 @@ namikaze-i18n = { path = "lib/namikaze-i18n" }
 namikaze-live-core = { path = "lib/namikaze-live-core" }
 namikaze-persist-core = { path = "lib/namikaze-persist-core" }
 namikaze-rt = { path = "lib/namikaze-rt" }
+namikaze-guards = { path = "lib/namikaze-guards" }
+namikaze-iso = { path = "lib/namikaze-iso" }
+namikaze-fs = { path = "lib/namikaze-fs" }
+namikaze-dist = { path = "lib/namikaze-dist" }
 
 # services: init.d-managed system services and the boot chain
 namikaze-cloak = { path = "services/namikaze-cloak" }

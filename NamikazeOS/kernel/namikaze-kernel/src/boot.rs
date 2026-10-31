@@ -3,10 +3,11 @@
 
 use crate::draw::ArrayString;
 
-/// The options this stage understands. The bootid seal is owned by
-/// value, so no reference can outlive its text.
+/// The options this stage understands. Seals are owned by value, so no
+/// reference can outlive its text.
 pub struct BootOptions {
     bootid: ArrayString,
+    namfs: ArrayString,
     safe_mode: bool,
 }
 
@@ -14,11 +15,17 @@ impl BootOptions {
     /// Parse the bootloader command line for the options the splash
     /// shows. Only the seal's characters are kept, truncated to 32.
     pub fn parse(raw: &[u8]) -> Self {
-        let mut options = Self { bootid: ArrayString::from(""), safe_mode: false };
+        let mut options =
+            Self { bootid: ArrayString::from(""), namfs: ArrayString::from(""), safe_mode: false };
         for token in raw.split(|b| *b == b' ') {
             if let Some(rest) = strip(token, b"namikaze.bootid=") {
                 for byte in rest.iter().take(32) {
                     options.bootid.push_ascii(*byte);
+                }
+            }
+            if let Some(rest) = strip(token, b"namikaze.namfs=") {
+                for byte in rest.iter().take(32) {
+                    options.namfs.push_ascii(*byte);
                 }
             }
             if strip(token, b"namikaze.safe=yes").is_some() {
@@ -34,6 +41,15 @@ impl BootOptions {
             None
         } else {
             Some(self.bootid.as_str())
+        }
+    }
+
+    /// The NamFS persistent-layer label, or `None` when volatile.
+    pub fn namfs_label(&self) -> Option<&str> {
+        if self.namfs.is_empty() {
+            None
+        } else {
+            Some(self.namfs.as_str())
         }
     }
 

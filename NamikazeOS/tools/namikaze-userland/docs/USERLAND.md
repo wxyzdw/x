@@ -3,8 +3,8 @@
 NamikazeOS ships a self-hosted userland written from scratch in memory-safe
 Rust. The legacy C core toolchain (and every third-party userland source
 tree) is absent by policy; the whole stack builds with `cargo build
---workspace` alone. Enforcement is mechanical: `cargo xtask tools-guard`,
-`cargo xtask gnu-guard` and `cargo xtask dep-guard` fail the build on any
+--workspace` alone. Enforcement is mechanical: the tools-guard,
+gnu-guard and dep-guard fail the build on any
 drift.
 
 ## Layer 1 - the hardened core: `namikaze-userland`
@@ -27,7 +27,7 @@ Hardening properties:
   (`namikaze-rt::sha256`), pinned by public test vectors
 
 The tool set lives in one file: `TOOLS` next to the crate sources.
-`cargo xtask tools-guard` cross-checks it against the Rust registry table
+The tools-guard cross-checks it against the Rust registry table
 and the overlay ebuild symlink farm, so a name can never drift between
 them.
 

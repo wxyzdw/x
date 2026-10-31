@@ -3,7 +3,7 @@
 //! Tool registry: the single mapping from tool name to implementation.
 //!
 //! The names and their order must match the `TOOLS` file next to this
-//! crate; `scripts/verify_all.py` fails the build on any drift.
+//! crate; the tools-guard fails the build on any drift.
 
 use crate::tools;
 

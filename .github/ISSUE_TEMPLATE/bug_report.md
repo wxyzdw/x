@@ -26,5 +26,5 @@ identifying redacted.
 
 ## Guard context
 
-If a guard or `cargo run -p xtask -- ci` step failed, paste the failing
+If a guard or pipeline step failed, paste the failing
 step output.

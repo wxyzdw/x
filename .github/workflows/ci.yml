@@ -17,16 +17,19 @@ env:
   CARGO_TERM_COLOR: always
 
 # The repository root carries only project meta; the Rust workspace and
-# every xtask task live under NamikazeOS/, so all run steps execute there.
-# Every action is pinned to the exact commit it was audited at (the ref
-# name is kept as a comment) and checkouts persist no credentials.
+# the whole filesystem tree (airootfs, boot payloads, kernel) live under
+# NamikazeOS/, so all run steps execute there. Every action is pinned to
+# the exact commit it was audited at (the ref name is kept as a comment)
+# and checkouts persist no credentials.
 defaults:
   run:
     working-directory: NamikazeOS
 
 jobs:
-  # One job, one command: the xtask ci gate runs the exact sequence the
-  # maintainers run locally (guards, build, tests, fmt, clippy, sbom).
+  # The gate is the architecture itself: a plain `cargo build` runs the
+  # complete dist pipeline through tools/namikaze/build.rs (tree guards,
+  # SBOM, bare-metal kernel, NamFS demo volume, OneISO image, deep
+  # audit, checksums). Tests, fmt and clippy follow.
   gate:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -42,18 +45,33 @@ jobs:
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           workspaces: NamikazeOS
-      - name: Full gate (guards + build + tests + fmt + clippy + kernel + sbom)
-        run: cargo run -p xtask -- ci
+      - name: Single build (guards + sbom + kernel + NamFS + ISO + audit via build.rs)
+        run: cargo build --workspace
+      - name: Tests
+        run: cargo test --workspace
+      - name: rustfmt
+        run: cargo fmt -- --check
+      - name: clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Upload SBOM
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: sbom
           path: NamikazeOS/dist/sbom.json
+      - name: Upload OneISO image
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: oneiso
+          path: |
+            NamikazeOS/dist/NamikazeOS-*-oneiso.iso
+            NamikazeOS/dist/NamikazeOS-*-oneiso.iso.sha256
+            NamikazeOS/dist/namfs/namikaze-demo.namfs
 
   # Static cross builds for the musl targets. All crates are pure Rust,
   # so the bundled rust-lld links them without any external toolchain:
   # the sysroot bin directory just needs to be on PATH (aarch64 musl
-  # emits linker flags the host system ld rejects).
+  # emits linker flags the host system ld rejects). The dist pipeline
+  # inside tools/namikaze/build.rs skips itself on cross builds.
   static:
     strategy:
       fail-fast: false
@@ -84,7 +102,8 @@ jobs:
           name: namikaze-bin-${{ matrix.target }}
           path: NamikazeOS/dist/bin-${{ matrix.target }}
 
-  # Tag pushes cut a release: seal id, SBOM and checksums as artifacts.
+  # Tag pushes cut a release: one `cargo build --release` produces the
+  # full dist set (ISO + NamFS volume + SBOM + bootid + checksums).
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [gate, static]
@@ -99,14 +118,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
           targets: x86_64-unknown-none
-      - name: Dist artifacts (bootid + sbom + checksums)
-        run: |
-          cargo run -p xtask -- bootid
-          cargo run -p xtask -- sbom
-          cargo run -p xtask -- kernel
-          cargo run -p xtask -- verify
-      - name: OneISO image (pure-Rust ISO9660 + El Torito writer)
-        run: cargo run -p xtask -- iso
+      - name: One build, all artifacts (guards + kernel + NamFS + ISO + audit)
+        run: cargo build --release --workspace
       - name: Create release with artifacts
         env:
           GH_TOKEN: ${{ github.token }}
@@ -115,7 +128,9 @@ jobs:
             --title "NamikazeOS $GITHUB_REF_NAME" \
             --generate-notes \
             dist/NamikazeOS-*-oneiso.iso dist/NamikazeOS-*-oneiso.iso.sha256 \
+            dist/namfs/namikaze-demo.namfs \
             dist/sbom.json dist/bootid dist/SHA256SUMS \
             || gh release upload "$GITHUB_REF_NAME" --clobber \
                  dist/NamikazeOS-*-oneiso.iso dist/NamikazeOS-*-oneiso.iso.sha256 \
+                 dist/namfs/namikaze-demo.namfs \
                  dist/sbom.json dist/bootid dist/SHA256SUMS

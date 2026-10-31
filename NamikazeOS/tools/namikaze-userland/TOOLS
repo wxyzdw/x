@@ -1,9 +1,8 @@
 # Single source of truth for the tool name set provided by
 # namikaze-userland. Consumed by:
 #   - src/registry.rs (must list exactly these names, same order)
-#   - scripts/gen-ebuilds.sh (symlink farm in the ::namikaze ebuild)
-#   - scripts/mkrootfs.sh (/usr/bin takeover in the built image)
-#   - scripts/verify_all.py (cross-checks all four sources)
+#   - the ::namikaze ebuild symlink loop (tools-guard cross-checks both)
+#   - the airootfs /usr/bin takeover during image assembly
 # One name per line; lines starting with '#' are comments.
 basename
 cat

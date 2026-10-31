@@ -1,0 +1,12 @@
+[package]
+name = "namikaze-fstool"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Create, inspect and verify NamFS encrypted persistent volumes"
+
+[dependencies]
+namikaze-common = { path = "../../lib/namikaze-common" }
+namikaze-rt = { path = "../../lib/namikaze-rt" }
+namikaze-fs = { path = "../../lib/namikaze-fs" }

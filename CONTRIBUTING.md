@@ -6,14 +6,25 @@ is "what the guards will check anyway".
 
 ## The one command that matters
 
-Before every push, from the `NamikazeOS/` workspace directory (the
-repository root only carries project meta):
+There is no shell, no make and no xtask: a plain build does everything.
+From the `NamikazeOS/` workspace directory (the repository root only
+carries project meta):
 
-    cargo run -p xtask -- ci
+    cargo build
 
-This runs the exact CI gate locally: tree guards, workspace build, tests,
-rustfmt, clippy with warnings denied, and the SBOM. If it passes locally
-it passes in CI (same steps, same order).
+This compiles every crate AND runs the complete dist pipeline through
+the `namikaze` tool's build script: the ten tree guards, the SBOM, the
+bare-metal kernel (build + ELF validation + staging), the deterministic
+NamFS demo volume, the OneISO image, the independent deep audit and the
+dist checksums. CI runs the same steps plus `cargo test --workspace`,
+`cargo fmt -- --check` and `cargo clippy --workspace --all-targets --
+-D warnings`.
+
+Single steps are available as subcommands of the same library functions:
+
+    cargo run -p namikaze -- guard        # the ten guards
+    cargo run -p namikaze -- iso          # only the image step
+    cargo run -p namikaze -- pipeline     # the full pipeline, verbose
 
 ## House rules (all enforced by guards)
 
@@ -27,13 +38,14 @@ it passes in CI (same steps, same order).
    `namikaze-i18n` locales and its docs directory.
 4. No theme codenames anywhere in the tree.
 5. No banned legacy toolchain tokens (`gnu-guard` keeps the list).
-6. `#![forbid(unsafe_code)]` everywhere. The two documented exceptions are
-   namikaze-ffi and the PAM glue in namikaze-sentinel; anything else needs
-   a written P0 justification first.
+6. `#![forbid(unsafe_code)]` everywhere. The documented exceptions are
+   namikaze-ffi, the PAM glue in namikaze-sentinel and the audited
+   hardware-boundary modules of namikaze-kernel (`limine`, `fb`, `port`);
+   anything else needs a written P0 justification first.
 7. Version discipline: the root `[workspace.package]` version is the only
    place a version is set. Crate manifests inherit it; overlay ebuilds
    must match (version-guard checks both).
-8. The Niri session files under `sysroot/` and `overlay/` must stay in
+8. The Niri session files under `airootfs/` and `overlay/` must stay in
    sync byte-for-byte (desk-guard).
 9. Userland tools must exist in three places at once: the `TOOLS` file,
    `src/registry.rs` and the userland ebuild symlink loop (tools-guard).
@@ -42,11 +54,15 @@ it passes in CI (same steps, same order).
 11. Git index hygiene: docs and configs are plain 100644; executable
     bits only for scripts and init.d entries, and no symlinks or
     submodule/gitlink entries anywhere (modes-guard).
-12. The bare-metal kernel (`kernel/namikaze-kernel`) is built only by
-    `cargo xtask kernel` for `x86_64-unknown-none` and stays excluded
-    from the workspace; never depend on it from userland or add it to
-    workspace members (the freestanding entry point must not link on a
-    hosted target).
+12. The bare-metal kernel (`kernel/namikaze-kernel`) targets
+    `x86_64-unknown-none` and stays excluded from the workspace; the
+    `namikaze` pipeline builds it with a nested cargo invocation. Never
+    depend on it from userland or add it to workspace members (the
+    freestanding entry point must not link on a hosted target).
+13. The dist pipeline is the single source of truth for artifacts: never
+    generate ISOs, volumes or checksums with anything but the pipeline
+    (namikaze-dist), and never ship an image the `namikaze-audit` has
+    not passed.
 
 ## Rust style
 
@@ -61,12 +77,16 @@ it passes in CI (same steps, same order).
 - Conventional, imperative, one logical change per commit:
   `ci: ...`, `guards: ...`, `storage: ...`, `network: ...`.
 - Semver only. Pre-releases are `X.Y.Z-alpha.N`. Bump the root manifest
-  version, then regenerate overlay ebuilds with `cargo run -p xtask -- ebuilds`
-  (version-guard verifies consistency).
+  version, rename the overlay ebuilds (`*_<old>.ebuild` ->
+  `*_<new>.ebuild`), then run `cargo run -p namikaze -- ebuilds` for
+  missing ones (version-guard verifies consistency).
 
-## Adding a guard or task
+## Adding a guard or a pipeline step
 
-1. Create `xtask/src/guards/<name>.rs` (or `tasks/<name>.rs`) exposing
-   `pub(crate) fn run(root: &Path) -> Result<()>`.
-2. Register it in `guards::GUARDS` (or the `main` dispatch and USAGE).
-3. Add tests for the failure path, not only the happy path.
+1. Guards: create `lib/namikaze-guards/src/<name>.rs` exposing
+   `pub(crate) fn run(root: &Path) -> Result<()>`, register it in
+   `GUARDS`, add tests for the failure path, not only the happy path.
+2. Pipeline steps: add a module to `lib/namikaze-dist` exposing
+   `pub fn run(root: &Path) -> Result<()>`, call it from
+   `pipeline::full_build` in the right order, mirror it as a `namikaze`
+   CLI subcommand, and document it in the pipeline module docs.

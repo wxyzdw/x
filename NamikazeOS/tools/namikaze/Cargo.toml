@@ -1,0 +1,19 @@
+[package]
+name = "namikaze"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "NamikazeOS build orchestration: a plain `cargo build` runs the guards, the kernel, NamFS and the ISO"
+build = "build.rs"
+
+[dependencies]
+namikaze-common = { path = "../../lib/namikaze-common" }
+namikaze-rt = { path = "../../lib/namikaze-rt" }
+namikaze-guards = { path = "../../lib/namikaze-guards" }
+namikaze-iso = { path = "../../lib/namikaze-iso" }
+namikaze-dist = { path = "../../lib/namikaze-dist" }
+namikaze-fs = { path = "../../lib/namikaze-fs" }
+
+[build-dependencies]
+namikaze-dist = { path = "../../lib/namikaze-dist" }

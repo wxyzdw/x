@@ -1,0 +1,10 @@
+  NamikazeOS 3.0.0-alpha.4 - the airootfs live system
+
+  You are in the persistent layer demo environment. The root
+  filesystem is the live airootfs; everything you keep goes into a
+  NamFS encrypted volume (AES-256-XTS, PBKDF2-HMAC-SHA256).
+
+  Quick start:
+    namikaze-doctor          system health check
+    namikaze-fstool          create / inspect encrypted volumes
+    namikaze-persist         persistence policy and LUKS2 volumes

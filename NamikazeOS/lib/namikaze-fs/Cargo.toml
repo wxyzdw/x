@@ -1,0 +1,11 @@
+[package]
+name = "namikaze-fs"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "NamFS: the NamikazeOS encrypted persistent volume format (AES-256-XTS + PBKDF2-HMAC-SHA256, zero dependencies)"
+
+[dependencies]
+namikaze-common = { path = "../namikaze-common" }
+namikaze-rt = { path = "../namikaze-rt" }

@@ -1,0 +1,4 @@
+# NamFS volume table (fstab-style): label, container, mountpoint
+# name             container                                  mountpoint
+system            /persist/system.namfs                      /
+home              /persist/home.namfs                        /home

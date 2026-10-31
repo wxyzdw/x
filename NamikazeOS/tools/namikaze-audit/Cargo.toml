@@ -1,0 +1,12 @@
+[package]
+name = "namikaze-audit"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Independent deep auditor for NamikazeOS ISO images (ECMA-119 + El Torito)"
+
+[dependencies]
+namikaze-common = { path = "../../lib/namikaze-common" }
+namikaze-rt = { path = "../../lib/namikaze-rt" }
+namikaze-iso = { path = "../../lib/namikaze-iso" }

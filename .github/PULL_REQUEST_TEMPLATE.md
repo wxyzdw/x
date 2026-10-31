@@ -11,11 +11,11 @@ issue if one exists.
 ## Guard impact
 
 Does this add or change anything the tree guards check? If yes, which
-guard, and how was `cargo run -p xtask -- ci` updated?
+guard, and how was the pipeline updated?
 
 ## Checklist
 
-- [ ] `cargo run -p xtask -- ci` passes locally (guards + build + tests +
+- [ ] `cargo build` passes locally (guards + kernel + NamFS + ISO + audit;
       fmt + clippy + sbom)
 - [ ] no new third-party dependency (or a written justification of the
       P0-exception kind)

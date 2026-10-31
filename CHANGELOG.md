@@ -3,6 +3,69 @@
 All notable changes to NamikazeOS are documented here. The format follows
 the Keep a Changelog structure; the project uses pure semantic versioning.
 
+## [3.0.0-alpha.4]
+
+### Added - the airootfs generation
+
+- **The repo is the filesystem**: `sysroot/` becomes `airootfs/`, the
+  live root filesystem tree in the Arch-releng style, but persistent and
+  encrypted. New policy files ship in it: `etc/namikaze/namfs.conf`
+  (persistence mode, volume path, passphrase source, KDF iterations),
+  `etc/namikaze/namfs.tab` (volume table) and a user-facing `motd`;
+  `var/lib/namikaze/` and `root/` slots added.
+- **NamFS** (`lib/namikaze-fs`): the native encrypted persistent volume
+  format, written from scratch with zero dependencies - AES-256 core
+  (FIPS-197, pinned by the C.3 known-answer vector), XTS tweakable mode
+  (IEEE 1619, tweak encrypted with the second key), PBKDF2-HMAC-SHA256
+  gate (RFC vectors), HMAC-anchored 512-byte header, passphrase verifier
+  checked before any data access, per-file SHA-256 integrity, sealed
+  free space, rewrite-on-put entry table. 10 unit tests including
+  wrong-passphrase rejection and ciphertext tamper detection.
+- **`namikaze-fstool`**: create / put / get / list / info / verify CLI
+  over NamFS, with deterministic volume creation (explicit salt, uuid
+  and timestamp) for reproducible builds.
+- **Deterministic demo volume in every ISO**: the pipeline seals
+  `airootfs`'s config set into `dist/namfs/namikaze-demo.namfs`
+  (passphrase `namikaze-demo`, byte-stable across builds, covered by
+  SHA256SUMS) and stages it at `boot/namfs/` in the image.
+- **The kernel parses the persistent layer**: `namikaze.namfs=<label>`
+  on the command line is reported on COM1 and drawn on the splash
+  footer next to the bootid seal.
+- **Independent deep audit in pure Rust** (`namikaze-iso/src/audit.rs`
+  + `namikaze-audit` tool): full ECMA-119 + El Torito re-derivation
+  (descriptor set walk, PVD both-endian halves, catalog checksum, L/M
+  path table mirroring, Rock Ridge SP/NM/PX, record sanity, extent
+  overlap detection, staged-file presence, limine.lock supply chain) -
+  the successor of the retired Python validator; the pipeline refuses
+  to finish unless it passes.
+
+### Changed - one command builds everything
+
+- **xtask is gone.** The orchestration crate is dissolved: the ten tree
+  guards live in `lib/namikaze-guards`, the ISO writer + staging +
+  verifier in `lib/namikaze-iso` (with the bootid seal), and the dist
+  steps (SBOM, kernel build + validation, checksums, ebuilds, source
+  zip, pipeline) in `lib/namikaze-dist`. The new `namikaze` tool
+  (`tools/namikaze`) exposes them as CLI subcommands - and its
+  `build.rs` runs the entire pipeline on every plain `cargo build`:
+  guards, SBOM, kernel, NamFS volume, ISO, audit, checksums. No shell,
+  no make, no xtask anywhere in the chain.
+- **Shared foundations moved to `namikaze-common`**: the guard/task
+  helper toolkit (`util`), the SBOM generator, the kernel-image ELF
+  validator (with the Limine protocol markers) and the overlay ebuild
+  sector table; `iso/` renamed to `boot/` (it is the boot payload
+  tree) and all path constants updated.
+- **CI mirrors the architecture**: the gate job is now
+  `cargo build --workspace` (the pipeline) + tests + fmt + clippy, and
+  uploads the ISO and the NamFS demo volume as artifacts; the release
+  job produces the full dist set with one build. Cross builds skip the
+  pipeline (TARGET != HOST detection in build.rs).
+- **51 -> 58 crates** (guards, fs, iso, dist + the namikaze/fstool/
+  audit tools), ebuild sectors extended, version bumped everywhere and
+  guard paths updated to the new tree (desk-guard pairs, modes-guard
+  allowlist, naming-guard codenames location, version-guard ebuild
+  source). The `cargo xtask` alias is gone from `.cargo/config.toml`.
+
 ## [3.0.0-alpha.3]
 
 ### Added - bare-metal kernel stage (post-release)

@@ -12,6 +12,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
+pub mod kernel_image;
+pub mod sbom;
+pub mod util;
+
 use namikaze_rt::fsutil::{zero, ZeroBuf};
 
 /// Canonical result alias used across NamikazeOS.

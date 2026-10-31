@@ -1,0 +1,11 @@
+[package]
+name = "namikaze-iso"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "NamikazeOS OneISO: staging, pure-Rust ISO9660 + El Torito writer, round-trip verifier and deep audit"
+
+[dependencies]
+namikaze-common = { path = "../namikaze-common" }
+namikaze-rt = { path = "../namikaze-rt" }

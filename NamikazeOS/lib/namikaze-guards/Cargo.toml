@@ -1,0 +1,11 @@
+[package]
+name = "namikaze-guards"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "NamikazeOS repository policy guards (ascii, naming, license, dep, modes, ...)"
+
+[dependencies]
+namikaze-common = { path = "../namikaze-common" }
+namikaze-rt = { path = "../namikaze-rt" }

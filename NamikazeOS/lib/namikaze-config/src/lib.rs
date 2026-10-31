@@ -626,9 +626,9 @@ mod tests {
     #[test]
     fn shipped_system_toml_matches_schema() {
         let path =
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../sysroot/etc/namikaze/system.toml");
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../airootfs/etc/namikaze/system.toml");
         let cfg = SystemConfig::load(&path)
-            .expect("sysroot/etc/namikaze/system.toml must parse against the schema");
+            .expect("airootfs/etc/namikaze/system.toml must parse against the schema");
         assert_eq!(cfg.desktop.environment, "niri");
         assert!(cfg.desktop.compositor);
         assert_eq!(cfg.desktop.terminal, "foot");
@@ -647,7 +647,7 @@ mod tests {
     #[test]
     fn roundtrip_preserves_values() {
         let path =
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../sysroot/etc/namikaze/system.toml");
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../airootfs/etc/namikaze/system.toml");
         let cfg = SystemConfig::load(&path).unwrap();
         let text = cfg.to_toml().unwrap();
         let again = text.parse::<SystemConfig>().unwrap();

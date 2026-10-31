@@ -33,4 +33,4 @@ snapshots so a bad update is a rollback, not a rebuild.
 
 The tool never fetches over the network itself; the binhost sync is the
 cron-driven `namikaze-secpatch` path, and installed-set integrity is
-verifiable with `xtask verify`-produced digests.
+verifiable with the dist pipeline's SHA256SUMS digests.

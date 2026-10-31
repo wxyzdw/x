@@ -25,7 +25,7 @@ the project title, the running version, the bootid seal and an animated
 progress bar, mirrored onto COM1. It is the demo stage for the bare-metal
 boot path, not a replacement for the Linux kernel.
 
-- Build + verify + stage: `cargo xtask kernel` (requires the
+- Build + verify + stage: `cargo build` runs it, or `cargo run -p namikaze -- kernel` (requires the
   `x86_64-unknown-none` target). The task validates the ELF (class,
   machine, entry point) and proves the Limine request markers survived
   linking, then drops the artifact under `dist/kernel/`.
