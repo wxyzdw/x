@@ -47,6 +47,9 @@ const USAGE: &[&str] = &[
     "        desk-guard | tools-guard | version-guard | verify-all",
     "tasks:  ci | sbom | verify | kernel-check [<.config>] | kernel-fragments",
     "        iso | ebuilds | bootid | release <out-dir>",
+    "",
+    "iso builds the OneISO image end to end (staging, ISO9660 + El Torito",
+    "serialization, round-trip verification, SHA-256 seal) into dist/.",
 ];
 
 fn main() -> Result<()> {

@@ -85,6 +85,8 @@ jobs:
           cargo run -p xtask -- bootid
           cargo run -p xtask -- sbom
           cargo run -p xtask -- verify
+      - name: OneISO image (pure-Rust ISO9660 + El Torito writer)
+        run: cargo run -p xtask -- iso
       - name: Create release with artifacts
         env:
           GH_TOKEN: ${{ github.token }}
@@ -92,6 +94,8 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             --title "NamikazeOS $GITHUB_REF_NAME" \
             --generate-notes \
+            dist/NamikazeOS-*-oneiso.iso dist/NamikazeOS-*-oneiso.iso.sha256 \
             dist/sbom.json dist/bootid dist/SHA256SUMS \
             || gh release upload "$GITHUB_REF_NAME" --clobber \
+                 dist/NamikazeOS-*-oneiso.iso dist/NamikazeOS-*-oneiso.iso.sha256 \
                  dist/sbom.json dist/bootid dist/SHA256SUMS

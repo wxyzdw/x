@@ -30,6 +30,30 @@ the Keep a Changelog structure; the project uses pure semantic versioning.
   namikaze-scrub); `cargo fmt --check` and `clippy -D warnings` are now
   hard gates.
 
+### Added - OneISO image pipeline
+
+- **Pure-Rust ISO writer**: `cargo xtask iso` now builds the OneISO image
+  end to end with no external tools - a hand-written ECMA-119 ISO9660
+  serializer (`tasks/iso/image.rs`) with El Torito BIOS + UEFI boot
+  support, little- and big-endian path tables and the Rock Ridge SUSP
+  subset (SP, RR, NM, PX).
+- **Pinned Limine payload**: official bootloader binaries vendored under
+  `iso/payload/limine/v12.9.6/` and verified against
+  `iso/manifest/limine.lock` (tarball + per-file SHA-256) before
+  staging; Limine is boot firmware (BSD-2-Clause), not a Cargo
+  dependency, so the zero-third-party rule is untouched.
+- **Round-trip verification**: every build re-parses the image
+  (`tasks/iso/verify.rs`) - volume descriptors, full directory walk with
+  real-name resolution, SHA-256 of every file extent, El Torito
+  validation checksum and both boot entries, path table links.
+- **Deterministic output**: sorted entries, fixed 1980-01-01 epoch,
+  zeroed padding; two builds of one staging tree are byte-identical and
+  the release `.sha256` sidecar seals exactly that hash.
+- **Release wiring**: the tag pipeline builds the ISO and attaches it
+  (plus its SHA-256) to the GitHub release next to SBOM, bootid and
+  SHA256SUMS; `cargo xtask` alias added so the documented interface
+  works from the repository root.
+
 ### Added - new components
 
 - **namikaze-trace (sector-observe)**: tamper-evident execution activity

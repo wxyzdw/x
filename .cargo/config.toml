@@ -9,3 +9,8 @@
 #   $(rustc --print sysroot)/lib/rustlib/<host-triple>/bin
 [target.aarch64-unknown-linux-musl]
 linker = "rust-lld"
+
+# `cargo xtask` is the documented build interface (see xtask/src/main.rs);
+# the alias routes it through the workspace build orchestration crate.
+[alias]
+xtask = "run -p xtask --"
