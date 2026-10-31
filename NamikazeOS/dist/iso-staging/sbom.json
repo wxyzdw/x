@@ -1,0 +1,263 @@
+{
+  "crates": [
+    {
+      "name": "namikaze-common",
+      "sector": "sector-core",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-config",
+      "sector": "sector-core",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-doctor",
+      "sector": "sector-core",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-ffi",
+      "sector": "sector-core",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-i18n",
+      "sector": "sector-core",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-oomd",
+      "sector": "sector-core",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-desk",
+      "sector": "sector-desk",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-firstboot",
+      "sector": "sector-desk",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-guest",
+      "sector": "sector-desk",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-tune",
+      "sector": "sector-desk",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-rt",
+      "sector": "sector-foundation",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-anon",
+      "sector": "sector-network",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-cloak",
+      "sector": "sector-network",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-dns",
+      "sector": "sector-network",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-macspin",
+      "sector": "sector-network",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-usbguard",
+      "sector": "sector-network",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-logd",
+      "sector": "sector-observe",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-metrics",
+      "sector": "sector-observe",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-trace",
+      "sector": "sector-observe",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-detect",
+      "sector": "sector-platform",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-hal",
+      "sector": "sector-platform",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-init",
+      "sector": "sector-platform",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-guard",
+      "sector": "sector-security",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-ledger",
+      "sector": "sector-security",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-sandbox",
+      "sector": "sector-security",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-seal",
+      "sector": "sector-security",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-secupdate",
+      "sector": "sector-security",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-sentinel",
+      "sector": "sector-security",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-vault",
+      "sector": "sector-security",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-watch",
+      "sector": "sector-security",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-backup",
+      "sector": "sector-storage",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-decoy",
+      "sector": "sector-storage",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-dupe",
+      "sector": "sector-storage",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-live",
+      "sector": "sector-storage",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-live-core",
+      "sector": "sector-storage",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-persist",
+      "sector": "sector-storage",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-persist-core",
+      "sector": "sector-storage",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-report",
+      "sector": "sector-storage",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-scrub",
+      "sector": "sector-storage",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-share",
+      "sector": "sector-storage",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-wipe",
+      "sector": "sector-storage",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-attest",
+      "sector": "sector-supply",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-install",
+      "sector": "sector-supply",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-mirror",
+      "sector": "sector-supply",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-pkg",
+      "sector": "sector-supply",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-rescue",
+      "sector": "sector-supply",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-secpatch",
+      "sector": "sector-supply",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-chrono",
+      "sector": "sector-time",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-ntp",
+      "sector": "sector-time",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-sh",
+      "sector": "sector-userland",
+      "version": "3.0.0-alpha.3"
+    },
+    {
+      "name": "namikaze-userland",
+      "sector": "sector-userland",
+      "version": "3.0.0-alpha.3"
+    }
+  ],
+  "license": "MPL-2.0",
+  "name": "NamikazeOS",
+  "third_party_dependencies": 0,
+  "version": "3.0.0-alpha.3"
+}

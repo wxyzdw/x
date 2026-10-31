@@ -1,0 +1,13 @@
+NamikazeOS OneISO boot tree
+===========================
+
+tree: riscv64
+loader: limine
+
+Artifacts supplied by the kernel build pipeline (dist/ inputs):
+  boot/riscv64/boot/riscv64/vmlinuz
+  boot/riscv64/boot/riscv64/initrd.img
+  boot/riscv64/boot/riscv64/rootfs.img
+
+Boot entries whose files are absent are hidden by the bootloader,
+so this tree degrades gracefully on any given machine.

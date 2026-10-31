@@ -1,0 +1,13 @@
+NamikazeOS OneISO boot tree
+===========================
+
+tree: ppc64le
+loader: petitboot-iso9660
+
+Artifacts supplied by the kernel build pipeline (dist/ inputs):
+  boot/ppc64le/boot/ppc64le/vmlinux
+  boot/ppc64le/boot/ppc64le/initrd.img
+  boot/ppc64le/boot/ppc64le/rootfs.img
+
+Boot entries whose files are absent are hidden by the bootloader,
+so this tree degrades gracefully on any given machine.

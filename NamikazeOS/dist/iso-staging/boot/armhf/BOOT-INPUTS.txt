@@ -1,0 +1,14 @@
+NamikazeOS OneISO boot tree
+===========================
+
+tree: armhf
+loader: uboot
+
+Artifacts supplied by the kernel build pipeline (dist/ inputs):
+  boot/armhf/boot/armhf/zImage
+  boot/armhf/boot/armhf/initrd.img
+  boot/armhf/boot/armhf/rootfs.img
+  boot/armhf/boot/armhf/dtbs
+
+Boot entries whose files are absent are hidden by the bootloader,
+so this tree degrades gracefully on any given machine.
