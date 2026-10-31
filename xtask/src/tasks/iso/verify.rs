@@ -171,7 +171,8 @@ fn strip_version(id: &str) -> String {
 
 /// El Torito: validation checksum, then both entries vs the staged payloads.
 fn check_eltorito(img: &[u8], staging: &Path) -> Result<()> {
-    let catalog = le32(&img[17 * BLOCK + 72..17 * BLOCK + 76]) as usize * BLOCK;
+    // spec offset 71: 32-bit little-endian catalog pointer
+    let catalog = le32(&img[17 * BLOCK + 71..17 * BLOCK + 75]) as usize * BLOCK;
     let words: u32 = (0..16usize)
         .map(|i| u32::from(u16::from_le_bytes([img[catalog + i * 2], img[catalog + i * 2 + 1]])))
         .sum();

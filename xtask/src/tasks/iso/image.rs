@@ -303,8 +303,10 @@ fn push_boot_record(img: &mut Vec<u8>, catalog_lba: u64) {
     img[at + 1..at + 6].copy_from_slice(b"CD001");
     img[at + 6] = 0x01;
     img[at + 8..at + 40].copy_from_slice(b"EL TORITO SPECIFICATION         ");
-    put_le32(img, at + 72, catalog_lba as u32, true);
-    put_le32(img, at + 76, catalog_lba as u32, false);
+    // Boot Catalog pointer: 32-bit little-endian at byte offset 71 of the
+    // descriptor (El Torito spec v1.0, Boot Record Volume Descriptor table;
+    // bytes 39-70 reserved, 75+ unused).
+    put_le32(img, at + 71, catalog_lba as u32, true);
 }
 
 /// Volume descriptor set terminator (type 255).
@@ -326,10 +328,14 @@ fn push_catalog(img: &mut Vec<u8>, tree: &Node) {
     let uefi = tree.children.iter().find(|c| c.real == "limine-uefi-cd.bin");
     let (Some(bios), Some(uefi)) = (bios, uefi) else { return };
 
-    // validation entry: the additive checksum covers ALL 16 words of the
-    // entry (header, platform, id and the 0x55AA key); the whole sum must
-    // be zero modulo 2^16.
-    img[at + 2..at + 26].copy_from_slice(b"NAMIKAZEOS ONEISO       ");
+    // validation entry, per the El Torito spec v1.0 layout:
+    // 0-1 header id 0x0001 | 2-3 platform id 0x0000 (BIOS) |
+    // 4-27 manufacturer id | 28-29 checksum | 30-31 key 0x55 0xAA.
+    // The additive checksum covers ALL 16 words of the entry (header,
+    // platform, id and the 0x55AA key); the whole sum must be zero mod 2^16.
+    img[at] = 0x01;
+    img[at + 2] = 0x00;
+    img[at + 4..at + 28].copy_from_slice(b"NAMIKAZEOS ONEISO       ");
     img[at + 30] = 0x55;
     img[at + 31] = 0xAA;
     let words: u32 = (0..16usize)
