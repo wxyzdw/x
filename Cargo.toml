@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/sector-*/*", "xtask"]
 
 [workspace.package]
-version = "3.0.0-alpha.2"
+version = "3.0.0-alpha.3"
 edition = "2021"
 rust-version = "1.75"
 license = "MPL-2.0"
@@ -53,6 +53,7 @@ namikaze-wipe = { path = "crates/sector-storage/namikaze-wipe" }
 namikaze-share = { path = "crates/sector-storage/namikaze-share" }
 namikaze-decoy = { path = "crates/sector-storage/namikaze-decoy" }
 namikaze-report = { path = "crates/sector-storage/namikaze-report" }
+namikaze-dupe = { path = "crates/sector-storage/namikaze-dupe" }
 # sector-desk
 namikaze-desk = { path = "crates/sector-desk/namikaze-desk" }
 namikaze-tune = { path = "crates/sector-desk/namikaze-tune" }
@@ -64,12 +65,14 @@ namikaze-install = { path = "crates/sector-supply/namikaze-install" }
 namikaze-rescue = { path = "crates/sector-supply/namikaze-rescue" }
 namikaze-secpatch = { path = "crates/sector-supply/namikaze-secpatch" }
 namikaze-mirror = { path = "crates/sector-supply/namikaze-mirror" }
+namikaze-attest = { path = "crates/sector-supply/namikaze-attest" }
 # sector-time
 namikaze-chrono = { path = "crates/sector-time/namikaze-chrono" }
 namikaze-ntp = { path = "crates/sector-time/namikaze-ntp" }
 # sector-observe
 namikaze-logd = { path = "crates/sector-observe/namikaze-logd" }
 namikaze-metrics = { path = "crates/sector-observe/namikaze-metrics" }
+namikaze-trace = { path = "crates/sector-observe/namikaze-trace" }
 
 [profile.release]
 lto = "fat"

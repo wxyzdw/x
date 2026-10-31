@@ -1,4 +1,4 @@
-# NamikazeOS 3.0.0-alpha.2 - Türkçe özeti
+# NamikazeOS 3.0.0-alpha.3 - Türkçe özeti
 
 NamikazeOS, gizlilik ve anonimlik odaklı bir işletim sistemidir: Gentoo
 stage3 tabanı, tamamen Rust ile yazılmış kullanıcı alanı ve değiştirilmemiş

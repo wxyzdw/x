@@ -1,11 +1,11 @@
-# NamikazeOS 3.0.0-alpha.2 (Rust Edition)
+# NamikazeOS 3.0.0-alpha.3 (Rust Edition)
 
 A privacy-first, anonymity-oriented operating system built on a Gentoo stage3
 base with a fully memory-safe, **dependency-free Rust userland** running on
 the unmodified mainline Linux LTS kernel. One ISO, every machine. One key,
 one owner.
 
-Status: source drop prepared during the git.disroot.org storage freeze.
+Status: developed in the open at https://github.com/wxyzdw/x.
 The v2.2.0 release line (shell/BASIC userland) remains published; this
 workspace is the from-scratch Rust rewrite ("Rust Edition") that becomes
 3.0.0.
@@ -53,7 +53,7 @@ through `namikaze-secupdate` (SHA-256-verified bundles, atomic slot
 rotation, offline rollback). See
 `crates/sector-storage/namikaze-persist/docs/PERSISTENCE.md`.
 
-## Workspace layout (11 sectors, 48 crates + xtask)
+## Workspace layout (11 sectors, 51 crates + xtask)
 
 Documentation lives **inside the crates it describes**; each crate carries
 its own `docs/` directory next to the sources.
@@ -72,13 +72,15 @@ crates/sector-security/    namikaze-vault, -sentinel, -guard, -seal, -watch,
                            -sandbox, -ledger, -secupdate
 crates/sector-network/     namikaze-anon, -cloak, -dns, -usbguard, -macspin
 crates/sector-storage/     namikaze-live-core, -live, -persist-core, -persist,
-                           -backup, -scrub, -wipe, -share, -decoy, -report
+                           -backup, -scrub, -wipe, -share, -decoy, -report,
+                           -dupe (leftover copy finder)
 crates/sector-desk/        namikaze-desk (Niri session factory), -tune,
                            -firstboot, -guest
 crates/sector-supply/      namikaze-pkg, -install, -rescue, -secpatch,
-                           -mirror
+                           -mirror, -attest (signed build manifests)
 crates/sector-time/        namikaze-chrono (civil time + TZif), -ntp (SNTPv4)
-crates/sector-observe/     namikaze-logd (hash-chained logs), -metrics
+crates/sector-observe/     namikaze-logd (hash-chained logs), -metrics,
+                           -trace (tamper-evident exec ledger)
 xtask/                     build orchestration + 7 CI guards (std-only)
 ```
 
@@ -89,7 +91,7 @@ pipeline is a cargo or xtask invocation.
 
 ```sh
 cargo build --workspace          # the entire OS userland
-cargo test  --workspace          # 193 unit tests (crypto vectors included)
+cargo test  --workspace          # 203 unit tests (crypto vectors included)
 cargo run -p xtask -- verify-all # the 7 CI guards
 cargo run -p xtask -- sbom       # dist/sbom.json (declares 0 third-party deps)
 cargo run -p xtask -- kernel-fragments   # per-arch kernel configs

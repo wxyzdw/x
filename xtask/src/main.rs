@@ -350,7 +350,7 @@ fn desk_guard(root: &Path) -> Result<()> {
 
 const TOOLS_FILE: &str = "crates/sector-userland/namikaze-userland/TOOLS";
 const REGISTRY_RS: &str = "crates/sector-userland/namikaze-userland/src/registry.rs";
-const USERLAND_EBUILD: &str = "overlay/sys-namikaze/userland/namikaze-userland-3.0.0_alpha.2.ebuild";
+const USERLAND_EBUILD: &str = "overlay/sys-namikaze/userland/namikaze-userland-3.0.0_alpha.3.ebuild";
 
 /// Cross-checks the single source of truth for the tool name set:
 /// TOOLS file == registry table == ebuild symlink farm.
@@ -698,10 +698,13 @@ const EBUILD_SECTORS: &[(&str, &str)] = &[
     ("namikaze-ntp", "ntp"),
     ("namikaze-logd", "logd"),
     ("namikaze-metrics", "metrics"),
+    ("namikaze-trace", "trace"),
+    ("namikaze-attest", "attest"),
+    ("namikaze-dupe", "dupe"),
 ];
 
 fn gentoo_version() -> String {
-    // 3.0.0-alpha.2 -> 3.0.0_alpha.2 (Gentoo ebuild convention)
+    // 3.0.0-alpha.3 -> 3.0.0_alpha.3 (Gentoo ebuild convention)
     let (main, suffix) = namikaze_common::VERSION.split_once('-').unwrap_or((namikaze_common::VERSION, ""));
     if suffix.is_empty() {
         return main.to_string();
@@ -726,7 +729,7 @@ fn ebuilds(root: &Path) -> Result<()> {
 EAPI=8
 
 DESCRIPTION="NamikazeOS {crate_name} component"
-HOMEPAGE="https://git.disroot.org/anbu141"
+HOMEPAGE="https://github.com/wxyzdw/x"
 SRC_URI=""
 
 LICENSE="MPL-2.0"

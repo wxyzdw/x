@@ -1,0 +1,33 @@
+name: ci
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build workspace
+        run: cargo build --workspace --all-targets
+      - name: Unit tests
+        run: cargo test --workspace
+      - name: Tree guards
+        run: cargo run -p xtask -- verify-all
+      - name: SBOM
+        run: cargo run -p xtask -- sbom
+
+  static:
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-musl, aarch64-unknown-linux-musl]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: rustup target add ${{ matrix.target }}
+      - name: Static build
+        run: cargo build --release --workspace --target ${{ matrix.target }}

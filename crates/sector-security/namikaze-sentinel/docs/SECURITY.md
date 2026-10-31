@@ -3,10 +3,9 @@
 ## Reporting
 
 Report vulnerabilities to the project security contact on
-`https://git.disroot.org/anbu141` (issue tracker, marked confidential) once the
-forge is available. During the freeze, reports are collected offline and
-triaged within 72 hours. Critical issues (CVSS >= 9.0) target a signed fix
-advisory within 24 hours of a verified report.
+`https://github.com/wxyzdw/x` (issue tracker, marked confidential). Security
+reports are triaged within 72 hours. Critical issues (CVSS >= 9.0) target a
+signed fix advisory within 24 hours of a verified report.
 
 ## Guarantees
 

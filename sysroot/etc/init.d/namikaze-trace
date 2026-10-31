@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: MPL-2.0
+# Tamper-evident execution activity ledger for NamikazeOS.
+
+description="NamikazeOS exec trace daemon (hash-chained JSONL)"
+command="/usr/bin/namikaze-trace"
+command_args="watch --interval 1000 --out /var/log/namikaze/trace.jsonl"
+command_background="yes"
+pidfile="/run/namikaze/trace.pid"
+directory="/run/namikaze"
+
+depend() {
+    after localmount namikaze-logd
+}

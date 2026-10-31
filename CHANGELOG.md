@@ -3,6 +3,36 @@
 All notable changes to NamikazeOS are documented here. The format follows
 the Keep a Changelog structure; the project uses pure semantic versioning.
 
+## [3.0.0-alpha.3]
+
+### Added - new components
+
+- **namikaze-trace (sector-observe)**: tamper-evident execution activity
+  ledger. Polls the process table, detects PID reuse (same pid, different
+  binary or start tick) and records every execution into the same
+  SHA-256 hash-chain JSONL format as namikaze-logd. Ships an OpenRC
+  service and unit tests for stat parsing, PID reuse and chain tampering.
+- **namikaze-attest (sector-supply)**: supply-chain attestation. Builds
+  a deterministic SHA-256 manifest over a release artifact directory and
+  seals it with HMAC-SHA256 (constant-time comparison); `verify`
+  re-fingerprints a deployment and reports MISSING/CHANGED files. The
+  key travels with the release channel (`--key` or NK_ATTEST_KEY),
+  never with the image.
+- **namikaze-dupe (sector-storage)**: leftover copy finder for sensitive
+  data. Two-stage duplicate detection (size plus 4 KiB head hash, then
+  full hash for candidate groups) across /tmp, /var/tmp and ~/.cache;
+  `zero` overwrites extra copies with zeros preserving size (keeper
+  first) and is a dry run unless `--apply`. Deletes nothing (P9).
+
+### Changed
+
+- Workspace version 3.0.0-alpha.2 -> 3.0.0-alpha.3; all overlay ebuilds
+  renamed accordingly; ebuild HOMEPAGE now points at the GitHub
+  repository.
+- CI mirrored to GitHub Actions (`.github/workflows/ci.yml`): workspace
+  build, unit tests, all tree guards and the SBOM run on every push and
+  pull request, next to the static musl matrix.
+
 ## [3.0.0-alpha.2]
 
 ### Changed - licensing

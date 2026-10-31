@@ -17,7 +17,7 @@ fn main() {
     // login-shell mode: "-" prefix on argv[0] is accepted and ignored
     let interactive = std::env::args().count() <= 1;
     if interactive {
-        println!("namikaze-sh 3.0.0-alpha.2 (MPL-2.0) - type 'help' for builtins");
+        println!("namikaze-sh {} (MPL-2.0) - type 'help' for builtins", env!("CARGO_PKG_VERSION"));
     }
     let mut env: HashMap<String, String> = std::env::vars().collect();
     let stdin_is_tty = is_tty();
