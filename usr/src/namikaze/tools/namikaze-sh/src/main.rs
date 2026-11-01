@@ -14,8 +14,52 @@ use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 
 fn main() {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    // POSIX `sh -c 'command'`: run one string, exit with its status
+    if let Some(pos) = args.iter().position(|a| a == "-c") {
+        let Some(line) = args.get(pos + 1) else {
+            eprintln!("namikaze-sh: -c requires an argument");
+            std::process::exit(2);
+        };
+        let mut env: HashMap<String, String> = std::env::vars().collect();
+        match run_line(line, &mut env) {
+            Ok((status, exit_req)) => std::process::exit(exit_req.unwrap_or(status)),
+            Err(msg) => {
+                eprintln!("namikaze-sh: {msg}");
+                std::process::exit(1);
+            }
+        }
+    }
+    // `sh script [args...]`: run the file's lines, exit with the last status
+    if let Some(script) = args.first().filter(|a| !a.starts_with('-')) {
+        let mut env: HashMap<String, String> = std::env::vars().collect();
+        match std::fs::read_to_string(script) {
+            Ok(text) => {
+                let mut last = 0;
+                for line in text.lines() {
+                    match run_line(line, &mut env) {
+                        Ok((status, exit_req)) => {
+                            last = status;
+                            if let Some(c) = exit_req {
+                                std::process::exit(c);
+                            }
+                        }
+                        Err(msg) => {
+                            eprintln!("namikaze-sh: {msg}");
+                            std::process::exit(1);
+                        }
+                    }
+                }
+                std::process::exit(last);
+            }
+            Err(e) => {
+                eprintln!("namikaze-sh: cannot read {script}: {e}");
+                std::process::exit(127);
+            }
+        }
+    }
     // login-shell mode: "-" prefix on argv[0] is accepted and ignored
-    let interactive = std::env::args().count() <= 1;
+    let interactive = args.is_empty();
     if interactive {
         println!("namikaze-sh {} (MPL-2.0) - type 'help' for builtins", env!("CARGO_PKG_VERSION"));
     }
@@ -33,8 +77,8 @@ fn main() {
         }
         let line = line.trim_end_matches(['\n', '\r']);
         match run_line(line, &mut env) {
-            Ok(code) => {
-                if let Some(c) = code {
+            Ok((_, exit_req)) => {
+                if let Some(c) = exit_req {
                     std::process::exit(c);
                 }
             }
@@ -56,9 +100,14 @@ fn is_tty() -> bool {
     }
 }
 
-/// Execute one input line; Ok(Some(code)) means exit was requested.
-fn run_line(line: &str, env: &mut HashMap<String, String>) -> Result<Option<i32>, String> {
+/// Execute one input line; returns the last command's status and, when
+/// the `exit` builtin ran, the exit code it requested.
+fn run_line(line: &str, env: &mut HashMap<String, String>) -> Result<(i32, Option<i32>), String> {
+    if line.trim_start().starts_with('#') {
+        return Ok((0, None));
+    }
     let expanded = expand(line, env);
+    let mut last = 0;
     for seq in split_top(&expanded, ';') {
         let seq = seq.trim();
         if seq.is_empty() {
@@ -71,10 +120,15 @@ fn run_line(line: &str, env: &mut HashMap<String, String>) -> Result<Option<i32>
             if (op == "&&" && status != 0) || (op == "||" && status == 0) {
                 continue;
             }
-            status = run_pipeline(&chunk, env)?;
+            let (st, exit_req) = run_pipeline(&chunk, env)?;
+            status = st;
+            if let Some(code) = exit_req {
+                return Ok((status, Some(code)));
+            }
         }
+        last = status;
     }
-    Ok(None)
+    Ok((last, None))
 }
 
 /// Split on && / || preserving the operator for each chunk. The first
@@ -201,7 +255,10 @@ fn expand(line: &str, env: &HashMap<String, String>) -> String {
 /// Stage handoff buffers each stage's stdout in memory (std-only, no raw
 /// fds needed under `forbid(unsafe_code)`); shell pipelines here carry
 /// short text, so this bounds fine for the login-shell role.
-fn run_pipeline(pipeline: &str, env: &mut HashMap<String, String>) -> Result<i32, String> {
+fn run_pipeline(
+    pipeline: &str,
+    env: &mut HashMap<String, String>,
+) -> Result<(i32, Option<i32>), String> {
     let stages: Vec<String> = split_top(pipeline, '|');
     let n = stages.len();
     let mut carry: Vec<u8> = Vec::new();
@@ -217,7 +274,7 @@ fn run_pipeline(pipeline: &str, env: &mut HashMap<String, String>) -> Result<i32
             && cmd.stdin_file.is_none()
             && cmd.stdout_file.is_none()
         {
-            return builtin(&cmd, env).map(|opt| opt.unwrap_or(0));
+            return builtin(&cmd, env);
         }
         let mut command = Command::new(&cmd.argv[0]);
         command.args(&cmd.argv[1..]);
@@ -260,7 +317,7 @@ fn run_pipeline(pipeline: &str, env: &mut HashMap<String, String>) -> Result<i32
         let st = child.wait().map_err(|e| format!("wait: {e}"))?;
         status = st.code().unwrap_or(if st.success() { 0 } else { 1 });
     }
-    Ok(status)
+    Ok((status, None))
 }
 
 fn open_out(path: &str, append: bool) -> Result<std::fs::File, String> {
@@ -385,7 +442,11 @@ fn is_builtin(name: &str) -> bool {
     matches!(name, "cd" | "pwd" | "exit" | "export" | "unset" | "echo" | "true" | "false" | "help")
 }
 
-fn builtin(cmd: &SimpleCommand, env: &mut HashMap<String, String>) -> Result<Option<i32>, String> {
+/// A builtin returns (status, exit request); only `exit` requests an exit.
+fn builtin(
+    cmd: &SimpleCommand,
+    env: &mut HashMap<String, String>,
+) -> Result<(i32, Option<i32>), String> {
     let argv = &cmd.argv;
     match argv[0].as_str() {
         "cd" => {
@@ -396,42 +457,45 @@ fn builtin(cmd: &SimpleCommand, env: &mut HashMap<String, String>) -> Result<Opt
             std::env::set_current_dir(&target).map_err(|e| format!("cd: {target}: {e}"))?;
             let pwd = std::env::current_dir().map(|p| p.display().to_string()).unwrap_or_default();
             env.insert("PWD".into(), pwd);
-            Ok(None)
+            Ok((0, None))
         }
         "pwd" => {
             println!(
                 "{}",
                 std::env::current_dir().map(|p| p.display().to_string()).unwrap_or_default()
             );
-            Ok(None)
+            Ok((0, None))
         }
-        "exit" => Ok(Some(argv.get(1).and_then(|c| c.parse::<i32>().ok()).unwrap_or(0))),
+        "exit" => {
+            let code = argv.get(1).and_then(|c| c.parse::<i32>().ok()).unwrap_or(0);
+            Ok((code, Some(code)))
+        }
         "export" => {
             for a in &argv[1..] {
                 if let Some((k, v)) = a.split_once('=') {
                     env.insert(k.to_string(), v.to_string());
                 }
             }
-            Ok(None)
+            Ok((0, None))
         }
         "unset" => {
             for a in &argv[1..] {
                 env.remove(a);
             }
-            Ok(None)
+            Ok((0, None))
         }
         "echo" => {
             println!("{}", argv[1..].join(" "));
-            Ok(None)
+            Ok((0, None))
         }
-        "true" => Ok(None),
-        "false" => Ok(None),
+        "true" => Ok((0, None)),
+        "false" => Ok((1, None)),
         "help" => {
             println!("builtins: cd pwd exit export unset echo true false help");
             println!("syntax:   pipe |, redirect < > >> 2>, sequence ;, chains && ||, vars $VAR");
-            Ok(None)
+            Ok((0, None))
         }
-        _ => Ok(None),
+        _ => Ok((0, None)),
     }
 }
 
@@ -443,6 +507,19 @@ mod tests {
         let mut e = HashMap::new();
         e.insert("NAME".to_string(), "namikaze".to_string());
         e
+    }
+
+    #[test]
+    fn builtin_statuses_thread_through_run_line() {
+        let mut e = env();
+        assert_eq!(run_line("true", &mut e).expect("true"), (0, None));
+        assert_eq!(run_line("false", &mut e).expect("false"), (1, None));
+        assert_eq!(run_line("exit 5", &mut e).expect("exit"), (5, Some(5)));
+        assert_eq!(run_line("false; true", &mut e).expect("seq"), (0, None));
+        assert_eq!(run_line("true; false", &mut e).expect("seq"), (1, None));
+        assert_eq!(run_line("# just a comment", &mut e).expect("comment"), (0, None));
+        assert_eq!(run_line("false && echo no", &mut e).expect("chain"), (1, None));
+        assert_eq!(run_line("false || echo yes", &mut e).expect("chain"), (0, None));
     }
 
     #[test]
@@ -485,16 +562,17 @@ mod tests {
     fn builtins_run_in_process() {
         let mut e = env();
         let cmd = parse_command("echo hi", &e).unwrap();
-        assert_eq!(builtin(&cmd, &mut e).unwrap(), None);
+        assert_eq!(builtin(&cmd, &mut e).unwrap(), (0, None));
         let cmd = parse_command("false", &e).unwrap();
-        assert!(builtin(&cmd, &mut e).is_ok());
+        assert_eq!(builtin(&cmd, &mut e).unwrap(), (1, None));
     }
 
     #[test]
     fn pipelines_run() {
         let mut e = env();
         // echo -> tr via our own pipeline plumbing
-        let code = run_pipeline("echo namikaze | true", &mut e).unwrap();
+        let (code, exit_req) = run_pipeline("echo namikaze | true", &mut e).unwrap();
         assert_eq!(code, 0);
+        assert_eq!(exit_req, None);
     }
 }

@@ -358,6 +358,15 @@ impl Interp {
                                 value = self.expand_terms(items)?;
                             }
                             k += 1;
+                        } else if matches!(
+                            argv.get(k),
+                            Some(Term::Var(_)) | Some(Term::Bq(_)) | Some(Term::Concat(_))
+                        ) {
+                            // a glued `$var` or `` `{cmd} `` after the '=' is
+                            // the whole value, per rc(1) `x=$y`, `x=`{cmd}`
+                            let term = argv.get(k).expect("checked");
+                            value = self.expand_terms(std::slice::from_ref(term))?;
+                            k += 1;
                         }
                         assigned.push((name, None));
                         self.set_var(&assigned.last().expect("just pushed").0, value);

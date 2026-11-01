@@ -495,13 +495,23 @@ impl Parser {
     fn simple(&mut self) -> Result<Node, RcError> {
         let mut argv: Vec<Term> = Vec::new();
         argv.push(self.term()?);
-        // an assignment word may take a parenthesized list as its value
+        // an assignment word may take a parenthesized list as its value,
+        // or a glued `$var` / `` `{cmd} `` (rc(1): `x=$y`, `x=`{cmd}` are
+        // assignments of the whole list, not commands named "x=a")
         if let Some(Term::Lit(w)) = argv.first() {
-            if assignment_like(w) && matches!(self.peek(), Some(t) if t.tok == Tok::LParen) {
-                self.pos += 1;
-                let items = self.terms_until_rparen()?;
-                self.expect(&Tok::RParen, "')' to close the list")?;
-                argv.push(Term::List(items));
+            if assignment_like(w) {
+                match self.peek() {
+                    Some(t) if t.tok == Tok::LParen => {
+                        self.pos += 1;
+                        let items = self.terms_until_rparen()?;
+                        self.expect(&Tok::RParen, "')' to close the list")?;
+                        argv.push(Term::List(items));
+                    }
+                    Some(t) if t.glued && matches!(t.tok, Tok::Dollar | Tok::Backquote) => {
+                        argv.push(self.term()?);
+                    }
+                    _ => {}
+                }
             }
         }
         loop {
@@ -777,6 +787,27 @@ mod tests {
             Node::Seq(items) => {
                 assert!(matches!(items[0], Node::Bg(_)));
                 assert!(matches!(items[1], Node::Simple { .. }));
+            }
+            other => panic!("unexpected {other:?}"),
+        }
+    }
+
+    #[test]
+    fn assignment_takes_glued_var_and_backquote_values() {
+        // rc(1): `x=$y` and `x=`{cmd}` assign the whole list; the glued
+        // value must not turn into a command named "x=a"
+        let n = parse_ok("x=$y");
+        match n {
+            Node::Simple { argv, .. } => {
+                assert!(matches!(argv[0], Term::Lit(_)), "the name stays first");
+                assert!(matches!(argv[1], Term::Var(_)), "the value is its own term");
+            }
+            other => panic!("unexpected {other:?}"),
+        }
+        let n = parse_ok("x=`{echo a b}");
+        match n {
+            Node::Simple { argv, .. } => {
+                assert!(matches!(argv[1], Term::Bq(_)), "backquote value is a term");
             }
             other => panic!("unexpected {other:?}"),
         }

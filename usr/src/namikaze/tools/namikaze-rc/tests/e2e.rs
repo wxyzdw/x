@@ -108,3 +108,14 @@ fn globbing_runs_against_the_working_directory() {
     assert_eq!(out, "aaa.txt aab.txt\n");
     std::fs::remove_dir_all(&dir).expect("cleanup");
 }
+
+#[test]
+fn assignment_from_var_and_backquote_yields_lists() {
+    let (out, _err, code) = one_line("y=(p q); x=$y; echo $#x");
+    assert_eq!(code, 0, "x=$y is an assignment");
+    assert_eq!(out.trim(), "2");
+
+    let (out, _err, code) = one_line("x=`{echo a b}; echo $#x");
+    assert_eq!(code, 0, "backquote assignment is an assignment");
+    assert_eq!(out.trim(), "2");
+}
