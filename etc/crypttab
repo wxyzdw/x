@@ -1,0 +1,10 @@
+# The encrypted-volume table (the Debian/Arch convention), adapted:
+# NamikazeOS does not use dm-crypt; the single disk partition carries
+# a NamFS v1 container whose every sector is sealed with XTS-AES-256
+# and whose header is bound to a passphrase through PBKDF2-HMAC-SHA256.
+# The entry below is the boot-time gate policy for that container;
+# "prompt" asks on the console, "keyfile" reads etc/namikaze/namfs.key
+# (mode 0600), "embedded" is the documented demo seal.
+#
+# <name>  <device>                              <keyfile option>  <options>
+root     /dev/disk/by-partlabel/NAMIKAZE_ROOT   prompt            namfs,xts256

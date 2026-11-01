@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "NamikazeOS build orchestration: a plain `cargo build` runs the guards, the kernel, NamFS and the ISO"
+description = "NamikazeOS build orchestration: a plain `cargo build` runs the guards, the kernel, NamFS and the disk image"
 build = "build.rs"
 
 [dependencies]
@@ -12,6 +12,7 @@ namikaze-common = { path = "../../lib/namikaze-common" }
 namikaze-rt = { path = "../../lib/namikaze-rt" }
 namikaze-guards = { path = "../../lib/namikaze-guards" }
 namikaze-iso = { path = "../../lib/namikaze-iso" }
+namikaze-img = { path = "../../lib/namikaze-img" }
 namikaze-dist = { path = "../../lib/namikaze-dist" }
 namikaze-fs = { path = "../../lib/namikaze-fs" }
 

@@ -1,9 +1,9 @@
-# NamikazeOS 3.0.0-alpha.6 (Rust Edition)
+# NamikazeOS 3.0.0-alpha.7 (Rust Edition)
 
 A privacy-first, anonymity-oriented operating system built on a Gentoo stage3
 base with a fully memory-safe, **dependency-free Rust userland** running on
 the unmodified mainline Linux LTS kernel, wrapped in an **airootfs-style live
-filesystem with a native encrypted persistent layer (NamFS)**. One ISO, every
+filesystem with a native encrypted persistent layer (NamFS)**. One encrypted disk image, every
 machine. One key, one owner.
 
 Status: developed in the open at https://github.com/wxyzdw/x.
@@ -16,7 +16,7 @@ workspace is the from-scratch Rust rewrite ("Rust Edition") that becomes
 | # | Principle | Enforcement |
 |---|-----------|-------------|
 | P0 | Memory safety first | `#![forbid(unsafe_code)]` in every crate; `unsafe` only in audited spots: the `namikaze-ffi` syscall boundary, the opt-in `namikaze-sentinel` PAM module ABI hook and the hardware-boundary modules of `namikaze-kernel` (SAFETY-commented, CI-enforced) |
-| P1 | One command builds everything | A plain `cargo build` runs the guards, the SBOM, the bare-metal kernel, the NamFS volume, the ISO, the deep audit and the checksums - no shell, no make, no xtask (`tools/namikaze/build.rs`) |
+| P1 | One command builds everything | A plain `cargo build` runs the guards, the SBOM, the bare-metal kernel, the NamFS volume, the NamikazeIMG disk image, the independent audit, the manifest and the checksums - no shell, no make, no xtask (`tools/namikaze/build.rs`) |
 | P2 | Zero theme in engineering | No codenames, no emoji, ASCII-only sources (ascii-guard) |
 | P3 | One system, all machines | Single multi-arch ISO; CPU features and boards detected at boot |
 | P4 | Confidential by default | Live persistent by default, everything encrypted, deny-by-default egress |
@@ -41,7 +41,7 @@ also self-hosting the workspace sources under `usr/src/`). The ISO boots it live
   touched; free space is indistinguishable from sealed space.
 - **`namikaze-fstool`** creates, fills, inspects and verifies volumes:
   `create | put | get | list | info | verify`.
-- **The pipeline ships a deterministic demo volume** in every ISO
+- **The pipeline ships a deterministic demo volume** in every build (dist/namfs)
   (`boot/namfs/namikaze-demo.namfs`, 1 MiB, passphrase
   `namikaze-demo`, byte-stable across builds) so the persistent layer
   can be exercised anywhere.
@@ -194,6 +194,29 @@ per-directory verdicts and the deliberate exclusions are documented in
 (Plan 9 Foundation); the adaptation carries MPL-2.0 like the rest of the
 workspace and cites the upstream files it follows.
 
+## One image: NamikazeIMG
+
+The release artifact is `dist/NamikazeOS-<version>-oneimg.img` - a GPT
+disk image with **one partition** (type GUID
+`ba1a3568-dc48-d141-bab9-02d0f8fcc4bd`, partlabel `NAMIKAZE_ROOT`)
+that is **one NamFS v1 container**: every 4096-byte sector sealed with
+XTS-AES-256, the header bound to a PBKDF2-HMAC-SHA256 passphrase gate,
+per-file SHA-256 inside. The rootfs tree rides as one `rootfs.nampack`
+stream (path, mode, SHA-256, bytes per file) because the volume table
+holds 28 entries and the tree has hundreds. One disk, one partition,
+nothing in the clear - the image is byte-reproducible from the
+version string and the tree, and nothing ships without the
+independent audit stage parsing it back layer by layer. Inspect one:
+
+```sh
+cargo run -p namikaze -- imginfo dist/NamikazeOS-*-oneimg.img
+cargo run -p namikaze -- audit   dist/NamikazeOS-*-oneimg.img
+```
+
+The live ISO story remains in `namikaze-iso` (the ECMA-119 writer and
+its tests), but the pipeline no longer builds it: the disk image is
+what boots, persists and updates.
+
 ## One command: cargo build
 
 There is no make, no autoconf, no shell, no xtask - the build is Rust
@@ -202,7 +225,8 @@ from the first byte to the shipped image. From `NamikazeOS/`:
 ```sh
 cd NamikazeOS
 cargo build                          # EVERYTHING: guards + sbom + kernel
-                                     # + NamFS volume + ISO + audit + checksums
+                                     # + NamFS volume + disk image + audit
+                                     # + manifest + checksums
 cargo test  --workspace              # the unit test suite (crypto vectors included)
 cargo fmt -- --check                 # formatting gate
 cargo clippy --workspace --all-targets -- -D warnings

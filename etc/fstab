@@ -1,0 +1,10 @@
+# The UNIX mount table, adapted to the NamikazeOS storage shape:
+# the disk is one GPT partition (partlabel NAMIKAZE_ROOT) holding one
+# NamFS v1 container - the root of the booted system is the decrypted
+# view of that container, not a filesystem the kernel mounts directly.
+# Everything else is volatile by policy (etc/namikaze/persistence.conf
+# governs what persists and how).
+#
+# <source>                              <mount> <type>  <options>       <dump> <pass>
+/dev/disk/by-partlabel/NAMIKAZE_ROOT    /       namfs   sealed,xts256   0      1
+tmpfs                                   /tmp    tmpfs   nosuid,nodev    0      0

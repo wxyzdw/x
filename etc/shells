@@ -1,0 +1,4 @@
+# Valid login shells (the /etc/shells convention), NamikazeOS set:
+# rc is the Plan 9 heritage shell, sh is the portable fallback.
+/bin/rc
+/bin/sh

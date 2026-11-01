@@ -1,0 +1,12 @@
+[package]
+name = "namikaze-img"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "NamikazeIMG: the single-partition fully-encrypted NamikazeOS disk image"
+
+[dependencies]
+namikaze-common = { path = "../namikaze-common" }
+namikaze-rt = { path = "../namikaze-rt" }
+namikaze-fs = { path = "../namikaze-fs" }

@@ -7,7 +7,7 @@ members = ["lib/*", "services/*", "tools/*"]
 exclude = ["kernel/namikaze-kernel"]
 
 [workspace.package]
-version = "3.0.0-alpha.6"
+version = "3.0.0-alpha.7"
 edition = "2021"
 rust-version = "1.75"
 license = "MPL-2.0"
@@ -26,6 +26,7 @@ namikaze-persist-core = { path = "lib/namikaze-persist-core" }
 namikaze-rt = { path = "lib/namikaze-rt" }
 namikaze-guards = { path = "lib/namikaze-guards" }
 namikaze-iso = { path = "lib/namikaze-iso" }
+namikaze-img = { path = "lib/namikaze-img" }
 namikaze-fs = { path = "lib/namikaze-fs" }
 namikaze-dist = { path = "lib/namikaze-dist" }
 

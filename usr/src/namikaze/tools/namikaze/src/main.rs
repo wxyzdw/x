@@ -2,17 +2,20 @@
 //! namikaze: the workspace's own build orchestration CLI.
 //!
 //! A plain `cargo build` already runs the entire dist pipeline through
-//! this crate's build script (guards, SBOM, kernel, NamFS, ISO, audit,
-//! checksums). The subcommands below exist to run or inspect individual
-//! steps without rebuilding everything - all of them call the same
-//! library functions the pipeline uses, so there is exactly one
-//! implementation of every policy in the repository.
+//! this crate's build script (guards, SBOM, kernel, NamFS, disk image,
+//! audit, manifest, checksums). The subcommands below exist to run or
+//! inspect individual steps without rebuilding everything - all of
+//! them call the same library functions the pipeline uses, so there is
+//! exactly one implementation of every policy in the repository.
 //!
 //! ```sh
 //! cargo build                          # the whole pipeline
 //! cargo run -p namikaze -- guard       # the ten tree guards
-//! cargo run -p namikaze -- iso         # only the ISO step
-//! cargo run -p namikaze -- audit dist/NamikazeOS-*-oneiso.iso dist/iso-staging
+//! cargo run -p namikaze -- img         # the NamikazeIMG disk image
+//! cargo run -p namikaze -- imginfo dist/NamikazeOS-*-oneimg.img
+//! cargo run -p namikaze -- audit dist/NamikazeOS-*-oneimg.img
+//! cargo run -p namikaze -- stages      # the stage table
+//! cargo run -p namikaze -- manifest    # dist/manifest.json
 //! NAMFS_PASSPHRASE=namikaze-demo namikaze-fstool info dist/namfs/namikaze-demo.namfs
 //! ```
 
@@ -27,10 +30,11 @@ const USAGE: &[&str] = &[
     "namikaze: NamikazeOS build orchestration (std-only, pure Rust)",
     "",
     "A plain `cargo build` at the workspace root runs the complete dist",
-    "pipeline (guards + sbom + kernel + NamFS + ISO + audit + checksums)",
-    "through this crate's build script. The subcommands run single steps:",
+    "pipeline (guards + sbom + kernel + NamFS + img + audit + manifest +",
+    "checksums) through this crate's build script. Subcommands:",
     "",
     "  pipeline              - run the full dist pipeline (what build.rs does)",
+    "  stages                - list the pipeline stage table",
     "  guard [name]          - all tree guards, or one (ascii-guard, ...)",
     "  sbom                  - dist/sbom.json inventory",
     "  bootid                - dist/bootid boot seal",
@@ -38,8 +42,10 @@ const USAGE: &[&str] = &[
     "  kernel-check [config] - kernel .config policy check",
     "  kernel-fragments      - merge universal fragments into per-arch configs",
     "  ebuilds               - regenerate missing ::namikaze overlay ebuilds",
-    "  iso                   - staging + ISO9660/El Torito image + .sha256",
-    "  audit <iso> <staging> - independent deep audit of an image",
+    "  img                   - the single-partition encrypted disk image",
+    "  imginfo <img>         - GPT + NamFS structure of an image",
+    "  audit <img>           - independent audit of an image vs the tree",
+    "  manifest              - print dist/manifest.json",
     "  verify                - dist/SHA256SUMS",
     "  release <out-dir>     - source zip + SHA256SUMS",
 ];
@@ -87,16 +93,39 @@ fn dispatch(root: &Path, sub: &str, args: &[String]) -> Result<()> {
         }
         "kernel-fragments" => namikaze_dist::kernel::fragments(root),
         "ebuilds" => namikaze_dist::ebuilds::run(root),
-        "iso" => namikaze_iso::run(root),
+        "stages" => {
+            for (i, stage) in namikaze_dist::pipeline::STAGES.iter().enumerate() {
+                println!("{:>2}. {:<9} {}", i + 1, stage.name, stage.title);
+            }
+            Ok(())
+        }
+        "img" => namikaze_img::run(root).map(|_| ()),
+        "imginfo" => {
+            let path =
+                args.first().map(PathBuf::from).unwrap_or_else(|| usage_missing("image path"));
+            print!("{}", namikaze_img::img::inspect(&path)?);
+            Ok(())
+        }
         "audit" => {
-            let iso = args.first().map(PathBuf::from).unwrap_or_else(|| usage_missing("iso path"));
-            let staging = args.get(1).map(PathBuf::from).unwrap_or_else(|| {
-                namikaze_common::util::workspace_dir(root).join("dist/iso-staging")
-            });
-            let failures = namikaze_iso::audit::run(&iso, &staging)?;
+            let path =
+                args.first().map(PathBuf::from).unwrap_or_else(|| usage_missing("image path"));
+            let failures = namikaze_img::audit::run(&path, root)?;
             if failures > 0 {
                 std::process::exit(1);
             }
+            Ok(())
+        }
+        "manifest" => {
+            let path = namikaze_common::util::workspace_dir(root).join("dist/manifest.json");
+            print!(
+                "{}",
+                std::fs::read_to_string(&path).map_err(|e| {
+                    namikaze_common::Error::Other(format!(
+                        "manifest: cannot read {}: {e}",
+                        path.display()
+                    ))
+                })?
+            );
             Ok(())
         }
         "verify" => namikaze_dist::verify::run(root),

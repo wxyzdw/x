@@ -3,6 +3,63 @@
 All notable changes to NamikazeOS are documented here. The format follows
 the Keep a Changelog structure; the project uses pure semantic versioning.
 
+## [3.0.0-alpha.7]
+
+### Added - NamikazeIMG: the single-partition fully-encrypted disk image
+
+- **The release artifact is now a `.img`, not an ISO.** The new
+  `lib/namikaze-img` crate assembles `NamikazeOS-<version>-oneimg.img`:
+  a GPT disk with **one partition** (type GUID
+  `ba1a3568-dc48-d141-bab9-02d0f8fcc4bd`, partlabel `NAMIKAZE_ROOT`)
+  that is **one NamFS v1 container** - every 4096-byte sector sealed
+  with XTS-AES-256, the header HMAC-bound to a PBKDF2-HMAC-SHA256
+  gate, per-file SHA-256 inside. One disk, one partition, nothing in
+  the clear.
+- **NamPack v1** (`pack.rs`): the strictly framed file stream that
+  carries the whole rootfs tree in the image's single volume entry -
+  path, POSIX mode, size, SHA-256 and bytes per file - because the
+  v1 volume table holds 28 entries and a tree has hundreds. The
+  reader is strict: truncation, trailing bytes, unsafe paths and
+  hash mismatches are all errors.
+- **GPT layer** (`gpt.rs`): protective MBR, both headers and both
+  entry arrays written and verified with the UEFI-mandated CRC-32
+  (own implementation, standard check vectors), 1 MiB alignment, and
+  a parser that checks signatures, CRCs, primary/backup agreement,
+  bounds and the exactly-one-partition invariant.
+- **Independent audit** (`audit.rs`): the finished image is parsed
+  back from the bytes on disk - disk, volume, rootfs - and compared
+  against the source tree; the pipeline ships nothing the audit does
+  not pass. The audit is the pipeline's own stage (6), and
+  `namikaze audit <img>` runs it standalone.
+- **The image is byte-reproducible**: salt, UUID, disk GUID,
+  partition GUID and size derive from the version string and the
+  tree, timestamps are zero; the documented demo seal
+  (`namikaze-demo`) keeps releases reproducible and
+  `NAMIKAZE_IMG_PASSPHRASE` builds private images. 14 tests cover
+  the geometry, corruption detection, the pack, reproducibility and
+  the audit.
+- **The pipeline grew real architecture** (`namikaze-dist`): the
+  release is a declarative stage table (`guards, sbom, kernel, namfs,
+  img, audit, manifest, checksums`), every stage timed, and the run
+  ends in `dist/manifest.json` - version, image size, bootid and
+  every artifact with its SHA-256, bound into SHA256SUMS by the
+  checksum stage. The `namikaze` CLI gained `stages`, `manifest`,
+  `img`, `imginfo` and `audit <img>`; CI publishes the `oneimg`
+  artifact set.
+- **The kernel build step pins the toolchain** (`RUSTUP_TOOLCHAIN`),
+  fixing the rustup "no default toolchain" failure when the step runs
+  from outside the workspace.
+
+### Added - the OS-standard configuration set (adapted from other systems)
+
+- `etc/os-release` (Freedesktop/systemd), `etc/fstab` (UNIX, with the
+  single NamFS root spelled out), `etc/crypttab` (Debian/Arch
+  convention, adapted to the NamFS gate), `etc/hostname` and
+  `etc/hosts` (Berkeley), `etc/machine-id` (systemd, uninitialized),
+  `etc/shells` (rc - the Plan 9 shell - first). The NamFS volume
+  policy now points at `/dev/disk/by-partlabel/NAMIKAZE_ROOT`, the
+  image's partition label.
+
 ## [3.0.0-alpha.6]
 
 ### Added - the Plan 9 plumber, adapted as `tools/namikaze-plumber`

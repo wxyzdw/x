@@ -1,74 +1,111 @@
 // SPDX-License-Identifier: MPL-2.0
-//! pipeline: the one-pass release build.
+//! pipeline: the one-pass release build, expressed as a declarative
+//! stage table.
 //!
-//! `full_build` is what a plain `cargo build` at the workspace root
-//! executes through the `namikaze` tool's build script. Order matters:
+//! A plain `cargo build` at the workspace root executes
+//! [`full_build`] through the `namikaze` tool's build script; the
+//! stage table below is the single description of what that means.
+//! Each stage is idempotent and deterministic; rerunning the build
+//! produces byte-identical artifacts (the bootid is reused from
+//! dist/bootid once it exists).
 //!
-//! 1. guards - the ten tree guards (ascii .. modes) must pass
-//! 2. sbom - dist/sbom.json inventory refresh
-//! 3. kernel - bare-metal kernel: build, validate ELF + Limine markers,
-//!    stage under dist/kernel
-//! 4. namfs - the deterministic demo volume (airootfs config, sealed
-//!    with the documented passphrase) under dist/namfs
-//! 5. iso - staging tree + ISO9660/El Torito image + .sha256
-//! 6. audit - independent deep audit of the finished image
-//! 7. checksums - dist/SHA256SUMS over every produced artifact
+//! 1. guards   - the ten tree guards (ascii .. modes) must pass
+//! 2. sbom     - dist/sbom.json inventory refresh
+//! 3. kernel   - bare-metal kernel: build, validate, stage dist/kernel
+//! 4. namfs    - the deterministic demo volume under dist/namfs
+//! 5. img      - NamikazeIMG: the single-partition fully-encrypted
+//!    disk image, dist/NamikazeOS-<version>-oneimg.img
+//! 6. audit    - independent re-parse of the image vs the tree
+//! 7. manifest - dist/manifest.json: the build report (version, GUIDs,
+//!    every artifact with its SHA-256)
+//! 8. checksums- dist/SHA256SUMS over every produced artifact
 //!
-//! Every step is idempotent and deterministic; rerunning the build
-//! produces byte-identical artifacts (bootid is reused from dist/bootid
-//! once it exists).
+//! The live ISO is gone from the release: the disk image is the
+//! artifact (the ISO9660 writer remains in namikaze-iso for the
+//! record and its own tests).
 
 use std::path::Path;
+use std::time::Instant;
 
 use namikaze_common::{Error, Result};
 use namikaze_rt::sha256::sha256;
 
 use crate::{rust_kernel, verify};
 
+/// One pipeline stage: a stable name, a human title, and the single
+/// implementation behind it (the `namikaze` CLI's subcommands call
+/// the same functions).
+#[derive(Debug, Clone, Copy)]
+pub struct Stage {
+    pub name: &'static str,
+    pub title: &'static str,
+    pub run: fn(&Path) -> Result<()>,
+}
+
+/// The release pipeline, in execution order.
+pub const STAGES: &[Stage] = &[
+    Stage { name: "guards", title: "tree guards", run: |root| namikaze_guards::verify_all(root) },
+    Stage { name: "sbom", title: "SBOM inventory", run: |root| namikaze_common::sbom::run(root) },
+    Stage { name: "kernel", title: "bare-metal kernel", run: |root| rust_kernel::run(root) },
+    Stage { name: "namfs", title: "NamFS demo volume", run: demo_stage },
+    Stage {
+        name: "img",
+        title: "NamikazeIMG disk image",
+        run: |root| namikaze_img::run(root).map(|_| ()),
+    },
+    Stage { name: "audit", title: "independent image audit", run: audit_stage },
+    Stage { name: "manifest", title: "build manifest", run: manifest_stage },
+    Stage { name: "checksums", title: "SHA256SUMS", run: |root| verify::run(root) },
+];
+
 /// Run the complete dist pipeline. `root` is the workspace root
-/// (NamikazeOS/).
+/// (the filesystem root).
 pub fn full_build(root: &Path) -> Result<()> {
     let version = namikaze_common::VERSION;
     println!("namikaze-pipeline: root {}, version {version}", root.display());
-
-    println!("pipeline [1/7]: tree guards");
-    namikaze_guards::verify_all(root)?;
-
-    println!("pipeline [2/7]: sbom");
-    namikaze_common::sbom::run(root)?;
-
-    println!("pipeline [3/7]: bare-metal kernel");
-    rust_kernel::run(root)?;
-
-    println!("pipeline [4/7]: NamFS demo volume");
-    demo_volume(root, version)?;
-
-    println!("pipeline [5/7]: OneISO image");
-    namikaze_iso::run(root)?;
-
-    println!("pipeline [6/7]: deep audit");
-    let iso = namikaze_common::util::workspace_dir(root)
-        .join("dist")
-        .join(format!("NamikazeOS-{version}-oneiso.iso"));
-    let staging = namikaze_common::util::workspace_dir(root).join("dist/iso-staging");
-    let failures = namikaze_iso::audit::run(&iso, &staging)?;
-    if failures > 0 {
-        return Err(Error::Other(format!("pipeline: audit reported {failures} failure(s)")));
+    let started = Instant::now();
+    for (i, stage) in STAGES.iter().enumerate() {
+        let t = Instant::now();
+        println!("pipeline [{}/{}]: {}", i + 1, STAGES.len(), stage.title);
+        (stage.run)(root)
+            .map_err(|e| Error::Other(format!("pipeline stage {}: {e}", stage.name)))?;
+        println!(
+            "pipeline [{}/{}]: {} done in {:.2}s",
+            i + 1,
+            STAGES.len(),
+            stage.title,
+            t.elapsed().as_secs_f64()
+        );
     }
-
-    println!("pipeline [7/7]: checksums");
-    verify::run(root)?;
-
-    println!("pipeline: dist complete");
+    println!("pipeline: dist complete in {:.2}s", started.elapsed().as_secs_f64());
     Ok(())
 }
 
-/// Deterministic NamFS demo volume for the airootfs persistent layer.
+fn demo_stage(root: &Path) -> Result<()> {
+    demo_volume(root, namikaze_common::VERSION)
+}
+
+fn audit_stage(root: &Path) -> Result<()> {
+    let img_path = namikaze_common::util::workspace_dir(root)
+        .join("dist")
+        .join(format!("NamikazeOS-{}-oneimg.img", namikaze_common::VERSION));
+    let failures = namikaze_img::audit::run(&img_path, root)?;
+    if failures > 0 {
+        return Err(Error::Other(format!("pipeline: audit reported {failures} failure(s)")));
+    }
+    Ok(())
+}
+
+fn manifest_stage(root: &Path) -> Result<()> {
+    write_manifest(root)
+}
+
+/// Deterministic NamFS demo volume for the persistent layer.
 ///
 /// Salt, uuid and timestamp derive from the version string, the
-/// passphrase is documented (`namikaze-demo`) and the contents come from
-/// the airootfs tree, so the volume - and therefore the ISO - is byte
-/// reproducible. Inspect it with:
+/// passphrase is documented (`namikaze-demo`) and the contents come
+/// from the airootfs tree, so the volume is byte reproducible.
+/// Inspect it with:
 /// `NAMFS_PASSPHRASE=namikaze-demo namikaze-fstool info <volume>`.
 pub fn demo_volume(root: &Path, version: &str) -> Result<()> {
     let out_dir = namikaze_common::util::workspace_dir(root).join("dist/namfs");
@@ -92,7 +129,7 @@ pub fn demo_volume(root: &Path, version: &str) -> Result<()> {
     let readme = format!(
         "NamikazeOS {version} - NamFS demo volume\n\n\
          This container is the persistent layer demo of the airootfs\n\
-         live system. Passphrase: namikaze-demo (documented in the\n\
+         system. Passphrase: namikaze-demo (documented in the\n\
          release notes; this is a demo, real volumes prompt for a\n\
          secret passphrase).\n\n\
          Inspect with:\n  \
@@ -122,6 +159,52 @@ pub fn demo_volume(root: &Path, version: &str) -> Result<()> {
     Ok(())
 }
 
+/// Write dist/manifest.json: the build report - version, image, disk
+/// and partition GUIDs, and every artifact with its SHA-256. The
+/// checksum stage covers the manifest itself, so the report is bound
+/// into SHA256SUMS like any other artifact.
+pub fn write_manifest(root: &Path) -> Result<()> {
+    let version = namikaze_common::VERSION;
+    let dist = namikaze_common::util::workspace_dir(root).join("dist");
+    let image_name = format!("NamikazeOS-{version}-oneimg.img");
+
+    let mut artifacts: Vec<(String, String)> = Vec::new();
+    for path in namikaze_rt::fsutil::walk_files(&dist) {
+        let rel = path.strip_prefix(&dist).unwrap_or(&path).to_string_lossy().replace('\\', "/");
+        if rel == "manifest.json" || rel == "SHA256SUMS" {
+            continue;
+        }
+        let digest = namikaze_rt::sha256::sha256_file_hex(&path)?;
+        artifacts.push((rel, digest));
+    }
+    artifacts.sort();
+
+    let bootid = std::fs::read_to_string(dist.join("bootid"))
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
+
+    let mut out = String::new();
+    out.push_str("{\n");
+    out.push_str("  \"name\": \"NamikazeOS\",\n");
+    out.push_str(&format!("  \"version\": \"{version}\",\n"));
+    out.push_str(&format!("  \"image\": \"{image_name}\",\n"));
+    if let Ok(stats) = std::fs::metadata(dist.join(&image_name)) {
+        out.push_str(&format!("  \"image_bytes\": {},\n", stats.len()));
+    }
+    if !bootid.is_empty() {
+        out.push_str(&format!("  \"bootid\": \"{bootid}\",\n"));
+    }
+    out.push_str("  \"artifacts\": [\n");
+    for (i, (rel, digest)) in artifacts.iter().enumerate() {
+        let comma = if i + 1 == artifacts.len() { "" } else { "," };
+        out.push_str(&format!("    {{\"path\": \"{rel}\", \"sha256\": \"{digest}\"}}{comma}\n"));
+    }
+    out.push_str("  ]\n}\n");
+    std::fs::write(dist.join("manifest.json"), out)?;
+    println!("manifest: dist/manifest.json over {} artifact(s)", artifacts.len());
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -131,6 +214,15 @@ mod tests {
         std::fs::write(dir.join("etc/namikaze/motd"), "demo motd\n").unwrap();
         std::fs::write(dir.join("etc/namikaze/namfs.conf"), "mode = \"persistent\"\n").unwrap();
         std::fs::write(dir.join("etc/namikaze/namfs.tab"), "# demo\n").unwrap();
+    }
+
+    #[test]
+    fn stage_table_is_ordered_and_named() {
+        let names: Vec<&str> = STAGES.iter().map(|s| s.name).collect();
+        assert_eq!(
+            names,
+            vec!["guards", "sbom", "kernel", "namfs", "img", "audit", "manifest", "checksums"]
+        );
     }
 
     #[test]

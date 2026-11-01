@@ -92,6 +92,7 @@ pub const EBUILD_SECTORS: &[(&str, &str)] = &[
     ("namikaze-mk", "mk"),
     ("namikaze-9srv", "9srv"),
     ("namikaze-plumber", "plumber"),
+    ("namikaze-img", "img"),
     ("namikaze-common", "common"),
     ("namikaze-ffi", "ffi"),
     ("namikaze-i18n", "i18n"),

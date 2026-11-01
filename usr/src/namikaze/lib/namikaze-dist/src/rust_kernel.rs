@@ -34,6 +34,11 @@ pub fn run(root: &Path) -> Result<()> {
             .arg(&manifest)
             .args(&step[1..])
             .current_dir(root)
+            // the kernel crate is outside the workspace, so a plain
+            // `cargo` spawned from the tree root finds no
+            // rust-toolchain.toml and rustup has nothing to resolve;
+            // pin the channel the workspace pins (rust-toolchain.toml)
+            .env("RUSTUP_TOOLCHAIN", "stable")
             .status()
             .map_err(|e| Error::Other(format!("kernel: cannot spawn cargo: {e}")))?;
         if !status.success() {
