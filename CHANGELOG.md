@@ -3,6 +3,65 @@
 All notable changes to NamikazeOS are documented here. The format follows
 the Keep a Changelog structure; the project uses pure semantic versioning.
 
+## [3.0.0-alpha.6]
+
+### Added - the Plan 9 plumber, adapted as `tools/namikaze-plumber`
+
+- **The fifth Plan 9 adaptation: the plumber**, the daemon that
+  receives, examines, rewrites and dispatches `plumb(6)` messages.
+  Every component is transcribed against the surveyed Bell Labs /
+  plan9port C source (`src/cmd/plumb/{rules,match,fsys,plumb,plumber}.c`,
+  `src/libplumb/mesg.c`, `plumb(6)` and `plumber(4)`), std-only,
+  zero third-party dependencies, `#![forbid(unsafe_code)]`.
+- The rules language (`src/rules.rs`): objects `arg attr data dst
+  plumb src type wdir` with `kind` accepted for `type`, verbs `add
+  client delete is isdir isfile matches set start to`, variable
+  assignments with `$` expansion, `include` with the depth-10 guard,
+  and the C original's exact validation errors. Rulesets need
+  patterns and actions, at most one command action, and the ports
+  `.`, `..` and `send` are illegal names. A ruleset of only `plumb
+  to` lines declares ports.
+- The matcher (`src/matcher.rs`): every pattern rule in order with
+  rewrites on the way (and the C semantics that a failed ruleset
+  keeps its mutations), the click protocol (`data matches` covering
+  the clicked character, then the click attribute consumed and the
+  data rewritten to `$0`), `isdir`/`isfile` resolving against the
+  working directory with plan9 `cleanname`, and the
+  `plumb start` / `plumb client` decision for unlistened ports.
+- The Plan 9 regular expression subset (`src/regex.rs`): classes,
+  alternation, greedy `* + ?`, anchors, groups with `$0..$99`
+  captures bounded at 100 like the C `NMATCHSUBEXP`; leftmost
+  matching with the longest overall match at a fixed position, and
+  a step budget where the C engine could smash its stack.
+- The message wire format (`src/msg.rs`, from `mesg.c`): six header
+  lines plus raw data, quoted attributes, and
+  `plumbunpackpartial`'s three outcomes - complete, incomplete (the
+  plumber buffers the write), malformed (`bad plumb message
+  format`).
+- The file interface (`src/plumbfs.rs`, from `fsys.c`) served over
+  real 9P2000 on the `namikaze-9p` stack: `send` (write-only),
+  `rules` (read/write, writes exclusive, OTRUNC wipes the rule set
+  while ports survive), and one read-only file per port with
+  blocking reads, a copy of each message per client, holds released
+  on open, and the exact wire errors (`no matching plumb rule`,
+  `bad plumb message format`, `no start action for plumb message`,
+  `file already open`, `plumb file does not exist`).
+- The binary has three subcommands: `serve` (rules file plus a TCP
+  9P endpoint), `check` (parse and print the plumber's view of a
+  rules file) and `plumb` (the `plumb(1)` client: one message per
+  argument, or stdin with `-i` and the `action=showdata` default).
+- 68 new tests (regex, wire format, rules parsing and expansion,
+  matching and rewrite, and 9P end-to-end sessions over real
+  sockets: routing, holds, partial sends, rules-file editing,
+  truncation, open-mode enforcement).
+
+### Fixed
+
+- The workspace gates were red in a fresh environment after a
+  sandbox recycle: `rustup target add x86_64-unknown-none` is part
+  of environment setup, not a source change; no source error was
+  involved.
+
 ## [3.0.0-alpha.5]
 
 ### Changed - the repository becomes the filesystem

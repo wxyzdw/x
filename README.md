@@ -1,4 +1,4 @@
-# NamikazeOS 3.0.0-alpha.5 (Rust Edition)
+# NamikazeOS 3.0.0-alpha.6 (Rust Edition)
 
 A privacy-first, anonymity-oriented operating system built on a Gentoo stage3
 base with a fully memory-safe, **dependency-free Rust userland** running on
@@ -150,7 +150,7 @@ carries its own `docs/` directory next to the sources. Project meta
 (this README, LICENSE, SECURITY, CONTRIBUTING, CHANGELOG and the CI
 workflows) sits at the filesystem root like a well-kept /-level.
 
-## The Plan 9 heritage (new in 3.0.0-alpha.5)
+## The Plan 9 heritage (new in 3.0.0-alpha.5, expanded in 3.0.0-alpha.6)
 
 Plan 9 from Bell Labs is the historic milestone this system borrows its
 toughest idea from: everything is a file, and the namespace that proves it
@@ -179,8 +179,16 @@ new std-only, dependency-free crates:
 - **`tools/namikaze-9srv`** - serve a real directory read-only over
   9P2000, or probe any 9P server with a full traced session
   (`--trace` prints both frames of every exchange).
+- **`tools/namikaze-plumber`** (new in 3.0.0-alpha.6) - the plumber:
+  `plumb(6)` messages routed by the rules language (`data matches`,
+  `attr add/delete`, `set`, `isdir`/`isfile`, `plumb to` ports,
+  `plumb start`/`plumb client`), the message wire format of
+  `libplumb`, a Plan 9 regular expression engine with `$0..$99`
+  captures, and the plumber's own file interface (`send`, `rules`,
+  one read-only file per port, blocking reads, holds) served over
+  real 9P2000 on the `namikaze-9p` stack.
 
-93 new tests cover the four crates; the adaptation decisions, the
+161 new tests cover the five crates; the adaptation decisions, the
 per-directory verdicts and the deliberate exclusions are documented in
 `usr/src/namikaze/docs/plan9/plan9-adaptation.md`. Plan 9 is MIT licensed
 (Plan 9 Foundation); the adaptation carries MPL-2.0 like the rest of the

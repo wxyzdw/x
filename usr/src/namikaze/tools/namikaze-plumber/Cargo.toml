@@ -1,0 +1,14 @@
+[package]
+name = "namikaze-plumber"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Plan 9 plumber: rules-driven plumb message router served over 9P2000"
+
+[dependencies]
+namikaze-9p = { path = "../../lib/namikaze-9p" }
+
+[[bin]]
+name = "namikaze-plumber"
+path = "src/main.rs"

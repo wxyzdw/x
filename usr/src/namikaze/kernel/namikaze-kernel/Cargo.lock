@@ -4,4 +4,4 @@ version = 3
 
 [[package]]
 name = "namikaze-kernel"
-version = "3.0.0-alpha.5"
+version = "3.0.0-alpha.6"

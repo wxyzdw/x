@@ -57,7 +57,7 @@ trees (pc, bcm, kw, mtx, omap, teg2 and friends) plus `port` and `boot`;
 `libauth`, `libString`; `sys/include` carries `fcall.h`, the protocol
 contract every 9P implementation on earth still checks against.
 
-## What was adapted, and why these four
+## What was adapted, and why these five
 
 The userland tools of Plan 9 (cat, ls, wc, ...) already have their
 equivalents in this system: `tools/namikaze-userland` provides 52 of them as
@@ -93,8 +93,35 @@ are its three load-bearing ideas and their implementations:
    session with `--trace` printing every T-message and R-message, so a
    misbehaving peer is debuggable wire frame by wire frame. 3 tests over
    real TCP sockets.
+5. **the plumber** (3.0.0-alpha.6) - adapted as `tools/namikaze-plumber`:
+   Plan 9's message router, the thing that turns `plumb(6)` messages
+   into actions. The rules language is transcribed from
+   `src/cmd/plumb/rules.c` (objects `arg attr data dst plumb src type
+   wdir`, `kind` kept as the historic spelling of `type`, verbs `add
+   client delete is isdir isfile matches set start to`, variable
+   assignment with `$` expansion, `include` with the depth-10 guard,
+   and the exact validation errors); the matcher from
+   `src/cmd/plumb/match.c` (every pattern rule in order, rewrites on
+   the way, a failed ruleset keeps its mutations, the click protocol,
+   `isdir`/`isfile` through plan9 `cleanname`, and the
+   start/client decision); the message wire format from
+   `src/libplumb/mesg.c` (six header lines, quoted attributes,
+   `plumbunpackpartial`'s complete/incomplete/bad outcomes); a Plan 9
+   regular expression engine for the `matches` verb (leftmost,
+   longest-overall, `$0..$99`, bounded at the C `NMATCHSUBEXP` of
+   100, with a step budget where the C engine could smash its stack);
+   and the file interface from `src/cmd/plumb/fsys.c` - `send`,
+   `rules`, one read-only file per port - served over real 9P2000 on
+   `namikaze-9p`, with blocking reads, a copy of each message per
+   client, holds released when a port opens, and the exact wire
+   errors. Where the C plumber could die at runtime (an expansion
+   failure mid-match) this port answers the sender with `Rerror`,
+   and where the C click matcher mixed byte offsets with character
+   counts this port works in characters; both departures are marked
+   at the code. 68 tests, including full 9P sessions over real
+   sockets.
 
-The four crates add 93 tests to the workspace, all std-only, zero
+The five crates add 161 tests to the workspace, all std-only, zero
 third-party dependencies, `#![forbid(unsafe_code)]`.
 
 ## What was deliberately not adapted
@@ -128,7 +155,14 @@ python3 usr/src/namikaze/docs/plan9/plan9_crawl.py \
     --file sys/man/1/rc --file sys/man/1/mk
 ```
 
+The plumber (3.0.0-alpha.6) grounds itself the same way, in the
+plan9port mirror of the same sources: `src/cmd/plumb/{rules,match,
+fsys,plumb,plumber}.c`, `src/libplumb/mesg.c`, `man/man4/plumber.4`
+and the surveyed `plumb(6)` message format, read from
+`github.com/9fans/plan9port` and `9p.io/magic/man2html/6/plumb`
+after the crawl cache was pruned.
+
 The `--file` payloads were read during this survey and are the ground
-truth for the four adaptations: `fcall.h` for the message set,
+truth for the first four adaptations: `fcall.h` for the message set,
 `error.h` for the errno strings, `rc(1)` for the shell grammar and
 assignment rules, `mk(1)` for the attribute and stem semantics.

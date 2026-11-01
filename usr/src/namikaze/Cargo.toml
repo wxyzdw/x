@@ -7,7 +7,7 @@ members = ["lib/*", "services/*", "tools/*"]
 exclude = ["kernel/namikaze-kernel"]
 
 [workspace.package]
-version = "3.0.0-alpha.5"
+version = "3.0.0-alpha.6"
 edition = "2021"
 rust-version = "1.75"
 license = "MPL-2.0"
