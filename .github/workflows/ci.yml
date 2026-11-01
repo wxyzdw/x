@@ -16,14 +16,14 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
 
-# The repository root IS the airootfs (the live filesystem tree): etc,
-# boot, usr/src, var. The Rust workspace lives at usr/src/namikaze, so
-# all cargo steps execute there. Every action is pinned to the exact
-# commit it was audited at (the ref name is kept as a comment) and
-# checkouts persist no credentials.
+# The repository carries the whole OS filesystem tree under os/
+# (etc, boot, sbin, lib, root, var, usr/bin) and the Rust workspace at
+# src/, so all cargo steps execute there. Every action is pinned to the
+# exact commit it was audited at (the ref name is kept as a comment)
+# and checkouts persist no credentials.
 defaults:
   run:
-    working-directory: usr/src/namikaze
+    working-directory: src
 
 jobs:
   # The gate is the architecture itself: a plain `cargo build` runs the
@@ -44,7 +44,7 @@ jobs:
       - name: Cache cargo state
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
-          workspaces: usr/src/namikaze
+          workspaces: src
       - name: Single build (guards + sbom + kernel + NamFS + img + audit via build.rs)
         run: cargo build --workspace
       - name: Tests
@@ -57,16 +57,16 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: sbom
-          path: usr/src/namikaze/dist/sbom.json
+          path: src/dist/sbom.json
       - name: Upload the disk image
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: oneimg
           path: |
-            usr/src/namikaze/dist/NamikazeOS-*-oneimg.img
-            usr/src/namikaze/dist/NamikazeOS-*-oneimg.img.sha256
-            usr/src/namikaze/dist/manifest.json
-            usr/src/namikaze/dist/namfs/namikaze-demo.namfs
+            src/dist/NamikazeOS-*-oneimg.img
+            src/dist/NamikazeOS-*-oneimg.img.sha256
+            src/dist/manifest.json
+            src/dist/namfs/namikaze-demo.namfs
 
   # Static cross builds for the musl targets. All crates are pure Rust,
   # so the bundled rust-lld links them without any external toolchain:
@@ -101,10 +101,10 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: namikaze-bin-${{ matrix.target }}
-          path: usr/src/namikaze/dist/bin-${{ matrix.target }}
+          path: src/dist/bin-${{ matrix.target }}
 
   # Tag pushes cut a release: one `cargo build --release` produces the
-  # full dist set (img + NamFS volume + SBOM + bootid + checksums).
+  # full dist set (img + NamFS volume + SBOM + manifest + checksums).
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [gate, static]
@@ -130,8 +130,8 @@ jobs:
             --generate-notes \
             dist/NamikazeOS-*-oneimg.img dist/NamikazeOS-*-oneimg.img.sha256 \
             dist/manifest.json dist/namfs/namikaze-demo.namfs \
-            dist/sbom.json dist/bootid dist/SHA256SUMS \
+            dist/sbom.json dist/kernel/namikaze-kernel dist/bootid dist/SHA256SUMS \
             || gh release upload "$GITHUB_REF_NAME" --clobber \
                  dist/NamikazeOS-*-oneimg.img dist/NamikazeOS-*-oneimg.img.sha256 \
                  dist/manifest.json dist/namfs/namikaze-demo.namfs \
-                 dist/sbom.json dist/bootid dist/SHA256SUMS
+                 dist/sbom.json dist/kernel/namikaze-kernel dist/bootid dist/SHA256SUMS

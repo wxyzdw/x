@@ -28,9 +28,8 @@ workspace is the from-scratch Rust rewrite ("Rust Edition") that becomes
 
 ## The airootfs and NamFS (new in 3.0.0-alpha.4)
 
-The repository root is the live root filesystem tree - the
-Arch-releng `airootfs` idea, but persistent and encrypted (and here
-also self-hosting the workspace sources under `usr/src/`). The image boots it
+The whole live root filesystem tree lives under `os/` - the
+Arch-releng `airootfs` idea, but persistent and encrypted. The image boots it
 live (the sealed NAMIKAZE_ROOT partition carries the tree as one verified
 rootfs.nampack stream); the writable layer is NamFS:
 
@@ -97,14 +96,18 @@ through `namikaze-secupdate` (SHA-256-verified bundles, atomic slot
 rotation, offline rollback). See
 `tools/namikaze-persist/docs/PERSISTENCE.md`.
 
-## Repository layout: the repo IS the filesystem
+## Repository layout: one OS tree, one workspace
 
-The repository root is the airootfs - the live root filesystem itself.
-Every directory is a real FHS location, and the sources live inside the
-filesystem they build, at the place FHS reserves for them:
+The repository carries the filesystem as a single subtree, `os/`, and
+the Rust workspace beside it at `src/` - the tree the image packs and
+the tree that builds it are cleanly separated, so repository plumbing
+never leaks into the OS and vice versa:
 
 ```
-/ (repository root = filesystem root)
+/ (repository root)
+|-- os/                     THE live filesystem tree (what the image
+|   |                       packs - everything below is a real FHS
+|   |                       location inside the booted system)
 |-- etc/                    system configuration (what boots)
 |   |-- namikaze/           namfs.conf, namfs.tab, motd, system.toml,
 |   |                       dns.toml, ntp.toml, persistence.conf, sandbox
@@ -113,16 +116,26 @@ filesystem they build, at the place FHS reserves for them:
 |-- boot/                   bootloader payload tree: pinned Limine
 |   |                       binaries (limine.lock-sha256-verified),
 |   `--                     limine.conf, oneimg boot manifest
-|-- usr/
-|   |-- bin/                session entry (namikaze-session)
-|   `-- src/namikaze/       THE Rust workspace (62 crates, zero
-|       |                   third-party deps) - Cargo.toml, .cargo,
+|   |-- boot/               bootloader payload tree: pinned Limine
+|   |                       binaries (limine.lock-sha256-verified),
+|   |                       limine.conf, oneimg boot manifest
+|   |-- sbin/               PID 1 (init -> openrc-init)
+|   |-- usr/bin/            session entry (namikaze-session)
+|   |-- var/
+|   |   |-- db/repos/       the ::namikaze Gentoo overlay (its real
+|   |   |   namikaze/       portage home): ebuilds, package sets,
+|   |   |                   profiles
+|   |   |-- lib/namikaze/   state skeleton
+|   |   `-- log/namikaze/   log skeleton
+|   `-- root/               root home skeleton
+|-- src/                    THE Rust workspace (64 crates, zero
+|       |                   third-party deps) - Cargo.toml, .cargo
 |       |-- kernel/         bare-metal no_std Rust kernel (Limine
 |       |                   splash stage) + Linux LTS config fragments
 |       |-- lib/            namikaze-rt, -common, -fs (NamFS), -img,
 |       |                   -dist (release pipeline), -guards, -ffi,
 |       |                   -i18n, -config, -live-core, -persist-core,
-|       |                   -9p (the 9P2000 protocol stack)
+|       |                   -compat, -9p (the 9P2000 protocol stack)
 |       |-- docs/plan9/     the surveyed Plan 9 source manifest and the
 |       |                   adaptation map (plan9-tree.json,
 |       |                   plan9-adaptation.md)
@@ -142,13 +155,7 @@ filesystem they build, at the place FHS reserves for them:
 |                           -wipe, -share, -decoy, -report, -dupe,
 |                           -guest, -pkg, -install, -rescue, -attest,
 |                           -chrono
-|-- var/
-|   |-- db/repos/namikaze/  the ::namikaze Gentoo overlay (its real
-|   |                       portage home): ebuilds, package sets,
-|   |                       profiles
-|   |-- lib/namikaze/       state skeleton
-|   `-- log/namikaze/       log skeleton
-`-- root/                   root home skeleton
+`-- .github/                CI (the gate is a plain cargo build)
 ```
 
 Documentation lives **inside the crates it describes**: each crate
@@ -162,7 +169,7 @@ Plan 9 from Bell Labs is the historic milestone this system borrows its
 toughest idea from: everything is a file, and the namespace that proves it
 is 9P. The full 4th edition source tree at `http://9p.io/sources/plan9/`
 was surveyed directory by directory - 894 directories, 16,015 files, ~277
-MB, every listing recorded in `usr/src/namikaze/docs/plan9/plan9-tree.json`
+MB, every listing recorded in `src/docs/plan9/plan9-tree.json`
 - and the parts that still carry weight were adapted into the workspace as
 new std-only, dependency-free crates:
 
@@ -196,7 +203,7 @@ new std-only, dependency-free crates:
 
 161 new tests cover the five crates; the adaptation decisions, the
 per-directory verdicts and the deliberate exclusions are documented in
-`usr/src/namikaze/docs/plan9/plan9-adaptation.md`. Plan 9 is MIT licensed
+`src/docs/plan9/plan9-adaptation.md`. Plan 9 is MIT licensed
 (Plan 9 Foundation); the adaptation carries MPL-2.0 like the rest of the
 workspace and cites the upstream files it follows.
 

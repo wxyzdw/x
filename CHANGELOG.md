@@ -3,6 +3,66 @@
 All notable changes to NamikazeOS are documented here. The format follows
 the Keep a Changelog structure; the project uses pure semantic versioning.
 
+## [3.0.0-alpha.11]
+
+### Fixed - the image can finally boot a real PID 1
+
+- **NamPack v2 carries symlinks and directories.** v1 packed regular
+  files only and dropped symlinks silently, so the image never
+  contained `/sbin/init` and the boot ended in the emergency shell
+  with `exec /sbin/init: ENOENT`. The pack format gains a kind byte
+  (file / empty directory / symlink, the target hash-gated like file
+  content); `collect` walks the OS tree with lstat semantics so
+  absolute targets survive verbatim, `unpack_rootfs` materializes
+  links with `symlink(2)`, and the audit compares kind, mode, target
+  and content per entry.
+- **The initramfs handover finishes with a chroot.** The alpha.10
+  fix stopped at `MS_MOVE` of the new root onto `/`, which left PID 1
+  still resolving paths against the initramfs rootfs underneath the
+  moved overlay. Verified in QEMU: the kernel refuses both a pivot
+  and an MS_MOVE whose target is the rootfs mount, so the handover is
+  the chroot form - `chdir` into the new root, `chroot` to it, exec
+  `/sbin/init` from there. The QEMU boot now reaches the exec with
+  the unpacked rootfs as the process root and `/sbin/init` ->
+  `openrc-init` present as a real symlink; the exec itself reports
+  ENOENT only because the reference image carries no `openrc-init`
+  binary (it installs as a Gentoo package), and the failure message
+  says exactly that.
+- **modes-guard now distinguishes OS-tree symlinks.** A tracked
+  symlink anywhere used to be a violation; since the pack carries
+  links as image content (`os/sbin/init`), links under `os/` are
+  allowed while everything outside it stays forbidden.
+- **The bootid stage is back in the pipeline** (reused once minted,
+  so rebuilds stay byte-reproducible) and the manifest carries it;
+  the CI release job uploads it again - it existed all along as a
+  `namikaze bootid` subcommand but no stage ever ran it.
+- **CI release job uploaded an artifact the pipeline never
+  produced.** The tag-push job globs included `dist/bootid`, but the
+  alpha.9 stage table has no bootid stage, so `gh release create`
+  failed on a missing file (this is what turned the v3.0.0-alpha.10
+  tag run red). The upload list now matches the stage table exactly:
+  image + checksums, manifest, demo volume, SBOM, kernel and
+  SHA256SUMS.
+
+### Changed - one OS tree, one workspace, cleanly separated
+
+- **The whole filesystem tree lives under `os/`.** The repository
+  root is no longer the filesystem itself: `etc`, `boot`, `sbin`,
+  `lib`, `root`, `var` and `usr/bin` moved under a single `os/`
+  directory - what the image packs is now one visible subtree, not a
+  tree interleaved with repository plumbing. `os/sbin/init` (the
+  OpenRC PID 1 symlink target) ships in the image.
+- **The Rust workspace lives at `src/`** (was `usr/src/namikaze`),
+  beside the OS tree instead of inside the filesystem it builds. The
+  guards, the dist pipeline, the SBOM, `build.rs` root resolution and
+  the `namikaze` CLI all resolve paths through `os_tree()` /
+  `workspace_dir()` helpers; no component hardcodes the old
+  `usr/src/namikaze` location anymore. CI, `.gitignore` and the
+  rust-cache workspace path follow.
+- Version bumped to 3.0.0-alpha.11 across the workspace manifest,
+  `os/etc/os-release` and the 64 overlay ebuilds (alpha.10 bumped the
+  changelog only; the guard now passes again).
+
 ## [3.0.0-alpha.10]
 
 ### Fixed - the boot chain, proven in QEMU

@@ -1,0 +1,98 @@
+[workspace]
+resolver = "2"
+members = ["lib/*", "services/*", "tools/*"]
+# The bare-metal kernel targets x86_64-unknown-none and must not build
+# for the host workspace targets; the namikaze tool's build script (part
+# of every plain `cargo build`) drives it.
+exclude = ["kernel/namikaze-kernel"]
+
+# The dist pipeline (guards + SBOM + kernel + NamFS + image + audit)
+# runs inside this workspace's build script; unoptimized it spends
+# minutes in PBKDF2/XTS loops that take seconds optimized (the img
+# stage went from ~122 s to seconds). Build scripts get full
+# optimization in dev too.
+[profile.dev.build-override]
+opt-level = 3
+
+[workspace.package]
+version = "3.0.0-alpha.11"
+edition = "2021"
+rust-version = "1.75"
+license = "MPL-2.0"
+authors = ["NamikazeOS Project"]
+repository = "https://github.com/wxyzdw/x"
+
+[workspace.dependencies]
+
+# lib: foundational libraries every other crate links against
+namikaze-common = { path = "lib/namikaze-common" }
+namikaze-compat = { path = "lib/namikaze-compat" }
+namikaze-config = { path = "lib/namikaze-config" }
+namikaze-ffi = { path = "lib/namikaze-ffi" }
+namikaze-i18n = { path = "lib/namikaze-i18n" }
+namikaze-live-core = { path = "lib/namikaze-live-core" }
+namikaze-persist-core = { path = "lib/namikaze-persist-core" }
+namikaze-rt = { path = "lib/namikaze-rt" }
+namikaze-guards = { path = "lib/namikaze-guards" }
+namikaze-img = { path = "lib/namikaze-img" }
+namikaze-fs = { path = "lib/namikaze-fs" }
+namikaze-dist = { path = "lib/namikaze-dist" }
+
+# services: init.d-managed system services and the boot chain
+namikaze-cloak = { path = "services/namikaze-cloak" }
+namikaze-desk = { path = "services/namikaze-desk" }
+namikaze-detect = { path = "services/namikaze-detect" }
+namikaze-dns = { path = "services/namikaze-dns" }
+namikaze-firstboot = { path = "services/namikaze-firstboot" }
+namikaze-guard = { path = "services/namikaze-guard" }
+namikaze-hal = { path = "services/namikaze-hal" }
+namikaze-init = { path = "services/namikaze-init" }
+namikaze-live = { path = "services/namikaze-live" }
+namikaze-logd = { path = "services/namikaze-logd" }
+namikaze-metrics = { path = "services/namikaze-metrics" }
+namikaze-mirror = { path = "services/namikaze-mirror" }
+namikaze-ntp = { path = "services/namikaze-ntp" }
+namikaze-oomd = { path = "services/namikaze-oomd" }
+namikaze-secpatch = { path = "services/namikaze-secpatch" }
+namikaze-secupdate = { path = "services/namikaze-secupdate" }
+namikaze-sentinel = { path = "services/namikaze-sentinel" }
+namikaze-trace = { path = "services/namikaze-trace" }
+namikaze-tune = { path = "services/namikaze-tune" }
+namikaze-usbguard = { path = "services/namikaze-usbguard" }
+namikaze-watch = { path = "services/namikaze-watch" }
+
+# tools: userland command-line tools
+namikaze-anon = { path = "tools/namikaze-anon" }
+namikaze-attest = { path = "tools/namikaze-attest" }
+namikaze-backup = { path = "tools/namikaze-backup" }
+namikaze-chrono = { path = "tools/namikaze-chrono" }
+namikaze-decoy = { path = "tools/namikaze-decoy" }
+namikaze-doctor = { path = "tools/namikaze-doctor" }
+namikaze-dupe = { path = "tools/namikaze-dupe" }
+namikaze-guest = { path = "tools/namikaze-guest" }
+namikaze-install = { path = "tools/namikaze-install" }
+namikaze-ledger = { path = "tools/namikaze-ledger" }
+namikaze-macspin = { path = "tools/namikaze-macspin" }
+namikaze-persist = { path = "tools/namikaze-persist" }
+namikaze-pkg = { path = "tools/namikaze-pkg" }
+namikaze-report = { path = "tools/namikaze-report" }
+namikaze-rescue = { path = "tools/namikaze-rescue" }
+namikaze-sandbox = { path = "tools/namikaze-sandbox" }
+namikaze-scrub = { path = "tools/namikaze-scrub" }
+namikaze-seal = { path = "tools/namikaze-seal" }
+namikaze-sh = { path = "tools/namikaze-sh" }
+namikaze-share = { path = "tools/namikaze-share" }
+namikaze-userland = { path = "tools/namikaze-userland" }
+namikaze-vault = { path = "tools/namikaze-vault" }
+namikaze-wipe = { path = "tools/namikaze-wipe" }
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+overflow-checks = true
+debug = false
+
+[profile.dev]
+overflow-checks = true

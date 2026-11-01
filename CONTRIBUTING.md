@@ -7,8 +7,7 @@ is "what the guards will check anyway".
 ## The one command that matters
 
 There is no shell, no make and no xtask: a plain build does everything.
-From the workspace directory, `usr/src/namikaze` (the repository root
-IS the filesystem it builds):
+From the workspace directory, `src/` (beside the `os/` tree it packs):
 
     cargo build
 

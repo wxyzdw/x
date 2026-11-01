@@ -1,0 +1,12 @@
+# The Freedesktop os-release contract, as systemd and every distro
+# tooling reads it - adapted to NamikazeOS. VERSION_ID tracks the
+# workspace version; BUILD_ID names the artifact shape (oneimg).
+NAME="NamikazeOS"
+PRETTY_NAME="NamikazeOS 3.0.0-alpha.11 (Rust Edition)"
+ID=namikaze
+BUILD_ID=oneimg
+VERSION_ID="3.0.0-alpha.11"
+VERSION="3.0.0-alpha.11"
+HOME_URL="https://github.com/wxyzdw/x"
+SUPPORT_URL="https://github.com/wxyzdw/x/issues"
+BUG_REPORT_URL="https://github.com/wxyzdw/x/issues"
