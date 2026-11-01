@@ -3,6 +3,34 @@
 All notable changes to NamikazeOS are documented here. The format follows
 the Keep a Changelog structure; the project uses pure semantic versioning.
 
+## [3.0.0-alpha.10]
+
+### Fixed - the boot chain, proven in QEMU
+
+- **`namikaze-ffi::mount` passed freed strings to the kernel.** The
+  `src`/`fstype`/`data` pointers were taken out of `Option<CString>`
+  with `.map(|s| s.as_ptr())`, which drops the CString at the end of
+  the statement: a use-after-free the kernel then read as garbage
+  strings (`mount("?wUU\5", ...)` under strace), so every
+  namikaze-init mount failed with ENODEV. Caught by booting the
+  alpha.9 image in QEMU and strace-ing PID 1. The pointers are now
+  borrowed from CStrings that outlive the syscall (`as_ref().map()`);
+  a lab probe performing the exact same mount sequence succeeds.
+- **`namikaze-init` handover is the switch_root sequence.** `pivot_root`
+  cannot be issued from the initramfs rootfs itself (the kernel refuses
+  a pivot whose old root is rootfs), so the boot always died with
+  EEXIST/EINVAL before reaching `/sbin/init`. The handover now moves
+  the new root onto `/` with `MS_MOVE` - the same sequence every
+  distro initramfs uses - and the QEMU boot reaches
+  `pivoted; handing over to /sbin/init` with the overlay mounted on `/`.
+- **Known gap (not fixed here): the image carries no `/sbin/init`.**
+  `namikaze-img` packs regular files only and drops symlinks silently,
+  so the Gentoo-style `/sbin/init` -> OpenRC link never lands in
+  `rootfs.nampack`; the handover exec fails with ENOENT. Booting now
+  ends in the emergency shell with the verified rootfs unpacked - the
+  pack needs symlink (and directory/mode) support before the chain can
+  run a real PID 1.
+
 ## [3.0.0-alpha.9]
 
 ### Fixed - the filesystem, deeply audited and repaired

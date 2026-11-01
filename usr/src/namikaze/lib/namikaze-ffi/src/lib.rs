@@ -180,9 +180,12 @@ pub fn mount(
         .map(CString::new)
         .transpose()
         .map_err(|_| FfiError::InvalidPath(data.unwrap_or_default().to_string()))?;
-    let src_p = src_c.map(|s| s.as_ptr()).unwrap_or(std::ptr::null());
-    let fs_p = fs_c.map(|s| s.as_ptr()).unwrap_or(std::ptr::null());
-    let data_p = data_c.map(|s| s.as_ptr().cast()).unwrap_or(std::ptr::null());
+    // the CStrings must outlive the syscall: taking pointers out of a
+    // .map() on the Option would drop them at the end of that statement
+    // (a use-after-free the kernel then reads as garbage strings)
+    let src_p = src_c.as_ref().map(|s| s.as_ptr()).unwrap_or(std::ptr::null());
+    let fs_p = fs_c.as_ref().map(|s| s.as_ptr()).unwrap_or(std::ptr::null());
+    let data_p = data_c.as_ref().map(|s| s.as_ptr().cast()).unwrap_or(std::ptr::null());
     // SAFETY: every pointer is null or points into a CString alive for the
     // duration of the call; the kernel copies strings before returning.
     let rc = unsafe { sys::mount(src_p, tgt_c.as_ptr(), fs_p, flags, data_p) };

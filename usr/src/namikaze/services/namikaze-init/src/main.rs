@@ -31,7 +31,6 @@ use namikaze_ffi as ffi;
 use namikaze_live_core::LiveMode;
 
 const NEW_ROOT: &str = "/newroot";
-const OLD_ROOT: &str = "/oldroot";
 
 fn log(msg: &str) {
     println!("[namikaze-init] {msg}");
@@ -174,11 +173,14 @@ fn move_and_pivot() -> Result<()> {
         let _ = std::fs::create_dir_all(&target);
         try_mount(None, dir, None, ffi::MS_MOVE, None);
     }
-    std::fs::create_dir_all(Path::new(NEW_ROOT).join(OLD_ROOT))?;
-    std::env::set_current_dir(NEW_ROOT)?;
-    ffi::pivot_root(Path::new("."), Path::new(OLD_ROOT))?;
+    // pivot_root cannot be issued from the initramfs rootfs itself (the
+    // kernel refuses a pivot whose old root is rootfs), so the handover
+    // is the standard switch_root sequence: MS_MOVE the new root onto
+    // /, then let the caller exec /sbin/init from the moved root.
     std::env::set_current_dir("/")?;
-    ffi::umount2_detached(OLD_ROOT).ok();
+    ffi::mount(Some(NEW_ROOT), "/", None, ffi::MS_MOVE, None)
+        .map_err(|e| Error::Other(format!("move {NEW_ROOT} to /: {e}")))?;
+    std::env::set_current_dir("/")?;
     Ok(())
 }
 
