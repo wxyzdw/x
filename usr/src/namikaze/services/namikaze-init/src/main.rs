@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: MPL-2.0
 //! namikaze-init: PID 1 of the NamikazeOS initramfs.
 //!
-//! Boot sequence (single-ISO, multi-arch):
+//! Boot sequence (NamikazeIMG: one disk, one partition, everything
+//! encrypted):
 //!   1. Mount pseudo filesystems so the environment is usable.
 //!   2. Parse the kernel command line (namikaze.* and standard keys).
-//!   3. Locate the ISO medium by label and mount it read-only.
-//!   4. Mount the per-architecture squashfs, verifying the dm-verity root
-//!      hash BEFORE any pivot (tamper-evident live root).
-//!   5. Build a writable tmpfs overlay on top of the read-only root.
+//!   3. Find the sealed NAMIKAZE_ROOT partition, stage it into /run and
+//!      open it as a NamFS volume - the passphrase gate runs here,
+//!      before any file is touched.
+//!   4. Read the rootfs.nampack entry and unpack every verified file
+//!      into a tmpfs root (modes included).
+//!   5. Build a writable overlay on top of the unpacked root.
 //!   6. Move pseudo filesystems into the new root, pivot_root, exec OpenRC.
 //!
 //! On unrecoverable failure the init drops to an emergency shell if one is
@@ -15,6 +18,7 @@
 
 #![forbid(unsafe_code)]
 
+mod boot;
 mod persist;
 
 use std::path::{Path, PathBuf};
@@ -26,7 +30,6 @@ use namikaze_common::{Error, Result};
 use namikaze_ffi as ffi;
 use namikaze_live_core::LiveMode;
 
-const ISO_LABEL: &str = "NAMIKAZE_ISO";
 const NEW_ROOT: &str = "/newroot";
 const OLD_ROOT: &str = "/oldroot";
 
@@ -81,83 +84,56 @@ fn mount_pseudo_fs() {
     try_mount(Some("tmpfs"), "/run", Some("tmpfs"), flags, None);
 }
 
-fn machine_tree() -> &'static str {
-    match std::env::consts::ARCH {
-        "x86_64" => "amd64",
-        "aarch64" => "arm64",
-        "arm" => "armv7",
-        "riscv64" => "riscv64",
-        "powerpc64" => "ppc64le",
-        _ => "unknown",
-    }
-}
-
-/// Wait for the ISO medium and mount it. Retries while udev settles.
-fn mount_iso() -> Result<PathBuf> {
-    let candidates =
-        [PathBuf::from("/dev/disk/by-label").join(ISO_LABEL), PathBuf::from("/dev/sr0")];
-    std::fs::create_dir_all("/run/iso")?;
+/// Find the sealed partition, waiting for udev to publish the
+/// by-partlabel link. Returns the staged NamFS volume path.
+fn open_sealed_volume(live_opts: &namikaze_live_core::LiveOptions) -> Result<PathBuf> {
     for attempt in 0..15 {
-        for cand in &candidates {
-            if !cand.exists() {
+        for dev in boot::find_root_device() {
+            if !boot::looks_like_namfs(&dev) {
                 continue;
             }
-            let dev = cand.to_str().unwrap_or_default().to_string();
-            if do_mount(Some(&dev), "/run/iso", Some("iso9660"), ffi::MS_RDONLY, None).is_ok()
-                || do_mount(Some(&dev), "/run/iso", Some("udf"), ffi::MS_RDONLY, None).is_ok()
-            {
-                log("ISO medium mounted");
-                return Ok(PathBuf::from("/run/iso"));
-            }
+            log(&format!("sealed partition found at {}", dev.display()));
+            let pass: Vec<u8> = match &live_opts.img_pass {
+                Some(given) => given.clone().into_bytes(),
+                None => {
+                    // the honest default: ask, never guess
+                    boot::ask_passphrase(3)?
+                }
+            };
+            return boot::stage_partition(&dev, &pass);
         }
         if attempt % 5 == 0 {
-            log("waiting for ISO medium...");
+            log("waiting for the sealed NAMIKAZE_ROOT partition...");
         }
         sleep(Duration::from_secs(1));
     }
-    Err(Error::Other("no medium with label ".to_string() + ISO_LABEL))
+    Err(Error::Other("no sealed NAMIKAZE_ROOT partition found".into()))
 }
 
-fn verity_open(sqfs: &Path, root_hash: &str) -> Result<PathBuf> {
-    let mapper = PathBuf::from("/dev/mapper/namikaze-root");
-    let status = Command::new("/usr/sbin/veritysetup")
-        .args([
-            "open",
-            sqfs.to_str().unwrap_or_default(),
-            "namikaze-root",
-            "--root-hash",
-            root_hash,
-        ])
-        .status();
-    match status {
-        Ok(s) if s.success() => Ok(mapper),
-        _ => Err(Error::Other("veritysetup failed; refusing to mount unverified root".into())),
-    }
-}
-
-fn mount_rootfs(iso: &Path, items: &[(String, String)]) -> Result<()> {
-    let sqfs = iso.join("boot").join(machine_tree()).join("rootfs.img");
-    if !sqfs.exists() {
-        return Err(Error::Other(format!("squashfs not found: {}", sqfs.display())));
-    }
-    let source = match cmdline_get(items, "namikaze.verity") {
-        Some(hash) => {
-            log("verifying rootfs with dm-verity");
-            verity_open(&sqfs, hash)?
-        }
-        None => {
-            log("no root hash in cmdline; mounting squashfs directly");
-            sqfs.clone()
-        }
+/// Unpack the verified rootfs pack into the tmpfs lower root and mount
+/// the overlay over NEW_ROOT.
+fn mount_rootfs(volume: &Path, live_opts: &namikaze_live_core::LiveOptions) -> Result<()> {
+    let pass: Vec<u8> = match &live_opts.img_pass {
+        Some(given) => given.clone().into_bytes(),
+        None => Vec::new(), // the volume is already authenticated
     };
+    let pack = boot::read_pack(volume, &pass).or_else(|first| {
+        // the staged volume gate already consumed the tty passphrase;
+        // retry with it before giving up (img_pass users never land here)
+        if live_opts.img_pass.is_some() {
+            return Err(first);
+        }
+        let prompted = boot::ask_passphrase(3)?;
+        boot::read_pack(volume, &prompted)
+    })?;
+
+    let lower = "/run/rootfs-lower";
+    std::fs::create_dir_all(lower)?;
+    let flags = ffi::MS_NOSUID | ffi::MS_NODEV;
+    try_mount(Some("tmpfs"), lower, Some("tmpfs"), flags, None);
     std::fs::create_dir_all(NEW_ROOT)?;
-    do_mount(
-        Some(source.to_str().unwrap_or_default()),
-        NEW_ROOT,
-        Some("squashfs"),
-        ffi::MS_RDONLY,
-        None,
-    )?;
+    boot::unpack_rootfs(&pack, Path::new(lower))?;
+    log("rootfs unpacked and verified (NamFS seal + per-file SHA-256)");
     Ok(())
 }
 
@@ -177,8 +153,11 @@ fn overlay_upper(choice: persist::UpperChoice) -> Result<()> {
     };
     std::fs::create_dir_all(&upper)?;
     std::fs::create_dir_all(&work)?;
-    let options =
-        format!("lowerdir={NEW_ROOT},upperdir={},workdir={}", upper.display(), work.display());
+    let options = format!(
+        "lowerdir=/run/rootfs-lower,upperdir={},workdir={}",
+        upper.display(),
+        work.display()
+    );
     do_mount(
         Some("overlay"),
         NEW_ROOT,
@@ -227,8 +206,9 @@ fn run() -> Result<()> {
     let raw_cmdline = namikaze_common::read_first_line(Path::new("/proc/cmdline"))?;
     let items = parse_cmdline()?;
     let live_opts = namikaze_live_core::parse_cmdline(&raw_cmdline);
-    let iso = mount_iso()?;
-    mount_rootfs(&iso, &items)?;
+    let _ = cmdline_get(&items, "namikaze.verity"); // pack hashes supersede verity
+    let volume = open_sealed_volume(&live_opts)?;
+    mount_rootfs(&volume, &live_opts)?;
 
     // Live persistence: unlock the encrypted upper layer when requested and
     // available; degrade to volatile otherwise (never destroy data).

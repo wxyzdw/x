@@ -3,6 +3,55 @@
 All notable changes to NamikazeOS are documented here. The format follows
 the Keep a Changelog structure; the project uses pure semantic versioning.
 
+## [3.0.0-alpha.9]
+
+### Fixed - the filesystem, deeply audited and repaired
+
+- **NamFS v2: XTS tweaks are now numbered globally across the volume**
+  (IEEE 1619 style). In v1 every entry restarted its tweak numbering at
+  0, so the same plaintext at two offsets produced the same ciphertext -
+  a pattern leak across the sealed disk, and the superblock shared tweak
+  0 with the first data unit. The magic is bumped (`NamFS\x02`): v1
+  volumes are rejected, never mis-decrypted. A new test proves identical
+  plaintext at different offsets seals differently.
+- **`put` no longer launders corruption.** Rewriting a volume used to
+  re-read kept entries without their SHA-256 gate, so a corrupted entry
+  could be silently re-sealed as "fresh". Kept entries now go through
+  `read_verified` (new test: a flipped byte makes the whole put fail).
+- **`remove` joins the API** (`namikaze-fs::remove`, `namikaze-fstool
+  rm`): entry removal with hash-gated re-read of the survivors, and
+  removing a missing name is an error, not a silent no-op.
+
+### Changed - the boot chain actually speaks the image
+
+- **`namikaze-init` boots the sealed partition.** The old PID 1 still
+  looked for a `NAMIKAZE_ISO` CD-ROM and mounted squashfs - dead code
+  under IMG-only. The new chain: find NAMIKAZE_ROOT by GPT partlabel
+  (udev fallback scan), probe the NamFS magic, stage the partition into
+  `/run`, pass the passphrase gate (cmdline `namikaze.img.pass=` or the
+  console prompt - never a guess), read the verified `rootfs.nampack`
+  and unpack it into a tmpfs lower root before the overlay and pivot.
+  The dm-verity/`veritysetup` path is gone: the pack's per-file hashes
+  supersede it.
+- **`namikaze-install iso` is gone; `img` replaces it** - writing the
+  sealed image to a device or file (dd semantics, fsync), and `verify`
+  now checks the NAMIKAZE_ROOT partlabel and the NamFS magic at the
+  partition offset.
+- **`boot/limine.conf` and the boot manifest speak IMG**: no more
+  CDLABEL/squashimg command lines, no `NAMIKAZE_ISO` volume label; the
+  manifest is `boot/manifest/oneimg.toml` describing the sealed
+  partition and per-arch boot trees.
+- **The bare-metal kernel banner reads `CARGO_PKG_VERSION`** instead of
+  a hardcoded `3.0.0-alpha.3`, and its test cmdline speaks the IMG
+  chain.
+
+### Changed - docs match the artifact
+
+- README, CI labels, and every stale "ISO" doc-comment (config, log,
+  secpatch, firstboot, logd, detect, hal, dist, img crates) now tell
+  the one-image story; the version is 3.0.0-alpha.9 across the
+  workspace, the kernel and `etc/os-release`.
+
 ## [3.0.0-alpha.8]
 
 ### Changed - IMG-only, for good

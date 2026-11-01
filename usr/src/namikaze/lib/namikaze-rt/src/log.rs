@@ -4,7 +4,7 @@
 //! Level comes from `NK_LOG` (or the conventional `RUST_LOG`) as one of
 //! `error|warn|info|debug|trace`; anything else falls back to the default
 //! the binary passes to [`init`]. Output goes to stderr in a stable
-//! `LEVEL message` format so OpenRC and the ISO boot log stay parseable.
+//! `LEVEL message` format so OpenRC and the boot log stay parseable.
 
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::OnceLock;

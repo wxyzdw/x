@@ -2,7 +2,7 @@
 //! bootid: the boot seal id (dist/bootid).
 //!
 //! A per-build random hex id the bootloader menu and the dist
-//! manifest carry; the ISO era used it to stamp the El Torito menu,
+//! manifest carry; the image era uses it to stamp the boot tree,
 //! the disk-image era uses it as the build's identity anchor.
 
 use std::path::Path;

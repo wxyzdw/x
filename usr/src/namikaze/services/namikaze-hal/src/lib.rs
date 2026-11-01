@@ -3,7 +3,7 @@
 //!
 //! Matches boot-time detection data against a curated board database and
 //! produces a complete hardware plan: DTB selection, firmware set, ordered
-//! module list, GPU/WiFi driver choice and seatd-aware udev rules. One ISO,
+//! module list, GPU/WiFi driver choice and seatd-aware udev rules. One image,
 //! every machine: arch-generic kernels plus per-board glue defined here.
 
 #![forbid(unsafe_code)]
@@ -19,7 +19,7 @@ use std::path::Path;
 use namikaze_common::{Error, Result};
 use namikaze_rt::json::{self, Value};
 
-/// CPU architectures shipped on the OneISO.
+/// CPU architectures shipped on the one image.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Arch {
     X86_64,

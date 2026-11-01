@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "namikaze"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-dist",
@@ -16,18 +16,18 @@ dependencies = [
 
 [[package]]
 name = "namikaze-9p"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 
 [[package]]
 name = "namikaze-9srv"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-9p",
 ]
 
 [[package]]
 name = "namikaze-anon"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -35,7 +35,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-attest"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -43,7 +43,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-audit"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-img",
@@ -52,7 +52,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-backup"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-ffi",
@@ -62,14 +62,14 @@ dependencies = [
 
 [[package]]
 name = "namikaze-chrono"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-rt",
 ]
 
 [[package]]
 name = "namikaze-cloak"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -77,14 +77,14 @@ dependencies = [
 
 [[package]]
 name = "namikaze-common"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-rt",
 ]
 
 [[package]]
 name = "namikaze-compat"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -92,7 +92,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-config"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -100,7 +100,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-decoy"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -108,7 +108,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-desk"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -116,7 +116,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-detect"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -124,7 +124,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-dist"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-fs",
@@ -135,7 +135,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-dns"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -143,7 +143,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-doctor"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -151,7 +151,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-dupe"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -159,14 +159,14 @@ dependencies = [
 
 [[package]]
 name = "namikaze-ffi"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
 ]
 
 [[package]]
 name = "namikaze-firstboot"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-config",
@@ -175,7 +175,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-fs"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -183,7 +183,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-fstool"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-fs",
@@ -192,7 +192,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-guard"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -200,7 +200,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-guards"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -208,7 +208,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-guest"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-detect",
@@ -217,7 +217,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-hal"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -225,14 +225,14 @@ dependencies = [
 
 [[package]]
 name = "namikaze-i18n"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
 ]
 
 [[package]]
 name = "namikaze-img"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-fs",
@@ -241,17 +241,19 @@ dependencies = [
 
 [[package]]
 name = "namikaze-init"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-ffi",
+ "namikaze-fs",
+ "namikaze-img",
  "namikaze-live-core",
  "namikaze-rt",
 ]
 
 [[package]]
 name = "namikaze-install"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -259,7 +261,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-ledger"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -267,7 +269,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-live"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-ffi",
@@ -277,14 +279,14 @@ dependencies = [
 
 [[package]]
 name = "namikaze-live-core"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
 ]
 
 [[package]]
 name = "namikaze-logd"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -292,7 +294,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-macspin"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -300,7 +302,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-metrics"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -308,7 +310,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-mirror"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -316,11 +318,11 @@ dependencies = [
 
 [[package]]
 name = "namikaze-mk"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 
 [[package]]
 name = "namikaze-ntp"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-chrono",
  "namikaze-common",
@@ -329,7 +331,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-oomd"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-ffi",
@@ -338,7 +340,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-persist"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-ffi",
@@ -349,11 +351,11 @@ dependencies = [
 
 [[package]]
 name = "namikaze-persist-core"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 
 [[package]]
 name = "namikaze-pkg"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-compat",
@@ -362,18 +364,18 @@ dependencies = [
 
 [[package]]
 name = "namikaze-plumber"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-9p",
 ]
 
 [[package]]
 name = "namikaze-rc"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 
 [[package]]
 name = "namikaze-report"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-config",
@@ -384,7 +386,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-rescue"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -392,11 +394,11 @@ dependencies = [
 
 [[package]]
 name = "namikaze-rt"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 
 [[package]]
 name = "namikaze-sandbox"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -404,7 +406,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-scrub"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -412,7 +414,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-seal"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -420,7 +422,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-secpatch"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -428,7 +430,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-secupdate"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -436,7 +438,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-sentinel"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -445,11 +447,11 @@ dependencies = [
 
 [[package]]
 name = "namikaze-sh"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 
 [[package]]
 name = "namikaze-share"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-anon",
  "namikaze-common",
@@ -458,7 +460,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-trace"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -466,7 +468,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-tune"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-persist-core",
@@ -475,7 +477,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-usbguard"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -483,7 +485,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-userland"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-ffi",
  "namikaze-rt",
@@ -491,7 +493,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-vault"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-ffi",
@@ -500,7 +502,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-watch"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-rt",
@@ -509,7 +511,7 @@ dependencies = [
 
 [[package]]
 name = "namikaze-wipe"
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 dependencies = [
  "namikaze-common",
  "namikaze-ffi",

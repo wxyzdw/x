@@ -173,7 +173,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-/// ISO stamp for query output (kept local to avoid a chrono dependency here).
+/// Timestamp stamp for query output (kept local to avoid a chrono dependency here).
 fn namikaze_chrono_time(ts: i64) -> String {
     let days = ts.div_euclid(86_400);
     let rem = ts.rem_euclid(86_400);

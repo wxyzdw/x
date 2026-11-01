@@ -3,7 +3,7 @@
 //!
 //! Walks the user through language, anonymity level and the sentinel consent
 //! (KVKK/GDPR-informed). Writes /etc/namikaze/system.toml and a done marker.
-//! The GUI wizard (GTK4) reuses this exact flow; TUI ships first so the ISO
+//! The GUI wizard (GTK4) reuses this exact flow; TUI ships first so the image
 //! works everywhere including serial consoles.
 
 #![forbid(unsafe_code)]

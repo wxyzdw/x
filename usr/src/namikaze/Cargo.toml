@@ -15,7 +15,7 @@ exclude = ["kernel/namikaze-kernel"]
 opt-level = 3
 
 [workspace.package]
-version = "3.0.0-alpha.8"
+version = "3.0.0-alpha.9"
 edition = "2021"
 rust-version = "1.75"
 license = "MPL-2.0"

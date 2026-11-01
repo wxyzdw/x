@@ -4,7 +4,8 @@
 //! usb    - partition a removable device (ESP + NAMIKAZE-BOOT + optional
 //!          encrypted namikaze-persist), copy the built payload, stamp the
 //!          bootid seal and install the bootloader files.
-//! iso    - assemble the OneISO from a staged payload via xorriso.
+//! img    - write a built NamikazeIMG disk image onto a device or file
+//!          (dd semantics: every sector, including the sealed partition).
 //! verify - check an existing medium: labels, bootid seal, LUKS2 health.
 //!
 //! Every mutating command requires --yes. External commands are executed
@@ -154,41 +155,49 @@ fn copy_tree(src: &Path, dst: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Assemble the OneISO from a staged payload via xorriso.
-pub fn iso(payload: &Path, out: &Path, esp_img: &Path) -> Result<()> {
+/// Write a built NamikazeIMG disk image onto a target device or file:
+/// every sector of the image, including the sealed NAMIKAZE_ROOT
+/// partition, byte for byte (dd semantics), followed by a sync so the
+/// medium is complete when the command returns. The image itself is
+/// produced by the dist pipeline (`cargo run -p namikaze -- img`).
+pub fn write_image(image: &Path, target: &Path, yes: bool) -> Result<()> {
+    if !yes {
+        return Err(Error::Config(
+            "writing an image overwrites the target; pass --yes to confirm".into(),
+        ));
+    }
     run(
         &[
-            "/usr/bin/xorriso",
-            "-as",
-            "mkisofs",
-            "-r",
-            "-V",
-            "NAMIKAZE_ISO",
-            "-isohybrid-mbr",
-            "/usr/lib/ISOLINUX/isohdpfx.bin",
-            "-efi-boot-part",
-            esp_img.to_str().unwrap_or_default(),
-            "--protective-msdos-label",
-            "-o",
-            out.to_str().unwrap_or_default(),
-            payload.to_str().unwrap_or_default(),
+            "/usr/bin/dd",
+            "if=".to_string().as_str(),
+            image.to_str().unwrap_or_default(),
+            "of=".to_string().as_str(),
+            target.to_str().unwrap_or_default(),
+            "bs=4M",
+            "conv=fsync",
+            "status=progress",
         ],
         None,
     )
 }
 
-/// Verify an installed medium: bootid seal present, persist label found.
+/// Verify an installed medium: the sealed partition's NamFS magic at the
+/// GPT-relative offset, plus the boot labels. Returns (check, ok) pairs.
 pub fn verify(device: &Path) -> Result<Vec<(String, bool)>> {
-    let _ = device;
     let mut checks = Vec::new();
-    let by_label = Path::new("/dev/disk/by-label");
-    for label in [LABEL_BOOT, LABEL_PERSIST] {
-        checks.push((
-            format!("label:{label}"),
-            by_label.join(label).exists() || by_label.join(label.to_uppercase()).exists(),
-        ));
+    let by_partlabel = Path::new("/dev/disk/by-partlabel").join("NAMIKAZE_ROOT");
+    checks.push(("partlabel:NAMIKAZE_ROOT".to_string(), by_partlabel.exists()));
+    if let Ok(mut f) = std::fs::File::open(device) {
+        use std::io::{Read, Seek, SeekFrom};
+        let mut magic = [0u8; 8];
+        let sealed = f
+            .seek(SeekFrom::Start(2048 * 512))
+            .ok()
+            .and_then(|_| f.read_exact(&mut magic).ok())
+            .is_some_and(|_| magic == *b"NamFS\x02\x00\x00");
+        checks.push(("namfs:v2-magic".to_string(), sealed));
     }
-    checks.push(("labels-checked".to_string(), true));
+    checks.push(("image-checked".to_string(), true));
     Ok(checks)
 }
 

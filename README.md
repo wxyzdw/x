@@ -1,10 +1,10 @@
-# NamikazeOS 3.0.0-alpha.8 (Rust Edition)
+# NamikazeOS 3.0.0-alpha.9 (Rust Edition)
 
 A privacy-first, anonymity-oriented operating system built on a Gentoo stage3
 base with a fully memory-safe, **dependency-free Rust userland** running on
 the unmodified mainline Linux LTS kernel, wrapped in an **airootfs-style live
-filesystem with a native encrypted persistent layer (NamFS)**. One encrypted disk image, every
-machine. One key, one owner.
+filesystem with a native encrypted persistent layer (NamFS)**. One encrypted
+disk image, every machine. One key, one owner.
 
 Status: developed in the open at https://github.com/wxyzdw/x.
 The v2.2.0 release line (shell/BASIC userland) remains published; this
@@ -18,7 +18,7 @@ workspace is the from-scratch Rust rewrite ("Rust Edition") that becomes
 | P0 | Memory safety first | `#![forbid(unsafe_code)]` in every crate; `unsafe` only in audited spots: the `namikaze-ffi` syscall boundary, the opt-in `namikaze-sentinel` PAM module ABI hook and the hardware-boundary modules of `namikaze-kernel` (SAFETY-commented, CI-enforced) |
 | P1 | One command builds everything | A plain `cargo build` runs the guards, the SBOM, the bare-metal kernel, the NamFS volume, the NamikazeIMG disk image, the independent audit, the manifest and the checksums - no shell, no make, no xtask (`tools/namikaze/build.rs`) |
 | P2 | Zero theme in engineering | No codenames, no emoji, ASCII-only sources (ascii-guard) |
-| P3 | One system, all machines | Single multi-arch ISO; CPU features and boards detected at boot |
+| P3 | One system, all machines | One multi-arch encrypted disk image; CPU features and boards detected at boot |
 | P4 | Confidential by default | Live persistent by default, everything encrypted, deny-by-default egress |
 | P5 | Zero third-party dependencies | The entire workspace compiles with `std` alone; crypto (SHA-256, HMAC, PBKDF2, XChaCha20-Poly1305, AES-256-XTS), parsers, compression, HTTP, CLI and logging are hand-written and pinned by public test vectors (dep-guard) |
 | P6 | The repo is the filesystem | the tree at the repository root IS the live root filesystem (airootfs-style); what you see in the tree is what boots |
@@ -30,8 +30,9 @@ workspace is the from-scratch Rust rewrite ("Rust Edition") that becomes
 
 The repository root is the live root filesystem tree - the
 Arch-releng `airootfs` idea, but persistent and encrypted (and here
-also self-hosting the workspace sources under `usr/src/`). The ISO boots it live
-(squashfs slot in the boot tree); the writable layer is NamFS:
+also self-hosting the workspace sources under `usr/src/`). The image boots it
+live (the sealed NAMIKAZE_ROOT partition carries the tree as one verified
+rootfs.nampack stream); the writable layer is NamFS:
 
 - **NamFS** (`lib/namikaze-fs`) is the native encrypted persistent
   volume format, implemented from scratch in the workspace: AES-256-XTS
@@ -41,8 +42,8 @@ also self-hosting the workspace sources under `usr/src/`). The ISO boots it live
   touched; free space is indistinguishable from sealed space.
 - **`namikaze-fstool`** creates, fills, inspects and verifies volumes:
   `create | put | get | list | info | verify`.
-- **The pipeline ships a deterministic demo volume** in every build (dist/namfs)
-  (`boot/namfs/namikaze-demo.namfs`, 1 MiB, passphrase
+- **The pipeline ships a deterministic demo volume** in every build
+  (`dist/namfs/namikaze-demo.namfs`, 1 MiB, passphrase
   `namikaze-demo`, byte-stable across builds) so the persistent layer
   can be exercised anywhere.
 - **Policy lives in the airootfs**: `etc/namikaze/namfs.conf`
@@ -75,8 +76,13 @@ Two layers:
 
 ## Live persistent system
 
-The ISO boots live; boot modes are selected in the Limine menu or with
-`namikaze.live=` on the command line:
+The image boots live; the initramfs finds the sealed NAMIKAZE_ROOT
+partition through its GPT partlabel, stages it into `/run`, opens it as
+a NamFS volume (the passphrase gate runs before any file is touched -
+`namikaze.img.pass=` on the command line, or the console prompt),
+unpacks the verified `rootfs.nampack` into a tmpfs root and pivots into
+it. Boot modes are selected in the Limine menu or with `namikaze.live=`
+on the command line:
 
 | Mode | Command line | Behavior |
 |---|---|---|
@@ -86,7 +92,7 @@ The ISO boots live; boot modes are selected in the Limine menu or with
 | Session | `namikaze.live=session` | RAM during the session, flushed to the volume on clean shutdown |
 
 Persistence is allowlist-only (`etc/namikaze/persistence.conf`);
-`/usr`, `/boot` and `/lib` stay sealed by dm-verity. Whole-image updates flow
+`/usr`, `/boot` and `/lib` stay sealed. Whole-image updates flow
 through `namikaze-secupdate` (SHA-256-verified bundles, atomic slot
 rotation, offline rollback). See
 `tools/namikaze-persist/docs/PERSISTENCE.md`.
@@ -106,14 +112,14 @@ filesystem they build, at the place FHS reserves for them:
 |   `-- greetd/  pam.d/
 |-- boot/                   bootloader payload tree: pinned Limine
 |   |                       binaries (limine.lock-sha256-verified),
-|   `--                     limine.conf, boot manifests
+|   `--                     limine.conf, oneimg boot manifest
 |-- usr/
 |   |-- bin/                session entry (namikaze-session)
 |   `-- src/namikaze/       THE Rust workspace (62 crates, zero
 |       |                   third-party deps) - Cargo.toml, .cargo,
 |       |-- kernel/         bare-metal no_std Rust kernel (Limine
 |       |                   splash stage) + Linux LTS config fragments
-|       |-- lib/            namikaze-rt, -common, -fs (NamFS), -iso,
+|       |-- lib/            namikaze-rt, -common, -fs (NamFS), -img,
 |       |                   -dist (release pipeline), -guards, -ffi,
 |       |                   -i18n, -config, -live-core, -persist-core,
 |       |                   -9p (the 9P2000 protocol stack)
@@ -199,23 +205,27 @@ workspace and cites the upstream files it follows.
 The release artifact is `dist/NamikazeOS-<version>-oneimg.img` - a GPT
 disk image with **one partition** (type GUID
 `ba1a3568-dc48-d141-bab9-02d0f8fcc4bd`, partlabel `NAMIKAZE_ROOT`)
-that is **one NamFS v1 container**: every 4096-byte sector sealed with
-XTS-AES-256, the header bound to a PBKDF2-HMAC-SHA256 passphrase gate,
-per-file SHA-256 inside. The rootfs tree rides as one `rootfs.nampack`
+that is **one NamFS v2 container**: every 4096-byte sector sealed with
+XTS-AES-256 (tweaks numbered globally across the volume, IEEE 1619
+style, so identical plaintext at different offsets never collides),
+the header bound to a PBKDF2-HMAC-SHA256 passphrase gate, per-file
+SHA-256 inside. The rootfs tree rides as one `rootfs.nampack`
 stream (path, mode, SHA-256, bytes per file) because the volume table
-holds 28 entries and the tree has hundreds. One disk, one partition,
-nothing in the clear - the image is byte-reproducible from the
-version string and the tree, and nothing ships without the
-independent audit stage parsing it back layer by layer. Inspect one:
+holds 28 entries and the tree has hundreds; the boot tree (kernel,
+initramfs, Limine config) stays outside the seal so firmware can
+reach it. One disk, one partition, nothing in the clear - the image is
+byte-reproducible from the version string and the tree, and nothing
+ships without the independent audit stage parsing it back layer by
+layer. Inspect one:
 
 ```sh
 cargo run -p namikaze -- imginfo dist/NamikazeOS-*-oneimg.img
 cargo run -p namikaze -- audit   dist/NamikazeOS-*-oneimg.img
 ```
 
-The live ISO story remains in `namikaze-iso` (the ECMA-119 writer and
-its tests), but the pipeline no longer builds it: the disk image is
-what boots, persists and updates.
+Nothing else is built: there is no ISO writer anywhere in the tree, and
+every boot path - initramfs, installer, rescue - speaks the sealed
+partition directly.
 
 ## The confinement ladder: levels 0-3, and Hiraishin no Jutsu
 
@@ -286,7 +296,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 ```
 
 The build drops the full dist set into `dist/`:
-`NamikazeOS-<version>-oneiso.iso` (+ `.sha256`),
+`NamikazeOS-<version>-oneimg.img` (+ `.sha256`),
 `namfs/namikaze-demo.namfs`, `sbom.json`, `bootid`, `SHA256SUMS`,
 `kernel/namikaze-kernel`.
 
@@ -294,9 +304,9 @@ Single steps (same library functions the pipeline uses):
 
 ```sh
 cargo run -p namikaze -- guard       # the 10 tree guards
-cargo run -p namikaze -- iso         # only the image step
+cargo run -p namikaze -- img         # only the image step
 cargo run -p namikaze -- kernel      # only the bare-metal kernel
-cargo run -p namikaze -- audit dist/NamikazeOS-*-oneiso.iso dist/iso-staging
+cargo run -p namikaze -- audit dist/NamikazeOS-*-oneimg.img
 cargo run -p namikaze -- release ../download   # source zip + checksums
 NAMFS_PASSPHRASE=namikaze-demo cargo run -p namikaze-fstool -- \
     info dist/namfs/namikaze-demo.namfs            # open the demo volume

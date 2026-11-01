@@ -1,14 +1,18 @@
-# OneISO manifest: architecture -> boot inputs
-# The single ISO carries every tree; Limine selects by ${ARCH} macro on the
-# firmware families it supports (x86-64 BIOS/UEFI, aarch64/riscv64/
-# loongarch64 UEFI), Petitboot discovers ppc64le by ISO9660 scan, and armv7
+# NamikazeIMG manifest: architecture -> boot inputs
+# One disk, one partition, everything encrypted: the NAMIKAZE_ROOT
+# partition is a whole NamFS v2 volume carrying the rootfs as one
+# verified rootfs.nampack stream, and /boot stays outside the seal so
+# the bootloader can reach it. Limine selects the tree by ${ARCH} macro
+# on the firmware families it supports (x86-64 BIOS/UEFI, aarch64/
+# riscv64/loongarch64 UEFI), Petitboot discovers ppc64le, and armv7
 # boards boot the armhf tree directly from U-Boot.
-# firmware.img is the linux-firmware squashfs layer mounted at /lib/firmware;
-# the bootid seal file (.bootid) is stamped by namikaze-install at write time.
+# firmware.img is the linux-firmware layer mounted at /lib/firmware;
+# the bootid seal file (.bootid) is stamped at image write time.
 
-[iso]
-label = "NAMIKAZE_ISO"
-volume_id = "NAMIKAZE_ISO"
+[img]
+partition_label = "NAMIKAZE_ROOT"
+partition_type = "ba1a3568-dc48-d141-bab9-02d0f8fcc4bd"
+rootfs_entry = "rootfs.nampack"
 firmware = "firmware.img"
 bootid_file = ".bootid"
 boot_config = "limine.conf"
@@ -20,7 +24,6 @@ loader = "limine"
 efi_path = "EFI/BOOT/BOOTX64.EFI"
 kernel = "boot/x86-64/vmlinuz"
 initramfs = "boot/x86-64/initrd.img"
-squashfs = "boot/x86-64/rootfs.img"
 microcode = "boot/x86-64/early_ucode.cpio"
 
 [[arch]]
@@ -29,7 +32,6 @@ loader = "limine"
 efi_path = "EFI/BOOT/BOOTAA64.EFI"
 kernel = "boot/aarch64/vmlinuz"
 initramfs = "boot/aarch64/initrd.img"
-squashfs = "boot/aarch64/rootfs.img"
 dtbs = "boot/aarch64/dtbs"
 
 [[arch]]
@@ -38,7 +40,6 @@ loader = "uboot"
 efi_path = "EFI/BOOT/BOOTARM.EFI"
 kernel = "boot/armhf/zImage"
 initramfs = "boot/armhf/initrd.img"
-squashfs = "boot/armhf/rootfs.img"
 dtbs = "boot/armhf/dtbs"
 
 [[arch]]
@@ -47,14 +48,12 @@ loader = "limine"
 efi_path = "EFI/BOOT/BOOTRISCV64.EFI"
 kernel = "boot/riscv64/vmlinuz"
 initramfs = "boot/riscv64/initrd.img"
-squashfs = "boot/riscv64/rootfs.img"
 
 [[arch]]
 tree = "ppc64le"
-loader = "petitboot-iso9660"
+loader = "petitboot"
 kernel = "boot/ppc64le/vmlinux"
 initramfs = "boot/ppc64le/initrd.img"
-squashfs = "boot/ppc64le/rootfs.img"
 
 [[arch]]
 tree = "loongarch64"
@@ -62,7 +61,6 @@ loader = "limine"
 efi_path = "EFI/BOOT/BOOTLOONGARCH64.EFI"
 kernel = "boot/loongarch64/vmlinuz"
 initramfs = "boot/loongarch64/initrd.img"
-squashfs = "boot/loongarch64/rootfs.img"
 
-# s390x is an installed-system target (KVM/LPAR); live USB does not apply,
-# so no ISO tree is carried for it (see kernel/README.md).
+# s390x is an installed-system target (KVM/LPAR); live media does not
+# apply, so no boot tree is carried for it (see kernel/README.md).

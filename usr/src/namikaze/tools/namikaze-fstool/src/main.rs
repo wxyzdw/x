@@ -7,6 +7,7 @@
 //! ```sh
 //! namikaze-fstool create persist.namfs --size 64M --label persist
 //! namikaze-fstool put persist.namfs etc/namikaze/motd ./motd
+//! namikaze-fstool rm persist.namfs etc/namikaze/motd
 //! namikaze-fstool list persist.namfs
 //! namikaze-fstool verify persist.namfs
 //! ```
@@ -15,7 +16,7 @@ use std::path::PathBuf;
 use std::process::exit;
 
 use namikaze_common::Result;
-use namikaze_fs::{create, get, info, list, put, verify, CreateOptions, DEMO_ITERATIONS};
+use namikaze_fs::{create, get, info, list, put, remove, verify, CreateOptions, DEMO_ITERATIONS};
 use namikaze_rt::args::Cli;
 
 const USAGE: &[&str] = &[
@@ -24,6 +25,7 @@ const USAGE: &[&str] = &[
     "create <volume> [--size <N[K/M]>] [--label <label>] [--iters <n>]",
     "                [--salt-hex <64 hex>] [--uuid-hex <32 hex>]  new empty volume",
     "put    <volume> <name> <file>                               store or replace a file",
+    "rm     <volume> <name>                                      remove an entry",
     "get    <volume> <name> [dest]                               extract a file (stdout default)",
     "list   <volume>                                             entry table (name, size)",
     "info   <volume>                                             header metadata",
@@ -136,6 +138,15 @@ fn run(cli: &Cli) -> Result<()> {
                 contents.len(),
                 path.display()
             );
+            Ok(())
+        }
+        "rm" => {
+            let (path, name) = match (free.first(), free.get(1)) {
+                (Some(p), Some(n)) => (PathBuf::from(p), n.clone()),
+                _ => usage_missing("volume name"),
+            };
+            remove(&path, pass, &name)?;
+            println!("namikaze-fstool: removed {name:?} from {}", path.display());
             Ok(())
         }
         "get" => {

@@ -5,8 +5,7 @@
 //! files under AES-256-XTS sector encryption, with a PBKDF2-HMAC-SHA256
 //! passphrase gate and per-file SHA-256 integrity. It is the persistent
 //! layer of the live system (mode=persistent points at a NamFS volume)
-//! and the container format the `namikaze` pipeline ships as a
-//! byte-stable demo inside every ISO.
+//! and the sealed single partition of the NamikazeIMG disk image.
 //!
 //! Everything is implemented in this workspace: the AES-256 core
 //! ([`aes`], FIPS-197), the XTS tweakable mode ([`xts`], IEEE 1619) and
@@ -21,7 +20,7 @@ pub mod format;
 pub mod xts;
 
 pub use format::{
-    create, get, info, list, open, put, put_all, verify, CreateOptions, VolumeInfo, MAGIC,
+    create, get, info, list, open, put, put_all, remove, verify, CreateOptions, VolumeInfo, MAGIC,
 };
 
 /// The PBKDF2 iteration count the release pipeline uses for demo volumes
@@ -71,6 +70,25 @@ mod tests {
         assert_eq!(get(&vol, PASS, "motd").unwrap(), b"replaced\n");
         assert_eq!(list(&vol, PASS).unwrap().len(), 3);
         assert_eq!(verify(&vol, PASS).unwrap(), 3);
+        // removal shrinks the table and re-seals free space
+        remove(&vol, PASS, "big").unwrap();
+        assert_eq!(list(&vol, PASS).unwrap().len(), 2);
+        assert_eq!(verify(&vol, PASS).unwrap(), 2);
+        std::fs::remove_file(&vol).unwrap();
+    }
+
+    #[test]
+    fn v1_magic_is_rejected() {
+        let dir = std::env::temp_dir().join("namfs-test-v1magic");
+        std::fs::create_dir_all(&dir).unwrap();
+        let vol = dir.join("test.namfs");
+        create(&vol, PASS, &opts()).unwrap();
+        let mut raw = std::fs::read(&vol).unwrap();
+        // v1 magic, v2 body: must be refused before any decryption
+        raw[5] = 0x01;
+        std::fs::write(&vol, &raw).unwrap();
+        let err = list(&vol, PASS).unwrap_err();
+        assert!(err.to_string().contains("not a NamFS v2 container"), "{err}");
         std::fs::remove_file(&vol).unwrap();
     }
 

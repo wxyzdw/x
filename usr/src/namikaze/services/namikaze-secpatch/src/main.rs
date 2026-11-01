@@ -8,7 +8,7 @@
 //! - Emits a triage report and a Forgejo-ready issue body.
 //!
 //! Policy: CVSS >= 9.0 issues target a fix within 24 hours; kernel issues
-//! always produce a new ISO (kexec is disabled by the hardening config).
+//! always produce a new image (kexec is disabled by the hardening config).
 
 #![forbid(unsafe_code)]
 

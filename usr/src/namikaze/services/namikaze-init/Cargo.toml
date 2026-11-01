@@ -10,6 +10,8 @@ namikaze-common = { path = "../../lib/namikaze-common" }
 namikaze-rt = { path = "../../lib/namikaze-rt" }
 namikaze-ffi = { path = "../../lib/namikaze-ffi" }
 namikaze-live-core = { path = "../../lib/namikaze-live-core" }
+namikaze-fs = { path = "../../lib/namikaze-fs" }
+namikaze-img = { path = "../../lib/namikaze-img" }
 
 [[bin]]
 name = "namikaze-init"

@@ -95,7 +95,7 @@ pub struct Desktop {
     pub greeter_user: String,
 }
 
-/// Live boot policy for the single-ISO medium (consumed by namikaze-init).
+/// Live boot policy for the sealed image medium (consumed by namikaze-init).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Live {
     /// persist | volatile | session

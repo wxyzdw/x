@@ -420,7 +420,7 @@ mod tests {
     fn guid_seed_is_deterministic_and_rfc4122_shaped() {
         let a = Guid::from_seed("namikaze/img/disk/3.0.0-alpha.7");
         let b = Guid::from_seed("namikaze/img/disk/3.0.0-alpha.7");
-        let c = Guid::from_seed("namikaze/img/disk/3.0.0-alpha.8");
+        let c = Guid::from_seed("namikaze/img/disk/3.0.0-alpha.10");
         assert_eq!(a, b);
         assert_ne!(a, c);
         assert_eq!(a.0[7] >> 4, 4); // version nibble

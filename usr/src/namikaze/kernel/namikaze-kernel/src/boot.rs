@@ -68,8 +68,7 @@ mod tests {
 
     #[test]
     fn parses_bootid_and_safe_mode() {
-        let raw =
-            b"root=live:CDLABEL=NAMIKAZE_ISO namikaze.bootid=0123456789abcdef namikaze.safe=yes";
+        let raw = b"namikaze.live=volatile namikaze.bootid=0123456789abcdef namikaze.safe=yes";
         let boot = BootOptions::parse(raw);
         assert_eq!(boot.ref_str(), Some("0123456789abcdef"));
         assert!(boot.safe_mode());

@@ -28,7 +28,7 @@ defaults:
 jobs:
   # The gate is the architecture itself: a plain `cargo build` runs the
   # complete dist pipeline through tools/namikaze/build.rs (tree guards,
-  # SBOM, bare-metal kernel, NamFS demo volume, OneISO image, deep
+  # SBOM, bare-metal kernel, NamFS demo volume, the disk image, deep
   # audit, checksums). Tests, fmt and clippy follow.
   gate:
     runs-on: ubuntu-latest
@@ -45,7 +45,7 @@ jobs:
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           workspaces: usr/src/namikaze
-      - name: Single build (guards + sbom + kernel + NamFS + ISO + audit via build.rs)
+      - name: Single build (guards + sbom + kernel + NamFS + img + audit via build.rs)
         run: cargo build --workspace
       - name: Tests
         run: cargo test --workspace
@@ -58,7 +58,7 @@ jobs:
         with:
           name: sbom
           path: usr/src/namikaze/dist/sbom.json
-      - name: Upload OneISO image
+      - name: Upload the disk image
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: oneimg
@@ -104,7 +104,7 @@ jobs:
           path: usr/src/namikaze/dist/bin-${{ matrix.target }}
 
   # Tag pushes cut a release: one `cargo build --release` produces the
-  # full dist set (ISO + NamFS volume + SBOM + bootid + checksums).
+  # full dist set (img + NamFS volume + SBOM + bootid + checksums).
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [gate, static]

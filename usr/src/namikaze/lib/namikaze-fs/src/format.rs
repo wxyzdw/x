@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-//! format: the NamFS v1 container.
+//! format: the NamFS v2 container.
 //!
 //! NamFS is the NamikazeOS encrypted persistent volume format: a single
 //! file (or block device) that holds a small set of named, integrity-
@@ -24,12 +24,19 @@
 //! into XTS data key (32) + XTS tweak key (32) + MAC key (32). A wrong
 //! passphrase therefore fails before any data is touched.
 //!
-//! v1 is deliberately simple: entries are rewrite-on-put (the superblock
+//! v2 (alpha.9) aligns the XTS tweaks with IEEE 1619: every data unit is
+//! numbered by its position in the volume, so identical plaintext at
+//! different offsets seals differently and the superblock shares the
+//! numbering instead of borrowing tweak 0. v1 volumes (per-entry
+//! numbering) are rejected by the magic, never mis-decrypted.
+//!
+//! v2 is deliberately simple: entries are rewrite-on-put (the superblock
 //! and data area are rebuilt from memory), capacity is bounded by the
 //! volume size given at creation, and integrity is per-file SHA-256 plus
 //! the HMAC-anchored header. The deterministic constructor (fixed salt,
 //! zero timestamp) exists so the release pipeline can ship a byte-stable
-//! demo volume inside the ISO.
+//! demo volume and the sealed partition inside the NamikazeIMG disk
+//! image.
 
 use std::path::Path;
 
@@ -40,8 +47,9 @@ use namikaze_rt::sha256::sha256;
 use crate::aes::Aes256;
 use crate::xts::{decrypt_unit, encrypt_unit, DATA_UNIT};
 
-/// Container magic: `NamFS` + format version 1.
-pub const MAGIC: [u8; 8] = *b"NamFS\x01\x00\x00";
+/// Container magic: `NamFS` + format version 2 (global IEEE 1619 tweak
+/// numbering; v1 volumes are rejected, never mis-read).
+pub const MAGIC: [u8; 8] = *b"NamFS\x02\x00\x00";
 const HEADER_LEN: usize = 512;
 const SUPERBLOCK_UNITS: u64 = 1;
 const DATA_OFFSET: u64 = HEADER_LEN as u64 + SUPERBLOCK_UNITS * DATA_UNIT as u64;
@@ -123,7 +131,10 @@ impl Volume {
             let begin = self.data_at(entry.offset) + u * DATA_UNIT;
             let end = (begin + DATA_UNIT).min(self.data.len());
             let mut unit = self.data[begin..end].to_vec();
-            decrypt_unit(&self.keys.data, &self.keys.tweak, u as u64, &mut unit);
+            // global tweak: the superblock is data unit 0, the data area
+            // continues at 1 (IEEE 1619 numbering over the whole volume)
+            let tweak = entry.offset / DATA_UNIT as u64 + u as u64 + 1;
+            decrypt_unit(&self.keys.data, &self.keys.tweak, tweak, &mut unit);
             let dst = u * DATA_UNIT;
             let stop = (dst + unit.len()).min(out.len());
             out[dst..stop].copy_from_slice(&unit[..stop - dst]);
@@ -154,7 +165,10 @@ impl Volume {
                 let mut unit = vec![0u8; DATA_UNIT];
                 let take = (body.len() - begin).min(DATA_UNIT);
                 unit[..take].copy_from_slice(&body[begin..begin + take]);
-                encrypt_unit(&self.keys.data, &self.keys.tweak, u as u64, &mut unit);
+                // global tweak (see read_entry): same bytes at a different
+                // offset seal differently - the IEEE 1619 position property
+                let tweak = cursor / DATA_UNIT as u64 + u as u64 + 1;
+                encrypt_unit(&self.keys.data, &self.keys.tweak, tweak, &mut unit);
                 let at = self.data_at(cursor) + u * DATA_UNIT;
                 self.data[at..at + DATA_UNIT].copy_from_slice(&unit);
             }
@@ -168,13 +182,13 @@ impl Volume {
         }
         // zero-encrypt everything past the last entry: free space looks
         // exactly like freshly created space
-        let mut unit_index = cursor / DATA_UNIT as u64;
+        let first_free = cursor / DATA_UNIT as u64;
         let mut unit = vec![0u8; DATA_UNIT];
-        while unit_index < self.data_units {
-            encrypt_unit(&self.keys.data, &self.keys.tweak, unit_index, &mut unit);
-            let at = self.data_at(unit_index * DATA_UNIT as u64);
+        for rel in first_free..self.data_units {
+            let tweak = rel + 1; // global numbering: the superblock is 0
+            encrypt_unit(&self.keys.data, &self.keys.tweak, tweak, &mut unit);
+            let at = self.data_at(rel * DATA_UNIT as u64);
             self.data[at..at + DATA_UNIT].copy_from_slice(&unit);
-            unit_index += 1;
         }
 
         let mut superblock = vec![0u8; DATA_UNIT];
@@ -211,7 +225,7 @@ fn seal_entry_name(name: &str) -> Result<[u8; NAME_LEN]> {
 pub fn open(path: &Path, pass: &[u8]) -> Result<Volume> {
     let raw = std::fs::read(path)?;
     if raw.len() < HEADER_LEN + DATA_UNIT || raw[..8] != MAGIC {
-        return Err(Error::Crypto("namfs: not a NamFS v1 container".into()));
+        return Err(Error::Crypto("namfs: not a NamFS v2 container".into()));
     }
     let iterations =
         u32::from_le_bytes(raw[OFF_ITERATIONS..OFF_ITERATIONS + 4].try_into().unwrap());
@@ -370,6 +384,8 @@ pub fn create(path: &Path, pass: &[u8], opts: &CreateOptions) -> Result<()> {
 
 /// Store (or replace) one named file inside the volume. The superblock
 /// and data area are rebuilt; header, salt, uuid and verifier persist.
+/// Every kept entry is re-read through its SHA-256 gate first: a stored
+/// entry that fails verification is never silently re-sealed.
 pub fn put(path: &Path, pass: &[u8], name: &str, contents: &[u8]) -> Result<()> {
     let volume = open(path, pass)?;
     seal_entry_name(name)?;
@@ -377,9 +393,26 @@ pub fn put(path: &Path, pass: &[u8], name: &str, contents: &[u8]) -> Result<()> 
         .entries
         .iter()
         .filter(|e| e.name != name)
-        .map(|e| Ok((e.name.clone(), volume.read_entry(e)?)))
+        .map(|e| Ok((e.name.clone(), volume.read_verified(e)?)))
         .collect::<Result<Vec<_>>>()?;
     kept.push((name.to_string(), contents.to_vec()));
+    volume.persist(path, &kept)
+}
+
+/// Remove one named file from the volume (the entry table and data area
+/// are rebuilt without it; free space re-seals as fresh space). Removing
+/// a name that does not exist is an error, not a silent no-op.
+pub fn remove(path: &Path, pass: &[u8], name: &str) -> Result<()> {
+    let volume = open(path, pass)?;
+    if !volume.entries.iter().any(|e| e.name == name) {
+        return Err(Error::Other(format!("namfs: no entry named {name:?}")));
+    }
+    let kept: Vec<(String, Vec<u8>)> = volume
+        .entries
+        .iter()
+        .filter(|e| e.name != name)
+        .map(|e| Ok((e.name.clone(), volume.read_verified(e)?)))
+        .collect::<Result<Vec<_>>>()?;
     volume.persist(path, &kept)
 }
 
@@ -388,7 +421,7 @@ pub fn put(path: &Path, pass: &[u8], name: &str, contents: &[u8]) -> Result<()> 
 /// uses - N individual `put` calls would re-derive the keys and
 /// rewrite the volume N times.
 ///
-/// Duplicate names are rejected; capacity (28 entries in v1) is
+/// Duplicate names are rejected; capacity (28 entries in v2) is
 /// enforced by the persist step. Returns the number of entries stored.
 pub fn put_all(path: &Path, pass: &[u8], entries: &[(&str, &[u8])]) -> Result<usize> {
     let volume = open(path, pass)?;
@@ -465,6 +498,17 @@ pub fn verify(path: &Path, pass: &[u8]) -> Result<usize> {
 mod tests {
     use super::*;
 
+    fn opts() -> CreateOptions {
+        CreateOptions {
+            size_bytes: 1024 * 1024,
+            label: "test".into(),
+            iterations: 1000,
+            salt: Some([7u8; 32]),
+            uuid: Some([9u8; 16]),
+            created: 0,
+        }
+    }
+
     #[test]
     fn put_all_matches_sequential_puts() {
         let dir = std::env::temp_dir().join("namfs-put-all");
@@ -472,19 +516,11 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let a = dir.join("a.namfs");
         let b = dir.join("b.namfs");
-        let opts = CreateOptions {
-            size_bytes: 1024 * 1024,
-            label: "test".into(),
-            iterations: 1000,
-            salt: Some([7u8; 32]),
-            uuid: Some([9u8; 16]),
-            created: 0,
-        };
         let pass = b"pass";
-        create(&a, pass, &opts).unwrap();
+        create(&a, pass, &opts()).unwrap();
         put(&a, pass, "one", b"first").unwrap();
         put(&a, pass, "two/two", b"second-second").unwrap();
-        create(&b, pass, &opts).unwrap();
+        create(&b, pass, &opts()).unwrap();
         let n = put_all(&b, pass, &[("one", b"first"), ("two/two", b"second-second")]).unwrap();
         assert_eq!(n, 2);
         assert_eq!(std::fs::read(&a).unwrap(), std::fs::read(&b).unwrap());
@@ -499,17 +535,74 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let v = dir.join("d.namfs");
-        let opts = CreateOptions {
-            size_bytes: 1024 * 1024,
-            label: "test".into(),
-            iterations: 1000,
-            salt: Some([7u8; 32]),
-            uuid: Some([9u8; 16]),
-            created: 0,
-        };
         let pass = b"pass";
-        create(&v, pass, &opts).unwrap();
+        create(&v, pass, &opts()).unwrap();
         assert!(put_all(&v, pass, &[("x", b"1"), ("x", b"2")]).is_err());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn remove_deletes_and_rejects_unknown() {
+        let dir = std::env::temp_dir().join("namfs-remove");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let v = dir.join("r.namfs");
+        let pass = b"pass";
+        create(&v, pass, &opts()).unwrap();
+        put(&v, pass, "a", b"alpha").unwrap();
+        put(&v, pass, "b", b"beta").unwrap();
+        remove(&v, pass, "a").unwrap();
+        assert_eq!(list(&v, pass).unwrap(), vec![("b".to_string(), 4)]);
+        assert_eq!(get(&v, pass, "b").unwrap(), b"beta");
+        assert_eq!(verify(&v, pass).unwrap(), 1);
+        assert!(remove(&v, pass, "a").is_err());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn put_refuses_to_reseal_corrupted_kept_entries() {
+        // put() must re-read kept entries through their hash gate: a
+        // flipped ciphertext byte anywhere makes the whole put fail
+        // instead of laundering the corruption into the new volume.
+        let dir = std::env::temp_dir().join("namfs-put-corrupt");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let v = dir.join("c.namfs");
+        let pass = b"pass";
+        create(&v, pass, &opts()).unwrap();
+        put(&v, pass, "keep", vec![1u8; 9000].as_slice()).unwrap();
+        let mut raw = std::fs::read(&v).unwrap();
+        // header = 512, superblock = 4096, the first data unit starts at 4608
+        raw[4608 + 3] ^= 0x01;
+        std::fs::write(&v, &raw).unwrap();
+        let err = put(&v, pass, "other", b"x").unwrap_err();
+        assert!(err.to_string().contains("hash mismatch"), "{err}");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn same_plaintext_at_different_offsets_seals_differently() {
+        // the global tweak numbering is the whole point of v2: two equal
+        // entries cannot produce equal ciphertext at different offsets
+        let dir = std::env::temp_dir().join("namfs-tweaks");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let v = dir.join("t.namfs");
+        let pass = b"pass";
+        create(&v, pass, &opts()).unwrap();
+        let body = vec![0x5Au8; 3 * DATA_UNIT];
+        put(&v, pass, "first", &body).unwrap();
+        put(&v, pass, "second", &body).unwrap();
+        // "second" lands at a different offset than "first"
+        let listed = list(&v, pass).unwrap();
+        assert_eq!(listed.len(), 2);
+        let raw = std::fs::read(&v).unwrap();
+        let a = &raw[DATA_OFFSET as usize..DATA_OFFSET as usize + DATA_UNIT];
+        let b = &raw[DATA_OFFSET as usize + DATA_UNIT..DATA_OFFSET as usize + 2 * DATA_UNIT];
+        assert_ne!(a, b, "identical plaintext at offset 0 and 1 must differ");
+        // and both read back intact
+        assert_eq!(get(&v, pass, "first").unwrap(), body);
+        assert_eq!(get(&v, pass, "second").unwrap(), body);
         std::fs::remove_dir_all(&dir).ok();
     }
 }

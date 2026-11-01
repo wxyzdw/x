@@ -28,8 +28,8 @@ impl RescuePlan {
     /// Limine menu entry for the rescue boot (appended to limine.conf).
     pub fn render_entry(&self) -> String {
         format!(
-            "/NamikazeOS (rescue - repair mode)\n    comment: Offline rescue; verity disabled, persist left closed.\n    protocol: linux\n    path: boot():/boot/{}/vmlinuz\n    module_path: boot():/boot/{}/initrd.img\n    cmdline: root=live:CDLABEL=NAMIKAZE_ISO rd.live.squashimg=/boot/{}/rootfs.img namikaze.recovery=yes namikaze.rescue=yes\n",
-            self.target.tree, self.target.tree, self.target.tree
+            "/NamikazeOS (rescue - repair mode)\n    comment: Offline rescue; the seal stays closed, persist left closed.\n    protocol: linux\n    path: boot():/boot/{}/vmlinuz\n    module_path: boot():/boot/{}/initrd.img\n    cmdline: namikaze.live=volatile namikaze.recovery=yes namikaze.rescue=yes\n",
+            self.target.tree, self.target.tree
         )
     }
 
@@ -78,7 +78,8 @@ mod tests {
         assert!(entry.contains("/boot/x86-64/vmlinuz"));
         assert!(entry.contains("namikaze.recovery=yes"));
         assert!(entry.contains("namikaze.rescue=yes"));
-        assert!(!entry.contains("namikaze.verity"));
+        assert!(entry.contains("namikaze.live=volatile"));
+        assert!(!entry.contains("CDLABEL"));
     }
 
     #[test]

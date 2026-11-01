@@ -4,7 +4,7 @@
 //! When the workspace is built (`cargo build`, `cargo test`, ...), this
 //! script runs the complete dist pipeline through namikaze-dist: tree
 //! guards, SBOM, the bare-metal kernel, the NamFS demo volume, the
-//! OneISO image, the deep audit and the dist checksums. There is no
+//! NamikazeIMG disk image, the deep audit and the dist checksums. There is no
 //! shell, no make and no xtask anywhere in the chain - this file and
 //! the library crates behind it are all Rust.
 //!

@@ -9,7 +9,7 @@
 //! check passes.
 //!
 //! ```sh
-//! namikaze-audit dist/NamikazeOS-3.0.0-alpha.8-oneimg.img
+//! namikaze-audit dist/NamikazeOS-<version>-oneimg.img
 //! ```
 
 #![forbid(unsafe_code)]

@@ -34,7 +34,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
     serial::init();
-    serial::line("namikaze-kernel 3.0.0-alpha.3 (no_std, bare metal)");
+    serial::line(concat!("namikaze-kernel ", env!("CARGO_PKG_VERSION"), " (no_std, bare metal)"));
 
     let revision = limine::loaded_base_revision();
     if revision == 0 {

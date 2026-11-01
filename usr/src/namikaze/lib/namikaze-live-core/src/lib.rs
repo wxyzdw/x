@@ -36,6 +36,10 @@ pub struct LiveOptions {
     pub trim: bool,
     pub verity_hash: Option<String>,
     pub recovery: bool,
+    /// Passphrase for the sealed NAMIKAZE_ROOT partition (IMG chain).
+    /// Absent means "prompt on the console" - the honest default for
+    /// an everything-encrypted system.
+    pub img_pass: Option<String>,
 }
 
 impl Default for LiveOptions {
@@ -49,6 +53,7 @@ impl Default for LiveOptions {
             trim: false,
             verity_hash: None,
             recovery: false,
+            img_pass: None,
         }
     }
 }
@@ -78,6 +83,7 @@ pub fn parse_cmdline(cmdline: &str) -> LiveOptions {
             "namikaze.persist.fallback" => o.fallback_volatile = value != "panic",
             "namikaze.verity" => o.verity_hash = Some(value.to_string()),
             "namikaze.recovery" => o.recovery = value != "0" && value != "no",
+            "namikaze.img.pass" => o.img_pass = Some(value.to_string()),
             _ => {}
         }
     }
@@ -232,6 +238,15 @@ mod tests {
         assert_eq!(o.mode, LiveMode::Session);
         assert!(o.trim);
         assert!(!o.fallback_volatile);
+        assert!(o.img_pass.is_none());
+    }
+
+    #[test]
+    fn cmdline_img_pass_is_optional() {
+        let o = parse_cmdline("namikaze.img.pass=sealed-key");
+        assert_eq!(o.img_pass.as_deref(), Some("sealed-key"));
+        let o = parse_cmdline("namikaze.live=volatile");
+        assert!(o.img_pass.is_none());
     }
 
     #[test]

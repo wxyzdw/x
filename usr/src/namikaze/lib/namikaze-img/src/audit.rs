@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 //! The independent audit of a NamikazeIMG image, in the spirit of the
-//! OneISO audit: parse everything back from the bytes on disk and
+//! NamikazeIMG audit: parse everything back from the bytes on disk and
 //! compare against the source tree, reporting every mismatch instead
 //! of trusting the writer.
 //!

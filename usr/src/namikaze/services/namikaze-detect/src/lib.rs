@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 //! CPU, firmware and virtualization detection with tuning profiles.
 //!
-//! The ISO boots on every machine; this crate decides HOW it should run on
+//! The image boots on every machine; this crate decides HOW it should run on
 //! this one. Exposed as a library so `namikaze-report` can reuse results.
 
 #![forbid(unsafe_code)]

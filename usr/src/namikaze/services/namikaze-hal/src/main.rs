@@ -12,7 +12,7 @@ use namikaze_common::{init_tracing, Result};
 use namikaze_rt::args::Cli;
 
 const USAGE: &[&str] = &[
-    "namikaze-hal: hardware adaptation layer (OneISO, every machine)",
+    "namikaze-hal: hardware adaptation layer (one image, every machine)",
     "",
     "usage:",
     "  namikaze-hal apply [--run-dir /run/namikaze] [--from-env]   write the hardware plan",
