@@ -15,6 +15,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "namikaze-9p"
+version = "3.0.0-alpha.5"
+
+[[package]]
+name = "namikaze-9srv"
+version = "3.0.0-alpha.5"
+dependencies = [
+ "namikaze-9p",
+]
+
+[[package]]
 name = "namikaze-anon"
 version = "3.0.0-alpha.5"
 dependencies = [
@@ -295,6 +306,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "namikaze-mk"
+version = "3.0.0-alpha.5"
+
+[[package]]
 name = "namikaze-ntp"
 version = "3.0.0-alpha.5"
 dependencies = [
@@ -334,6 +349,10 @@ dependencies = [
  "namikaze-common",
  "namikaze-rt",
 ]
+
+[[package]]
+name = "namikaze-rc"
+version = "3.0.0-alpha.5"
 
 [[package]]
 name = "namikaze-report"

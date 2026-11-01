@@ -1,0 +1,14 @@
+[package]
+name = "namikaze-rc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Plan 9 rc shell, adapted to Rust for NamikazeOS"
+
+[dependencies]
+# zero dependencies: std-only by design
+
+[[bin]]
+name = "namikaze-rc"
+path = "src/main.rs"

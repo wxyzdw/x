@@ -1,0 +1,13 @@
+[package]
+name = "namikaze-9p"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "9P2000 protocol for NamikazeOS: codec, client, server framework, synthetic tree"
+
+[dependencies]
+# zero dependencies: std-only by design
+
+[lib]
+path = "src/lib.rs"
