@@ -116,6 +116,64 @@ fn partial_walk_prefix_is_reported_by_the_client() {
 }
 
 #[test]
+fn walk_wire_semantics_follow_walk5() {
+    // walk(5): a failure on the first element is Rerror on the wire,
+    // never an empty Rwalk; a failure on a later element is a partial
+    // Rwalk and the new fid is NOT established (clunking it answers
+    // "unknown fid")
+    let (mut conn, _srv) = connected();
+    conn.attach(1, namikaze_9p::proto::NOFID, "glenda", "").expect("attach");
+
+    let twalk = Msg::Twalk { tag: 60, fid: 1, newfid: 3, wnames: vec!["void".to_string()] };
+    let frame = twalk.serialize(conn.msize()).expect("fits one frame");
+    conn.send_raw(&frame).expect("send first-element walk");
+    let msg = Msg::parse(&conn.recv_raw().expect("reply")).expect("parse reply");
+    match msg {
+        Msg::Rerror { tag, ename, .. } => {
+            assert_eq!(tag, 60);
+            assert_eq!(ename, "file does not exist", "the plan9 wording");
+        }
+        other => panic!(
+            "first-element failure must be Rerror, got {}",
+            namikaze_9p::proto::type_name(other.typ())
+        ),
+    }
+
+    let twalk = Msg::Twalk {
+        tag: 61,
+        fid: 1,
+        newfid: 3,
+        wnames: vec!["top".to_string(), "void".to_string()],
+    };
+    let frame = twalk.serialize(conn.msize()).expect("fits one frame");
+    conn.send_raw(&frame).expect("send partial walk");
+    let msg = Msg::parse(&conn.recv_raw().expect("reply")).expect("parse reply");
+    match msg {
+        Msg::Rwalk { wqids, .. } => assert_eq!(wqids.len(), 1, "the prefix walked"),
+        other => panic!(
+            "a later-element failure is a partial Rwalk, got {}",
+            namikaze_9p::proto::type_name(other.typ())
+        ),
+    }
+
+    // the partial walk left no fid 3 behind
+    let tclunk = Msg::Tclunk { tag: 62, fid: 3 };
+    let frame = tclunk.serialize(conn.msize()).expect("fits one frame");
+    conn.send_raw(&frame).expect("send clunk of newfid");
+    let msg = Msg::parse(&conn.recv_raw().expect("reply")).expect("parse reply");
+    match msg {
+        Msg::Rerror { ename, .. } => {
+            assert_eq!(ename, "unknown fid", "newfid was never established")
+        }
+        other => panic!(
+            "clunking an unestablished newfid must fail, got {}",
+            namikaze_9p::proto::type_name(other.typ())
+        ),
+    }
+    conn.clunk(1).expect("the walk source fid is untouched");
+}
+
+#[test]
 fn mutating_a_read_only_server_fails_cleanly() {
     let (mut conn, _srv) = connected();
     conn.attach(1, namikaze_9p::proto::NOFID, "glenda", "").expect("attach");

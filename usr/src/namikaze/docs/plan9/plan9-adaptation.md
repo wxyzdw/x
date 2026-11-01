@@ -4,7 +4,7 @@
 Bell Labs mirror of the Plan 9 4th edition tree. License: MIT (Plan 9
 Foundation, 2021) - see the root `LICENSE` and `NOTICE`, both re-fetched
 during the survey. The crawl is fully reproducible with
-`scripts/plan9_crawl.py`; its raw output is committed next to this document
+`plan9_crawl.py` (in this directory); its raw output is committed next to this document
 as `plan9-tree.json`.*
 
 ## What was examined
@@ -116,12 +116,12 @@ third-party dependencies, `#![forbid(unsafe_code)]`.
 
 ## Method and reproduction
 
-`scripts/plan9_crawl.py` (Python 3 stdlib only) walks the source tree
+`plan9_crawl.py` (Python 3 stdlib only, kept next to this document) walks the source tree
 breadth-first with a 0.2 s delay per request, caches listings under
 `/tmp/plan9cache`, and writes the complete manifest:
 
 ```
-python3 scripts/plan9_crawl.py \
+python3 usr/src/namikaze/docs/plan9/plan9_crawl.py \
     --out usr/src/namikaze/docs/plan9/plan9-tree.json \
     --file LICENSE --file NOTICE --file sys/include/fcall.h \
     --file sys/src/cmd/mk/mk.h --file sys/src/9/port/error.h \

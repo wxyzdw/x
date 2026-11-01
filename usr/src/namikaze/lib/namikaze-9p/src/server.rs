@@ -410,23 +410,28 @@ impl<S: Read + Write> ServerConn<S> {
                     cur = next;
                     qids.push(qid);
                 }
-                Err(_) => {
-                    // 9P2000: a partial prefix is a legal answer; the
-                    // new fid is established only on full success
+                Err(e) => {
+                    if qids.is_empty() {
+                        // walk(5): a failure on the first element is an
+                        // error on the wire, never an empty partial reply
+                        return self.rerror(tag, &e);
+                    }
+                    // a partial prefix is a legal answer, but newfid is
+                    // NOT established; a client that allocated it must
+                    // clunk it
                     return self.send(&Msg::Rwalk { tag, wqids: qids });
                 }
             }
         }
-        if !qids.is_empty() || wnames.is_empty() {
-            let qid = match qids.last() {
-                Some(q) => *q,
-                None => match self.fids.get(&fid) {
-                    Some(f) => f.qid,
-                    None => return self.rerror(tag, &Error::Server(Errno::BadFid)),
-                },
-            };
-            self.fids.insert(newfid, Fid { node: cur, qid, open: None });
-        }
+        // full walk, or a zero-name walk that clones the fid
+        let qid = match qids.last() {
+            Some(q) => *q,
+            None => match self.fids.get(&fid) {
+                Some(f) => f.qid,
+                None => return self.rerror(tag, &Error::Server(Errno::BadFid)),
+            },
+        };
+        self.fids.insert(newfid, Fid { node: cur, qid, open: None });
         self.send(&Msg::Rwalk { tag, wqids: qids })
     }
 

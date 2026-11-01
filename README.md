@@ -126,7 +126,7 @@ filesystem they build, at the place FHS reserves for them:
 |       |                   -tune, -ntp, -logd, -metrics, -trace
 |       `-- tools/          namikaze (build orchestration: its
 |                           build.rs IS the pipeline), namikaze-fstool,
-|                           namikaze-audit, namikaze-userland (52-tool
+|                           namikaze-audit, namikaze-userland (50-tool
 |                           multi-call binary), namikaze-sh, -rc and
 |                           -mk (Plan 9's shell and make), -9srv
 |                           (9P server + probe), -doctor,

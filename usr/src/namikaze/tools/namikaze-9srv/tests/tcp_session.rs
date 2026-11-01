@@ -63,10 +63,14 @@ fn full_session_over_tcp_with_the_real_dirfs() {
     }
     assert_eq!(names, vec!["plan9.txt"]);
 
-    // a missing element surfaces the canonical errno
+    // a missing element surfaces the canonical errno; the first
+    // element failing is an on-the-wire Rerror, which carries the
+    // plan9 wording but no element name (the element is named only
+    // when a partial walk reveals it client-side)
     let err = conn.walk(2, 4, &["void".to_string()]).expect_err("missing element");
     assert_eq!(Errno::leaf(&err), Errno::NotFound);
-    assert!(err.to_string().contains("void"), "the element is named: {err}");
+    assert!(err.to_string().contains("Twalk"), "the operation is named: {err}");
+    assert_eq!(err.to_string(), "Twalk: server: file does not exist");
 
     // writes are refused before they can reach the backend: the fid
     // is not open for writing, so the answer is Ebadusefd; the server

@@ -41,7 +41,7 @@ the Keep a Changelog structure; the project uses pure semantic versioning.
   `usr/src/namikaze/docs/plan9/plan9-adaptation.md`. Upstream is MIT
   (Plan 9 Foundation); the survey read `fcall.h`, `error.h`, `rc(1)`
   and `mk(1)` as the ground truth for the ports.
-- **`lib/namikaze-9p`** (62nd crate): the 9P2000 protocol stack -
+- **`lib/namikaze-9p`**: the 9P2000 protocol stack -
   wire codec transcribed from `fcall.h`, a server framework in the
   shape of `lib9p` (Fsys trait, fid table, walk/open/read semantics,
   partial-walk replies), a synthetic file tree in the shape of
