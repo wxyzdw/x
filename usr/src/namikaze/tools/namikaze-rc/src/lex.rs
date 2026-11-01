@@ -54,9 +54,12 @@ pub struct Word(pub Vec<Part>);
 impl Word {
     /// The fully quoted form of the word (used for diagnostics).
     pub fn text(&self) -> String {
-        self.0.iter().map(|p| match p {
-            Part::Quoted(s) | Part::Unquoted(s) => s.clone(),
-        }).collect()
+        self.0
+            .iter()
+            .map(|p| match p {
+                Part::Quoted(s) | Part::Unquoted(s) => s.clone(),
+            })
+            .collect()
     }
 }
 
@@ -191,10 +194,7 @@ pub fn lex(src: &str) -> Result<Vec<Token>, RcError> {
             '#' => {
                 // `$#name` is the element count; a glued '#' after '$'
                 // is that syntax, any other '#' starts a comment
-                let after_dollar = matches!(
-                    out.last().map(|t| &t.tok),
-                    Some(Tok::Dollar)
-                );
+                let after_dollar = matches!(out.last().map(|t| &t.tok), Some(Tok::Dollar));
                 if after_dollar {
                     let start = Pos { line, col };
                     if word.is_empty() {
@@ -411,7 +411,10 @@ mod tests {
 
     #[test]
     fn quoting_is_the_only_escape() {
-        assert_eq!(toks("'hello world'"), vec![Tok::Word(Word(vec![Part::Quoted("hello world".into())]))]);
+        assert_eq!(
+            toks("'hello world'"),
+            vec![Tok::Word(Word(vec![Part::Quoted("hello world".into())]))]
+        );
         // doubled quote inside quotes
         assert_eq!(toks("'it''s'"), vec![Tok::Word(Word(vec![Part::Quoted("it's".into())]))]);
         // mixed
@@ -429,21 +432,27 @@ mod tests {
     fn metacharacters_split_words() {
         assert_eq!(toks("a|b").len(), 3);
         assert_eq!(toks("a;b;c").len(), 5);
-        assert_eq!(toks("x>y"), vec![
-            Tok::Word(Word(vec![Part::Unquoted("x".into())])),
-            Tok::Gt,
-            Tok::Word(Word(vec![Part::Unquoted("y".into())])),
-        ]);
+        assert_eq!(
+            toks("x>y"),
+            vec![
+                Tok::Word(Word(vec![Part::Unquoted("x".into())])),
+                Tok::Gt,
+                Tok::Word(Word(vec![Part::Unquoted("y".into())])),
+            ]
+        );
     }
 
     #[test]
     fn comments_run_to_newline() {
         let t = toks("a # rest of line\nb");
-        assert_eq!(t, vec![
-            Tok::Word(Word(vec![Part::Unquoted("a".into())])),
-            Tok::Newline,
-            Tok::Word(Word(vec![Part::Unquoted("b".into())])),
-        ]);
+        assert_eq!(
+            t,
+            vec![
+                Tok::Word(Word(vec![Part::Unquoted("a".into())])),
+                Tok::Newline,
+                Tok::Word(Word(vec![Part::Unquoted("b".into())])),
+            ]
+        );
     }
 
     #[test]
@@ -471,16 +480,19 @@ mod tests {
     #[test]
     fn redirection_and_logic_operators() {
         let t = toks("a >> b <> c && d || e");
-        assert_eq!(t, vec![
-            Tok::Word(Word(vec![Part::Unquoted("a".into())])),
-            Tok::Append,
-            Tok::Word(Word(vec![Part::Unquoted("b".into())])),
-            Tok::Both,
-            Tok::Word(Word(vec![Part::Unquoted("c".into())])),
-            Tok::AndAnd,
-            Tok::Word(Word(vec![Part::Unquoted("d".into())])),
-            Tok::OrOr,
-            Tok::Word(Word(vec![Part::Unquoted("e".into())])),
-        ]);
+        assert_eq!(
+            t,
+            vec![
+                Tok::Word(Word(vec![Part::Unquoted("a".into())])),
+                Tok::Append,
+                Tok::Word(Word(vec![Part::Unquoted("b".into())])),
+                Tok::Both,
+                Tok::Word(Word(vec![Part::Unquoted("c".into())])),
+                Tok::AndAnd,
+                Tok::Word(Word(vec![Part::Unquoted("d".into())])),
+                Tok::OrOr,
+                Tok::Word(Word(vec![Part::Unquoted("e".into())])),
+            ]
+        );
     }
 }

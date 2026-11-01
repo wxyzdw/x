@@ -112,30 +112,24 @@ pub fn expand_in(base: &Path, pattern: &str) -> Vec<String> {
         base.join(dir_part)
     };
     let mut out = Vec::new();
-    match fs::read_dir(&dir) {
-        Ok(entries) => {
-            for entry in entries.flatten() {
-                let name = entry.file_name().to_string_lossy().into_owned();
-                if name.starts_with('.') && !leaf.starts_with('.') {
-                    continue; // dotfiles need an explicit dot, sh-style
-                }
-                if match_glob(leaf, &name) {
-                    let joined = if dir_part.is_empty() {
-                        name.clone()
-                    } else {
-                        format!("{dir_part}/{name}")
-                    };
-                    // a directory match keeps globbing open: `src/*`
-                    // matches dirs, callers re-glob if needed; keep the
-                    // plain path here, like rc
-                    out.push(joined);
-                }
+    if let Ok(entries) = fs::read_dir(&dir) {
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if name.starts_with('.') && !leaf.starts_with('.') {
+                continue; // dotfiles need an explicit dot, sh-style
+            }
+            if match_glob(leaf, &name) {
+                let joined =
+                    if dir_part.is_empty() { name.clone() } else { format!("{dir_part}/{name}") };
+                // a directory match keeps globbing open: `src/*`
+                // matches dirs, callers re-glob if needed; keep the
+                // plain path here, like rc
+                out.push(joined);
             }
         }
-        // an unreadable directory yields no matches; the caller then
-        // keeps the literal pattern
-        Err(_) => {}
     }
+    // an unreadable directory yields no matches; the caller then
+    // keeps the literal pattern
     out.sort();
     if out.is_empty() {
         vec![pattern.to_string()]

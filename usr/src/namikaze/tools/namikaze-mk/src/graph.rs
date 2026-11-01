@@ -64,7 +64,10 @@ impl fmt::Display for MkError {
                 None => write!(f, "no rule to make {target}"),
             },
             MkError::Recipe { target, cmd, code, line } if *line > 0 => {
-                write!(f, "mkfile line {line}: recipe for {target} failed with status {code}: {cmd}")
+                write!(
+                    f,
+                    "mkfile line {line}: recipe for {target} failed with status {code}: {cmd}"
+                )
             }
             MkError::Recipe { target, cmd, code, .. } => {
                 write!(f, "recipe for {target} failed with status {code}: {cmd}")
@@ -97,9 +100,8 @@ fn file_time(path: &str) -> Option<SystemTime> {
 impl Engine {
     /// An engine with the process environment imported, as mk does.
     pub fn new() -> Engine {
-        let vars: HashMap<String, Vec<String>> = std::env::vars()
-            .map(|(k, v)| (k, vec![v]))
-            .collect();
+        let vars: HashMap<String, Vec<String>> =
+            std::env::vars().map(|(k, v)| (k, vec![v])).collect();
         Engine {
             vars,
             rules: HashMap::new(),
@@ -187,9 +189,9 @@ impl Engine {
             }
             match context.get(&name) {
                 Some(v) => out.push_str(v),
-                None => match self.vars.get(&name) {
-                    Some(values) => {
-                        // one level of expansion for stored values
+                None => {
+                    // one level of expansion for stored values
+                    if let Some(values) = self.vars.get(&name) {
                         let joined = values.join(" ");
                         if joined.contains('$') {
                             let expanded = self.expand(&joined, context)?;
@@ -198,8 +200,8 @@ impl Engine {
                             out.push_str(&joined);
                         }
                     }
-                    None => {}
-                },
+                    // unknown variables expand to nothing, as mk does
+                }
             }
         }
         Ok(out)
@@ -268,11 +270,7 @@ impl Engine {
         let mut newprereq: Vec<String> = Vec::new();
         for prereq in &prereqs {
             self.build(prereq, Some(target), chain)?;
-            let pt = self
-                .times
-                .get(prereq)
-                .copied()
-                .or_else(|| file_time(prereq));
+            let pt = self.times.get(prereq).copied().or_else(|| file_time(prereq));
             match (pt, target_time) {
                 (Some(pt), Some(tt)) if pt > tt => newprereq.push(prereq.clone()),
                 (Some(_), None) => newprereq.push(prereq.clone()),
@@ -281,10 +279,8 @@ impl Engine {
         }
 
         let virtual_rule = rule.attr('V');
-        let out_of_date = virtual_rule
-            || self.force
-            || target_time.is_none()
-            || !newprereq.is_empty();
+        let out_of_date =
+            virtual_rule || self.force || target_time.is_none() || !newprereq.is_empty();
         if !out_of_date {
             if let Some(t) = target_time {
                 self.times.insert(target.to_string(), t);
@@ -325,13 +321,9 @@ impl Engine {
                 .get("MKSHELL")
                 .and_then(|v| v.first().cloned())
                 .unwrap_or_else(|| "/bin/sh".to_string());
-            let status = Command::new(&shell)
-                .arg("-c")
-                .arg(&expanded)
-                .status()
-                .map_err(|e| MkError::Io {
-                    what: format!("cannot run {shell} for {target}: {e}"),
-                })?;
+            let status = Command::new(&shell).arg("-c").arg(&expanded).status().map_err(|e| {
+                MkError::Io { what: format!("cannot run {shell} for {target}: {e}") }
+            })?;
             let code = status.code().unwrap_or(if status.success() { 0 } else { 1 });
             if code != 0 && !rule.attr('E') {
                 if rule.attr('D') {
@@ -362,9 +354,8 @@ impl Engine {
             let now = filetime_set_now(target);
             self.mark_time(target, now);
         } else {
-            fs::write(target, b"").map_err(|e| {
-                MkError::Io { what: format!("cannot create {target}: {e}") }
-            })?;
+            fs::write(target, b"")
+                .map_err(|e| MkError::Io { what: format!("cannot create {target}: {e}") })?;
         }
         Ok(())
     }
@@ -400,7 +391,9 @@ fn meta_stem(pattern: &str, name: &str) -> Option<String> {
     let pos = pattern.find(sep)?;
     let prefix = &pattern[..pos];
     let suffix = &pattern[pos + 1..];
-    if name.len() < prefix.len() + suffix.len() || !name.starts_with(prefix) || !name.ends_with(suffix)
+    if name.len() < prefix.len() + suffix.len()
+        || !name.starts_with(prefix)
+        || !name.ends_with(suffix)
     {
         return None;
     }

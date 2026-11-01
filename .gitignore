@@ -12,3 +12,6 @@ Cargo.lock.bak
 /upload
 /download
 /scripts
+
+# artifacts the sandbox flattens from absolute paths (e.g. /tmp caches)
+,*

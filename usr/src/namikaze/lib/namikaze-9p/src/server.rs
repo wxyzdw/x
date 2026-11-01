@@ -174,11 +174,7 @@ impl<S: Read + Write> ServerConn<S> {
                 let granted = negotiate(&version, msize);
                 self.msize = granted.msize;
                 self.fids.clear(); // a Tversion restarts the session
-                self.send(&Msg::Rversion {
-                    tag,
-                    msize: granted.msize,
-                    version: granted.version,
-                })?;
+                self.send(&Msg::Rversion { tag, msize: granted.msize, version: granted.version })?;
             }
             Msg::Tauth { tag, .. } => {
                 self.rerror(tag, &Error::Server(Errno::AuthRequired))?;
@@ -266,17 +262,24 @@ impl<S: Read + Write> ServerConn<S> {
                         return Ok(());
                     }
                 };
-                let data = if is_dir { fsys.read_dir(node, offset, count) } else { fsys.read(node, offset, count) };
+                let data = if is_dir {
+                    fsys.read_dir(node, offset, count)
+                } else {
+                    fsys.read(node, offset, count)
+                };
                 match data {
                     Ok(data) => {
                         if data.len() as u32 > count {
-                            self.rerror(tag, &Error::BadField {
-                                op: "Tread",
-                                why: format!(
-                                    "backend returned {} bytes for a read of {count}",
-                                    data.len()
-                                ),
-                            })?;
+                            self.rerror(
+                                tag,
+                                &Error::BadField {
+                                    op: "Tread",
+                                    why: format!(
+                                        "backend returned {} bytes for a read of {count}",
+                                        data.len()
+                                    ),
+                                },
+                            )?;
                         } else {
                             self.send(&Msg::Rread { tag, data })?;
                         }
@@ -359,10 +362,13 @@ impl<S: Read + Write> ServerConn<S> {
             | Msg::Rremove { .. }
             | Msg::Rstat { .. }
             | Msg::Rwstat { .. } => {
-                self.rerror(tag, &Error::State {
-                    op: "dispatch",
-                    why: format!("unexpected {} from a client", proto::type_name(msg.typ())),
-                })?;
+                self.rerror(
+                    tag,
+                    &Error::State {
+                        op: "dispatch",
+                        why: format!("unexpected {} from a client", proto::type_name(msg.typ())),
+                    },
+                )?;
             }
         }
         Ok(())
@@ -413,12 +419,12 @@ impl<S: Read + Write> ServerConn<S> {
         }
         if !qids.is_empty() || wnames.is_empty() {
             let qid = match qids.last() {
-            Some(q) => *q,
-            None => match self.fids.get(&fid) {
-                Some(f) => f.qid,
-                None => return self.rerror(tag, &Error::Server(Errno::BadFid)),
-            },
-        };
+                Some(q) => *q,
+                None => match self.fids.get(&fid) {
+                    Some(f) => f.qid,
+                    None => return self.rerror(tag, &Error::Server(Errno::BadFid)),
+                },
+            };
             self.fids.insert(newfid, Fid { node: cur, qid, open: None });
         }
         self.send(&Msg::Rwalk { tag, wqids: qids })
@@ -431,18 +437,24 @@ impl<S: Read + Write> ServerConn<S> {
             None => return Some(Error::Server(Errno::BadFid)),
         };
         if f.open.is_some() {
-            return Some(Error::Server(Errno::BadUseFd)
-                .with_ctx(format!("Topen: fid {fid} is already open")));
+            return Some(
+                Error::Server(Errno::BadUseFd)
+                    .with_ctx(format!("Topen: fid {fid} is already open")),
+            );
         }
         let access = mode & 0x07;
         if access > proto::OEXEC {
-            return Some(Error::Server(Errno::BadArg)
-                .with_ctx(format!("Topen: open mode {mode:#04x} has an invalid access field")));
+            return Some(
+                Error::Server(Errno::BadArg)
+                    .with_ctx(format!("Topen: open mode {mode:#04x} has an invalid access field")),
+            );
         }
         let known = proto::OTRUNC | proto::OCEXEC | proto::ORCLOSE | proto::OEXCL;
         if mode & !0x07 & !known != 0 {
-            return Some(Error::Server(Errno::BadArg)
-                .with_ctx(format!("Topen: open mode {mode:#04x} sets unknown flags")));
+            return Some(
+                Error::Server(Errno::BadArg)
+                    .with_ctx(format!("Topen: open mode {mode:#04x} sets unknown flags")),
+            );
         }
         None
     }

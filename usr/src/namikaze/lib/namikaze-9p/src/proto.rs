@@ -143,34 +143,131 @@ impl Qid {
 /// four-byte size prefix is transport framing and lives outside.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Msg {
-    Tversion { tag: u16, msize: u32, version: String },
-    Rversion { tag: u16, msize: u32, version: String },
-    Tauth { tag: u16, afid: u32, uname: String, aname: String },
-    Rauth { tag: u16, aqid: Qid },
-    Tattach { tag: u16, fid: u32, afid: u32, uname: String, aname: String },
-    Rattach { tag: u16, aqid: Qid },
+    Tversion {
+        tag: u16,
+        msize: u32,
+        version: String,
+    },
+    Rversion {
+        tag: u16,
+        msize: u32,
+        version: String,
+    },
+    Tauth {
+        tag: u16,
+        afid: u32,
+        uname: String,
+        aname: String,
+    },
+    Rauth {
+        tag: u16,
+        aqid: Qid,
+    },
+    Tattach {
+        tag: u16,
+        fid: u32,
+        afid: u32,
+        uname: String,
+        aname: String,
+    },
+    Rattach {
+        tag: u16,
+        aqid: Qid,
+    },
     /// Received only; never sent by this stack.
-    Rerror { tag: u16, ename: String },
-    Tflush { tag: u16, oldtag: u16 },
-    Rflush { tag: u16 },
-    Twalk { tag: u16, fid: u32, newfid: u32, wnames: Vec<String> },
-    Rwalk { tag: u16, wqids: Vec<Qid> },
-    Topen { tag: u16, fid: u32, mode: u8 },
-    Ropen { tag: u16, qid: Qid, iounit: u32 },
-    Tcreate { tag: u16, fid: u32, name: String, perm: u32, mode: u8 },
-    Rcreate { tag: u16, qid: Qid, iounit: u32 },
-    Tread { tag: u16, fid: u32, offset: u64, count: u32 },
-    Rread { tag: u16, data: Vec<u8> },
-    Twrite { tag: u16, fid: u32, offset: u64, data: Vec<u8> },
-    Rwrite { tag: u16, count: u32 },
-    Tclunk { tag: u16, fid: u32 },
-    Rclunk { tag: u16 },
-    Tremove { tag: u16, fid: u32 },
-    Rremove { tag: u16 },
-    Tstat { tag: u16, fid: u32 },
-    Rstat { tag: u16, stat: Dir },
-    Twstat { tag: u16, fid: u32, stat: Dir },
-    Rwstat { tag: u16 },
+    Rerror {
+        tag: u16,
+        ename: String,
+    },
+    Tflush {
+        tag: u16,
+        oldtag: u16,
+    },
+    Rflush {
+        tag: u16,
+    },
+    Twalk {
+        tag: u16,
+        fid: u32,
+        newfid: u32,
+        wnames: Vec<String>,
+    },
+    Rwalk {
+        tag: u16,
+        wqids: Vec<Qid>,
+    },
+    Topen {
+        tag: u16,
+        fid: u32,
+        mode: u8,
+    },
+    Ropen {
+        tag: u16,
+        qid: Qid,
+        iounit: u32,
+    },
+    Tcreate {
+        tag: u16,
+        fid: u32,
+        name: String,
+        perm: u32,
+        mode: u8,
+    },
+    Rcreate {
+        tag: u16,
+        qid: Qid,
+        iounit: u32,
+    },
+    Tread {
+        tag: u16,
+        fid: u32,
+        offset: u64,
+        count: u32,
+    },
+    Rread {
+        tag: u16,
+        data: Vec<u8>,
+    },
+    Twrite {
+        tag: u16,
+        fid: u32,
+        offset: u64,
+        data: Vec<u8>,
+    },
+    Rwrite {
+        tag: u16,
+        count: u32,
+    },
+    Tclunk {
+        tag: u16,
+        fid: u32,
+    },
+    Rclunk {
+        tag: u16,
+    },
+    Tremove {
+        tag: u16,
+        fid: u32,
+    },
+    Rremove {
+        tag: u16,
+    },
+    Tstat {
+        tag: u16,
+        fid: u32,
+    },
+    Rstat {
+        tag: u16,
+        stat: Dir,
+    },
+    Twstat {
+        tag: u16,
+        fid: u32,
+        stat: Dir,
+    },
+    Rwstat {
+        tag: u16,
+    },
 }
 
 impl Msg {
@@ -244,8 +341,7 @@ impl Msg {
     pub fn serialize(&self, msize: u32) -> Result<Vec<u8>, Error> {
         let mut w = Writer::new(self.typ());
         match self {
-            Msg::Tversion { tag, msize: m, version }
-            | Msg::Rversion { tag, msize: m, version } => {
+            Msg::Tversion { tag, msize: m, version } | Msg::Rversion { tag, msize: m, version } => {
                 w.u16(*tag).u32(*m).string(version);
             }
             Msg::Tauth { tag, afid, uname, aname } => {
@@ -499,11 +595,7 @@ impl Dir {
         // directory reader steps through entries with pos += size
         let total = 2 + Self::fixed_size() as usize + strings_len;
         if total > u16::MAX as usize {
-            return Err(Error::Oversize {
-                op: "stat",
-                limit: u16::MAX as u32,
-                got: total as u32,
-            });
+            return Err(Error::Oversize { op: "stat", limit: u16::MAX as u32, got: total as u32 });
         }
         let mut body: Vec<u8> = Vec::with_capacity(total);
         body.extend_from_slice(&(total as u16).to_le_bytes());
@@ -622,12 +714,7 @@ mod tests {
 
     #[test]
     fn walk_over_limit_is_rejected_before_the_wire() {
-        let msg = Msg::Twalk {
-            tag: 1,
-            fid: 2,
-            newfid: 3,
-            wnames: vec!["x".into(); MAX_WELEM + 1],
-        };
+        let msg = Msg::Twalk { tag: 1, fid: 2, newfid: 3, wnames: vec!["x".into(); MAX_WELEM + 1] };
         let err = msg.serialize(8192).expect_err("over the walk limit");
         assert!(matches!(err, Error::BadField { .. }), "got {err:?}");
     }
@@ -655,7 +742,7 @@ mod tests {
         let back = Dir::decode(&blob).expect("decode");
         assert_eq!(d, back);
         // size field (2) + fixed part + four length-prefixed strings
-        let strings = (2 + 1) + (2 + 1) + (2 + 1) + (2 + 0);
+        let strings = (2 + 1) + (2 + 1) + (2 + 1) + 2;
         let expect = 2 + Dir::fixed_size() as usize + strings;
         assert_eq!(blob.len(), expect, "wire stat length");
         let declared = u16::from_le_bytes([blob[0], blob[1]]) as usize;

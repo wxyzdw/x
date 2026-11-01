@@ -3,7 +3,7 @@
 //! grammar of Plan 9's rc(1) for the subset this port implements.
 //! Every error names the position and what the parser expected.
 
-use crate::lex::{Pos, RcError, Token, Tok, Word};
+use crate::lex::{Pos, RcError, Tok, Token, Word};
 
 /// A word ingredient: a literal, a variable, a subscripted variable or
 /// a command substitution. Adjacent ingredients concatenate (`a$b`).
@@ -54,7 +54,10 @@ pub enum Cond {
 /// The command tree.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Node {
-    Simple { argv: Vec<Term>, redirs: Vec<Redir> },
+    Simple {
+        argv: Vec<Term>,
+        redirs: Vec<Redir>,
+    },
     /// a | b | c - one or more stages
     Pipe(Vec<Node>),
     /// a && b
@@ -67,12 +70,23 @@ pub enum Node {
     Seq(Vec<Node>),
     /// { ... } as a command
     Block(Box<Node>),
-    If { cond: Cond, then: Box<Node>, els: Option<Box<Node>> },
+    If {
+        cond: Cond,
+        then: Box<Node>,
+        els: Option<Box<Node>>,
+    },
     /// rc's `if not cmd`: the body runs when the immediately preceding
     /// if condition was false
     IfNot(Box<Node>),
-    While { cond: Cond, body: Box<Node> },
-    For { var: String, list: Vec<Term>, body: Box<Node> },
+    While {
+        cond: Cond,
+        body: Box<Node>,
+    },
+    For {
+        var: String,
+        list: Vec<Term>,
+        body: Box<Node>,
+    },
 }
 
 struct Parser {
@@ -322,10 +336,9 @@ impl Parser {
             Some(t) if t.tok == Tok::If => self.if_node(),
             Some(t) if t.tok == Tok::While => self.while_node(),
             Some(t) if t.tok == Tok::For => self.for_node(),
-            Some(t) if t.tok == Tok::Tilde => Err(RcError::new(
-                t.pos,
-                "'~' is only valid inside an if or while condition",
-            )),
+            Some(t) if t.tok == Tok::Tilde => {
+                Err(RcError::new(t.pos, "'~' is only valid inside an if or while condition"))
+            }
             Some(t) if self.starts_term(&t.tok) => self.simple(),
             Some(t) => Err(RcError::new(t.pos, format!("unexpected {n}", n = tok_name(&t.tok)))),
             None => Err(RcError::new(Pos { line: u32::MAX, col: 0 }, "unexpected end of input")),
@@ -437,15 +450,12 @@ impl Parser {
         if matches!(self.peek(), Some(t) if t.tok == Tok::Tilde) {
             let tilde_pos = self.peek().map(|t| t.pos).unwrap_or(Pos { line: 1, col: 1 });
             self.pos += 1;
-            let subject = vec![self.term().map_err(|e| {
-                RcError::new(tilde_pos, format!("'~' needs a subject: {e}"))
-            })?];
+            let subject = vec![self
+                .term()
+                .map_err(|e| RcError::new(tilde_pos, format!("'~' needs a subject: {e}")))?];
             let patterns = self.terms_until_rparen_pattern()?;
             if patterns.is_empty() {
-                return Err(RcError::new(
-                    tilde_pos,
-                    "'~' needs at least one pattern",
-                ));
+                return Err(RcError::new(tilde_pos, "'~' needs at least one pattern"));
             }
             return Ok(Cond::Match(subject, patterns));
         }
@@ -540,7 +550,10 @@ impl Parser {
                     Some(Token { pos, tok, .. }) => {
                         return Err(RcError::new(
                             pos,
-                            format!("expected a variable name after '$', found {n}", n = tok_name(&tok)),
+                            format!(
+                                "expected a variable name after '$', found {n}",
+                                n = tok_name(&tok)
+                            ),
                         ));
                     }
                     None => {
@@ -562,7 +575,10 @@ impl Parser {
                             Some(Token { pos, tok, .. }) => {
                                 return Err(RcError::new(
                                     pos,
-                                    format!("expected a variable name after '$#', found {n}", n = tok_name(&tok)),
+                                    format!(
+                                        "expected a variable name after '$#', found {n}",
+                                        n = tok_name(&tok)
+                                    ),
                                 ));
                             }
                             None => {
@@ -581,7 +597,10 @@ impl Parser {
                         Some(Token { pos, tok, .. }) => {
                             return Err(RcError::new(
                                 pos,
-                                format!("expected a variable name after '$#', found {n}", n = tok_name(&tok)),
+                                format!(
+                                    "expected a variable name after '$#', found {n}",
+                                    n = tok_name(&tok)
+                                ),
                             ));
                         }
                         None => {

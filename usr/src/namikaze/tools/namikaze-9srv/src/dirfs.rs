@@ -12,7 +12,7 @@ use std::time::UNIX_EPOCH;
 
 use namikaze_9p::error::{Errno, Error, Result};
 use namikaze_9p::proto::{
-    Dir, Qid, DMEXEC, DMREAD, DMWRITE, DMDIR, OWRITE, ORDWR, OTRUNC, QTDIR, QTFILE,
+    Dir, Qid, DMDIR, DMEXEC, DMREAD, DMWRITE, ORDWR, OTRUNC, OWRITE, QTDIR, QTFILE,
 };
 use namikaze_9p::server::Fsys;
 
@@ -26,10 +26,8 @@ impl DirFs {
     /// Serve the tree under `root` (it must exist and be a directory).
     pub fn new(root: &Path) -> Result<DirFs, Error> {
         if !root.is_dir() {
-            return Err(Error::Server(Errno::BadSpec).with_ctx(format!(
-                "{} is not a directory",
-                root.display()
-            )));
+            return Err(Error::Server(Errno::BadSpec)
+                .with_ctx(format!("{} is not a directory", root.display())));
         }
         let mut fs = DirFs { paths: HashMap::new(), parents: HashMap::new(), next: 0 };
         fs.paths.insert(0, root.to_path_buf());
@@ -126,10 +124,9 @@ impl Fsys for DirFs {
         }
         let child = path.join(name);
         if !child.exists() {
-            return Err(Error::Server(Errno::NotFound).with_ctx(format!(
-                "walk {}",
-                child.display()
-            )));
+            return Err(
+                Error::Server(Errno::NotFound).with_ctx(format!("walk {}", child.display()))
+            );
         }
         let id = self.alloc(child, node);
         let qid = self.qid_for(id);
@@ -140,8 +137,9 @@ impl Fsys for DirFs {
         let qid = self.qid_for(node);
         let write_open = mode == OWRITE || mode == ORDWR || mode & OTRUNC != 0;
         if write_open {
-            return Err(Error::Server(Errno::ReadOnly)
-                .with_ctx("this server exports a read-only view"));
+            return Err(
+                Error::Server(Errno::ReadOnly).with_ctx("this server exports a read-only view")
+            );
         }
         let _ = self.path_of(node)?;
         Ok((qid, 8192))
@@ -233,8 +231,8 @@ mod tests {
     use super::*;
     use namikaze_9p::proto::OREAD;
 
-    fn temp_tree() -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("dirfs-{}", std::process::id()));
+    fn temp_tree(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("dirfs-{}-{name}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(dir.join("sub")).expect("mkdir");
         fs::write(dir.join("hello.txt"), b"hi dirfs\n").expect("write");
@@ -244,7 +242,7 @@ mod tests {
 
     #[test]
     fn walks_reads_and_stats_a_real_tree() {
-        let root = temp_tree();
+        let root = temp_tree("walk");
         let mut fs = DirFs::new(&root).expect("new");
         let (root_node, root_qid) = fs.attach("glenda", "").expect("attach");
         assert!(root_qid.is_dir());
@@ -284,7 +282,7 @@ mod tests {
 
     #[test]
     fn bad_aname_and_missing_files_are_classified() {
-        let root = temp_tree();
+        let root = temp_tree("aname");
         let mut fs = DirFs::new(&root).expect("new");
         let err = fs.attach("glenda", "/elsewhere").expect_err("bad aname");
         assert_eq!(Errno::leaf(&err), Errno::BadSpec);

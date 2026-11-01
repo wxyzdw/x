@@ -29,7 +29,8 @@ fn pipes_and_redirections() {
     let dir = std::env::temp_dir().join(format!("rc-e2e-{}", std::process::id()));
     std::fs::create_dir_all(&dir).expect("mkdir");
     let file = dir.join("out.txt");
-    let (out, _, code) = one_line(&format!("seq 1 3 > {}; wc -l < {}", file.display(), file.display()));
+    let (out, _, code) =
+        one_line(&format!("seq 1 3 > {}; wc -l < {}", file.display(), file.display()));
     assert_eq!((code, out.as_str()), (0, "3\n"));
     std::fs::remove_dir_all(&dir).expect("cleanup");
 }
@@ -63,8 +64,7 @@ fn status_variable_tracks_the_last_command() {
 
 #[test]
 fn missing_files_use_plan9_wording() {
-    let (_, err, code) = one_line("cat /definitely/not/here");
-    // the child cat reports; check rc's own wording instead
+    // rc reports its own exec failure with the plan9 wording
     let (_, err, code) = one_line("nonexistent-command-xyz");
     assert_eq!(code, 1);
     assert!(err.contains("file does not exist"), "got: {err}");

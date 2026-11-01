@@ -243,7 +243,10 @@ impl Interp {
             }
             Term::VarCount(name) => {
                 let n = self.lookup(name).len();
-                vec![vec![Ch { c: std::char::from_digit(n as u32, 10).unwrap_or('0'), quoted: false }]]
+                vec![vec![Ch {
+                    c: std::char::from_digit(n as u32, 10).unwrap_or('0'),
+                    quoted: false,
+                }]]
             }
             Term::Concat(parts) => {
                 let mut lists: Vec<Vec<Vec<Ch>>> = Vec::new();
@@ -313,9 +316,8 @@ impl Interp {
         for (k, v) in &self.vars {
             cmd.env(k, v.join(" "));
         }
-        let out = cmd
-            .output()
-            .map_err(|e| RunError::io(format!("command substitution `{src}"), e))?;
+        let out =
+            cmd.output().map_err(|e| RunError::io(format!("command substitution `{src}"), e))?;
         if !out.stderr.is_empty() {
             let mut err = std::io::stderr();
             let _ = err.write_all(&out.stderr);
@@ -370,10 +372,8 @@ impl Interp {
             return Ok(0);
         }
         // assignments before a command are scoped to that command
-        let saved: Vec<(String, Option<Vec<String>>)> = assigned
-            .iter()
-            .map(|(name, _)| (name.clone(), self.vars.get(name).cloned()))
-            .collect();
+        let saved: Vec<(String, Option<Vec<String>>)> =
+            assigned.iter().map(|(name, _)| (name.clone(), self.vars.get(name).cloned())).collect();
         // the values assigned above are the "new" ones; the saved ones
         // captured them already, so re-apply is unnecessary
         let result = {
@@ -519,11 +519,13 @@ impl Interp {
             let path = self.redirect_target(r)?;
             match r {
                 Redir::In(_) => {
-                    let f = fs::File::open(&path).map_err(|e| RunError::io(format!("< {path}"), e))?;
+                    let f =
+                        fs::File::open(&path).map_err(|e| RunError::io(format!("< {path}"), e))?;
                     cmd.stdin(Stdio::from(f));
                 }
                 Redir::Out(_) => {
-                    let f = fs::File::create(&path).map_err(|e| RunError::io(format!("> {path}"), e))?;
+                    let f = fs::File::create(&path)
+                        .map_err(|e| RunError::io(format!("> {path}"), e))?;
                     cmd.stdout(Stdio::from(f));
                 }
                 Redir::Append(_) => {
@@ -550,7 +552,11 @@ impl Interp {
         Ok(())
     }
 
-    fn external_with_redirs(&mut self, words: &[String], redirs: &[Redir]) -> Result<i32, RunError> {
+    fn external_with_redirs(
+        &mut self,
+        words: &[String],
+        redirs: &[Redir],
+    ) -> Result<i32, RunError> {
         let mut cmd = Command::new(&words[0]);
         cmd.args(&words[1..]);
         self.child_env(&mut cmd);

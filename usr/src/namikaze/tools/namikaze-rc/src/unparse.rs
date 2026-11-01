@@ -16,12 +16,33 @@ fn word(w: &Word) -> String {
         .map(|p| match p {
             Part::Quoted(s) => quote(s),
             Part::Unquoted(s) => {
-                if s.is_empty() {
-                    quote(s)
-                } else if s.chars().any(|c| {
-                    matches!(c, ' ' | '\t' | '\n' | ';' | '&' | '|' | '^' | '$' | '`' | '~'
-                        | '{' | '}' | '(' | ')' | '<' | '>' | '#' | '\'' | '*' | '?' | '[')
-                }) {
+                let needs_quotes = s.is_empty()
+                    || s.chars().any(|c| {
+                        matches!(
+                            c,
+                            ' ' | '\t'
+                                | '\n'
+                                | ';'
+                                | '&'
+                                | '|'
+                                | '^'
+                                | '$'
+                                | '`'
+                                | '~'
+                                | '{'
+                                | '}'
+                                | '('
+                                | ')'
+                                | '<'
+                                | '>'
+                                | '#'
+                                | '\''
+                                | '*'
+                                | '?'
+                                | '['
+                        )
+                    });
+                if needs_quotes {
                     quote(s)
                 } else {
                     s.clone()

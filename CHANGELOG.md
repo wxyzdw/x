@@ -30,6 +30,49 @@ the Keep a Changelog structure; the project uses pure semantic versioning.
   `usr/src/namikaze/dist`. Version bumped tree-wide, 58 overlay
   ebuilds renamed.
 
+### Added - the Plan 9 heritage
+
+- **The full Plan 9 4th edition source tree was surveyed directory by
+  directory** (http://9p.io/sources/plan9/): 894 directories, 16,015
+  files, ~277 MB, every listing recorded in
+  `usr/src/namikaze/docs/plan9/plan9-tree.json` by the reproducible
+  `scripts/plan9_crawl.py`. The analysis and the per-directory
+  adaptation verdicts are in
+  `usr/src/namikaze/docs/plan9/plan9-adaptation.md`. Upstream is MIT
+  (Plan 9 Foundation); the survey read `fcall.h`, `error.h`, `rc(1)`
+  and `mk(1)` as the ground truth for the ports.
+- **`lib/namikaze-9p`** (62nd crate): the 9P2000 protocol stack -
+  wire codec transcribed from `fcall.h`, a server framework in the
+  shape of `lib9p` (Fsys trait, fid table, walk/open/read semantics,
+  partial-walk replies), a synthetic file tree in the shape of
+  `lib9p/file.c` (static and dynamic files, content snapshotted at
+  open), a synchronous client with strict reply validation, and an
+  error taxonomy bound to the exact strings of
+  `/sys/src/9/port/error.h`. Malformed frames are answered with a
+  salvaged tag and the session survives; hostile or buggy peers
+  cannot wedge a connection.
+- **`tools/namikaze-rc`**: Plan 9's rc shell in Rust - single-quote
+  quoting with `''` doubling, list variables with `(a b c)` literals,
+  `^` concatenation with the pairwise/singleton/cross rules, `$x(1 2)`
+  subscripts, `$#x`, `~` pattern matching, backquote command
+  substitution, if/while/for, `if not`, assignments scoped to a
+  command per the manual's rule, globs on the result of substitution,
+  pipelines, `< > >> <>` redirections, `&` backgrounding, positioned
+  syntax errors and Plan 9 errno wording for runtime failures.
+- **`tools/namikaze-mk`**: Plan 9's mk in Rust - rules with the D, E,
+  N, Q, U, V attributes, meta-rules with `%` and `&` stems,
+  `$target $prereq $newprereq $stem $pid`, `<file` includes,
+  command-line variable overrides in any argument position, `-n` and
+  `-a`, cycle detection that prints the loop, and failures that name
+  the mkfile line.
+- **`tools/namikaze-9srv`**: serve a real directory read-only over
+  9P2000, or probe any 9P server with a full traced session
+  (`probe --trace` prints both frames of every exchange).
+- 93 new tests across the four crates (37 + 35 + 18 + 3), all std-only,
+  zero third-party dependencies, `#![forbid(unsafe_code)]`. The
+  workspace is now 62 crates; the overlay is 62 ebuilds
+  (`EBUILD_SECTORS` extended, curated ebuilds added for the four).
+
 ## [3.0.0-alpha.4]
 
 ### Added - the airootfs generation

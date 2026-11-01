@@ -1,4 +1,4 @@
-# NamikazeOS 3.0.0-alpha.4 (Rust Edition)
+# NamikazeOS 3.0.0-alpha.5 (Rust Edition)
 
 A privacy-first, anonymity-oriented operating system built on a Gentoo stage3
 base with a fully memory-safe, **dependency-free Rust userland** running on
@@ -108,13 +108,17 @@ filesystem they build, at the place FHS reserves for them:
 |   `--                     limine.conf, oneiso.toml manifest
 |-- usr/
 |   |-- bin/                session entry (namikaze-session)
-|   `-- src/namikaze/       THE Rust workspace (58 crates, zero
+|   `-- src/namikaze/       THE Rust workspace (62 crates, zero
 |       |                   third-party deps) - Cargo.toml, .cargo,
 |       |-- kernel/         bare-metal no_std Rust kernel (Limine
 |       |                   splash stage) + Linux LTS config fragments
 |       |-- lib/            namikaze-rt, -common, -fs (NamFS), -iso,
 |       |                   -dist (release pipeline), -guards, -ffi,
-|       |                   -i18n, -config, -live-core, -persist-core
+|       |                   -i18n, -config, -live-core, -persist-core,
+|       |                   -9p (the 9P2000 protocol stack)
+|       |-- docs/plan9/     the surveyed Plan 9 source manifest and the
+|       |                   adaptation map (plan9-tree.json,
+|       |                   plan9-adaptation.md)
 |       |-- services/       namikaze-init (PID 1), -detect, -hal,
 |       |                   -oomd, -sentinel, -guard, -watch,
 |       |                   -secupdate, -secpatch, -mirror, -cloak,
@@ -122,8 +126,10 @@ filesystem they build, at the place FHS reserves for them:
 |       |                   -tune, -ntp, -logd, -metrics, -trace
 |       `-- tools/          namikaze (build orchestration: its
 |                           build.rs IS the pipeline), namikaze-fstool,
-|                           namikaze-audit, namikaze-userland (50-tool
-|                           multi-call binary), namikaze-sh, -doctor,
+|                           namikaze-audit, namikaze-userland (52-tool
+|                           multi-call binary), namikaze-sh, -rc and
+|                           -mk (Plan 9's shell and make), -9srv
+|                           (9P server + probe), -doctor,
 |                           -vault, -seal, -ledger, -sandbox, -anon,
 |                           -macspin, -persist, -backup, -scrub,
 |                           -wipe, -share, -decoy, -report, -dupe,
@@ -142,6 +148,42 @@ Documentation lives **inside the crates it describes**: each crate
 carries its own `docs/` directory next to the sources. Project meta
 (this README, LICENSE, SECURITY, CONTRIBUTING, CHANGELOG and the CI
 workflows) sits at the filesystem root like a well-kept /-level.
+
+## The Plan 9 heritage (new in 3.0.0-alpha.5)
+
+Plan 9 from Bell Labs is the historic milestone this system borrows its
+toughest idea from: everything is a file, and the namespace that proves it
+is 9P. The full 4th edition source tree at `http://9p.io/sources/plan9/`
+was surveyed directory by directory - 894 directories, 16,015 files, ~277
+MB, every listing recorded in `usr/src/namikaze/docs/plan9/plan9-tree.json`
+- and the parts that still carry weight were adapted into the workspace as
+new std-only, dependency-free crates:
+
+- **`lib/namikaze-9p`** - the 9P2000 protocol: wire codec transcribed from
+  the surveyed `sys/include/fcall.h`, a server framework in the shape of
+  `sys/src/lib9p` (backend trait, fid table, walk/open/read semantics),
+  an in-memory synthetic tree in the shape of `file.c`, a synchronous
+  client, and an error taxonomy bound to the exact strings of the
+  surveyed `/sys/src/9/port/error.h` - every failure carries the
+  operation, the context chain and the leaf errno.
+- **`tools/namikaze-rc`** - Plan 9's rc shell: one quoting mechanism,
+  list values with `(a b c)` literals, `^` concatenation, subscripts,
+  `$#x`, `~` pattern matching, `` ` ``{...} command substitution,
+  if/while/for, `if not`, assignments scoped to a command, globs,
+  pipelines and `< > >> <>` redirections, with positioned syntax errors.
+- **`tools/namikaze-mk`** - Plan 9's mk: rules with the D, E, N, Q, U, V
+  attributes, meta-rules with `%` and `&` stems, `$target $prereq
+  $newprereq $stem`, `<file` includes, and cycle detection that prints
+  the loop.
+- **`tools/namikaze-9srv`** - serve a real directory read-only over
+  9P2000, or probe any 9P server with a full traced session
+  (`--trace` prints both frames of every exchange).
+
+93 new tests cover the four crates; the adaptation decisions, the
+per-directory verdicts and the deliberate exclusions are documented in
+`usr/src/namikaze/docs/plan9/plan9-adaptation.md`. Plan 9 is MIT licensed
+(Plan 9 Foundation); the adaptation carries MPL-2.0 like the rest of the
+workspace and cites the upstream files it follows.
 
 ## One command: cargo build
 

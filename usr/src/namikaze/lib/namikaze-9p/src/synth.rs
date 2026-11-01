@@ -8,7 +8,7 @@
 use std::collections::HashMap;
 
 use crate::error::{Errno, Error, Result};
-use crate::proto::{Dir, Qid, QTDIR, QTFILE, DMDIR, DMREAD, DMWRITE};
+use crate::proto::{Dir, Qid, DMDIR, DMREAD, DMWRITE, QTDIR, QTFILE};
 use crate::server::Fsys;
 
 /// A content generator for dynamic files, called once per open and the

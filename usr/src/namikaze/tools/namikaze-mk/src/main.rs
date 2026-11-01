@@ -127,7 +127,11 @@ fn main() {
     exit(status);
 }
 
-fn push_goal_or_override(arg: &str, goals: &mut Vec<String>, overrides: &mut Vec<(String, Vec<String>)>) {
+fn push_goal_or_override(
+    arg: &str,
+    goals: &mut Vec<String>,
+    overrides: &mut Vec<(String, Vec<String>)>,
+) {
     if let Some((name, rest)) = arg.split_once('=') {
         if !name.is_empty() && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
             let values = rest.split(' ').filter(|s| !s.is_empty()).map(String::from).collect();

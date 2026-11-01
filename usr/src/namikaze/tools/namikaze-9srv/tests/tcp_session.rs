@@ -68,12 +68,23 @@ fn full_session_over_tcp_with_the_real_dirfs() {
     assert_eq!(Errno::leaf(&err), Errno::NotFound);
     assert!(err.to_string().contains("void"), "the element is named: {err}");
 
-    // writes are refused read-only, with the plan9 errno on the wire
+    // writes are refused before they can reach the backend: the fid
+    // is not open for writing, so the answer is Ebadusefd; the server
+    // never even asks the read-only DirFs
     conn.clunk(3).expect("clunk");
     conn.walk(2, 3, &["README".to_string()]).expect("walk README");
-    let err = conn.write(3, 0, b"vandalism").expect_err("read-only");
-    assert_eq!(Errno::leaf(&err), Errno::ReadOnly);
+    let err = conn.write(3, 0, b"vandalism").expect_err("write on unread-open fid");
+    assert_eq!(Errno::leaf(&err), Errno::BadUseFd);
     assert_eq!(fs::read_to_string(dir.join("README")).expect("read"), "welcome to the export\n");
+
+    // opening for writing is refused by the read-only backend itself
+    conn.clunk(3).expect("clunk");
+    conn.walk(2, 3, &["README".to_string()]).expect("walk README again");
+    let err = conn.open(3, namikaze_9p::proto::OWRITE).expect_err("read-only open");
+    assert_eq!(Errno::leaf(&err), Errno::ReadOnly);
+    // a refused open does not release the fid; clunk before reuse
+    conn.clunk(3).expect("clunk after refused open");
+    conn.walk(2, 3, &["README".to_string()]).expect("walk README once more");
 
     // stat reports the real file name and length
     conn.clunk(3).expect("clunk");

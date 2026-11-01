@@ -52,9 +52,7 @@ fn main() {
 }
 
 fn opt_value(args: &[String], name: &str) -> Option<String> {
-    args.iter()
-        .position(|a| a == name)
-        .and_then(|i| args.get(i + 1).cloned())
+    args.iter().position(|a| a == name).and_then(|i| args.get(i + 1).cloned())
 }
 
 fn serve(args: &[String]) {
@@ -72,12 +70,7 @@ fn serve(args: &[String]) {
 }
 
 /// One traced raw exchange.
-fn rpc<S: Read + Write>(
-    sock: &mut S,
-    msize: u32,
-    msg: Msg,
-    trace: bool,
-) -> Result<Msg, Error> {
+fn rpc<S: Read + Write>(sock: &mut S, msize: u32, msg: Msg, trace: bool) -> Result<Msg, Error> {
     let frame = msg.serialize(msize)?;
     if trace {
         eprintln!("-> {:?} {}", proto::type_name(msg.typ()), describe(&msg));
@@ -150,11 +143,12 @@ fn probe(args: &[String]) {
     let mut sock =
         TcpStream::connect(&addr).unwrap_or_else(|e| fail(&format!("cannot dial {addr}: {e}")));
 
-    let reply = rpc(&mut sock, msize, Msg::Tversion {
-        tag: proto::NOTAG,
+    let reply = rpc(
+        &mut sock,
         msize,
-        version: proto::VERSION_9P2000.into(),
-    }, trace)
+        Msg::Tversion { tag: proto::NOTAG, msize, version: proto::VERSION_9P2000.into() },
+        trace,
+    )
     .unwrap_or_else(|e| fail(&e.to_string()));
     match &reply {
         Msg::Rversion { version, .. } if version == proto::VERSION_9P2000 => {}
@@ -164,13 +158,12 @@ fn probe(args: &[String]) {
         _ => fail("the peer answered the version request with something else"),
     }
 
-    let reply = rpc(&mut sock, msize, Msg::Tattach {
-        tag: 1,
-        fid: 2,
-        afid: proto::NOFID,
-        uname: whoami(),
-        aname: String::new(),
-    }, trace)
+    let reply = rpc(
+        &mut sock,
+        msize,
+        Msg::Tattach { tag: 1, fid: 2, afid: proto::NOFID, uname: whoami(), aname: String::new() },
+        trace,
+    )
     .unwrap_or_else(|e| fail(&e.to_string()));
     let root_qid = match reply {
         Msg::Rattach { aqid, .. } => aqid,
@@ -197,8 +190,9 @@ fn probe(args: &[String]) {
         let dir = dir_of(&path);
         let leaf = leaf_of(&path);
         walk_path(&mut sock, msize, trace, &dir, &leaf);
-        let reply = rpc(&mut sock, msize, Msg::Topen { tag: 30, fid: 3, mode: proto::OREAD }, trace)
-            .unwrap_or_else(|e| fail(&e.to_string()));
+        let reply =
+            rpc(&mut sock, msize, Msg::Topen { tag: 30, fid: 3, mode: proto::OREAD }, trace)
+                .unwrap_or_else(|e| fail(&e.to_string()));
         let iounit = match reply {
             Msg::Ropen { iounit, .. } => iounit.min(msize.saturating_sub(proto::IOHDRSZ)),
             _ => fail("no Ropen"),
@@ -206,13 +200,9 @@ fn probe(args: &[String]) {
         let mut all = Vec::new();
         let mut offset = 0u64;
         loop {
-            let reply = rpc(&mut sock, msize, Msg::Tread {
-                tag: 31,
-                fid: 3,
-                offset,
-                count: iounit,
-            }, trace)
-            .unwrap_or_else(|e| fail(&e.to_string()));
+            let reply =
+                rpc(&mut sock, msize, Msg::Tread { tag: 31, fid: 3, offset, count: iounit }, trace)
+                    .unwrap_or_else(|e| fail(&e.to_string()));
             let data = match reply {
                 Msg::Rread { data, .. } => data,
                 _ => fail("no Rread"),
@@ -235,7 +225,11 @@ fn probe(args: &[String]) {
         let leaf = leaf_of(&path);
         let qids = walk_path(&mut sock, msize, trace, &dir, &leaf);
         if !qids.is_empty() {
-            println!("walked {} element(s), leaf qid path={}", qids.len(), qids[qids.len() - 1].path);
+            println!(
+                "walked {} element(s), leaf qid path={}",
+                qids.len(),
+                qids[qids.len() - 1].path
+            );
         }
     }
 
@@ -260,23 +254,19 @@ fn walk_path(
     if !dir_elems.is_empty() {
         // walk the directory part in place on fid 2, then the leaf on
         // a fresh fid 3
-        let reply = rpc(sock, msize, Msg::Twalk {
-            tag: 10,
-            fid: 2,
-            newfid: 2,
-            wnames: dir_elems,
-        }, trace)
-        .unwrap_or_else(|e| fail(&e.to_string()));
+        let reply =
+            rpc(sock, msize, Msg::Twalk { tag: 10, fid: 2, newfid: 2, wnames: dir_elems }, trace)
+                .unwrap_or_else(|e| fail(&e.to_string()));
         if let Msg::Rwalk { wqids, .. } = reply {
             if leaf.is_empty() {
                 return wqids;
             }
-            let leaf_reply = rpc(sock, msize, Msg::Twalk {
-                tag: 11,
-                fid: 2,
-                newfid: 3,
-                wnames: vec![leaf.to_string()],
-            }, trace)
+            let leaf_reply = rpc(
+                sock,
+                msize,
+                Msg::Twalk { tag: 11, fid: 2, newfid: 3, wnames: vec![leaf.to_string()] },
+                trace,
+            )
             .unwrap_or_else(|e| fail(&e.to_string()));
             return match leaf_reply {
                 Msg::Rwalk { wqids, .. } => wqids,
@@ -287,12 +277,12 @@ fn walk_path(
     if leaf.is_empty() {
         return Vec::new();
     }
-    let reply = rpc(sock, msize, Msg::Twalk {
-        tag: 11,
-        fid: 2,
-        newfid: 3,
-        wnames: vec![leaf.to_string()],
-    }, trace)
+    let reply = rpc(
+        sock,
+        msize,
+        Msg::Twalk { tag: 11, fid: 2, newfid: 3, wnames: vec![leaf.to_string()] },
+        trace,
+    )
     .unwrap_or_else(|e| fail(&e.to_string()));
     match reply {
         Msg::Rwalk { wqids, .. } => wqids,
@@ -318,4 +308,3 @@ fn leaf_of(path: &str) -> String {
 fn whoami() -> String {
     std::env::var("USER").or_else(|_| std::env::var("LOGNAME")).unwrap_or_else(|_| "nobody".into())
 }
-

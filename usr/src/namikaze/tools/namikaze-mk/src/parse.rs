@@ -122,9 +122,7 @@ pub fn parse_file(path: &str, depth: usize) -> Result<Vec<Item>, ParseError> {
                 return Err(ParseError {
                     file: path.to_string(),
                     line: line_no,
-                    msg: format!(
-                        "neither an assignment nor a rule: \"{line}\""
-                    ),
+                    msg: format!("neither an assignment nor a rule: \"{line}\""),
                 });
             }
         };
@@ -218,10 +216,8 @@ mod tests {
 
     #[test]
     fn assignments_and_rules() {
-        let items = parse_text(
-            "CC=8c\nCFLAGS=-w\nprog: a.8 b.8\n\t$CC -o $target a.8 b.8\n",
-            "basic",
-        );
+        let items =
+            parse_text("CC=8c\nCFLAGS=-w\nprog: a.8 b.8\n\t$CC -o $target a.8 b.8\n", "basic");
         assert_eq!(items.len(), 3);
         match &items[0] {
             Item::Assign { var, values, .. } => {

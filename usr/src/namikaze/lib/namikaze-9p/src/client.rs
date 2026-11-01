@@ -123,9 +123,7 @@ impl<S: Read + Write> Conn<S> {
             });
         }
         match reply {
-            Msg::Rerror { ename, .. } => {
-                Err(Error::Server(Errno::classify(&ename)).with_ctx(op))
-            }
+            Msg::Rerror { ename, .. } => Err(Error::Server(Errno::classify(&ename)).with_ctx(op)),
             other if other.typ() == msg.typ() + 1 => Ok(other),
             other => Err(Error::State {
                 op,
@@ -182,11 +180,8 @@ impl<S: Read + Write> Conn<S> {
     /// `newfid` as the stepping stone for later chunks. Diagnostics
     /// name the failing element and the path context.
     pub fn walk_path(&mut self, root: u32, newfid: u32, path: &str) -> Result<Vec<Qid>, Error> {
-        let parts: Vec<String> = path
-            .split('/')
-            .filter(|p| !p.is_empty() && *p != ".")
-            .map(String::from)
-            .collect();
+        let parts: Vec<String> =
+            path.split('/').filter(|p| !p.is_empty() && *p != ".").map(String::from).collect();
         if parts.is_empty() {
             return Err(Error::BadField {
                 op: "walk_path",
@@ -244,12 +239,7 @@ impl<S: Read + Write> Conn<S> {
     pub fn write(&mut self, fid: u32, offset: u64, data: &[u8]) -> Result<u32, Error> {
         let tag = self.tag("Twrite")?;
         let capped = data.len().min((self.msize.saturating_sub(proto::IOHDRSZ + 12)) as usize);
-        match self.rpc(Msg::Twrite {
-            tag,
-            fid,
-            offset,
-            data: data[..capped].to_vec(),
-        })? {
+        match self.rpc(Msg::Twrite { tag, fid, offset, data: data[..capped].to_vec() })? {
             Msg::Rwrite { count, .. } => Ok(count),
             other => Err(unexpected("Twrite", other)),
         }
@@ -309,8 +299,5 @@ fn read_frame<R: Read>(io: &mut R, msize: u32) -> Result<Vec<u8>, Error> {
 /// The reply type was syntactically valid but not the answer to our
 /// request (the rpc() type check passed, so this is a logic slip).
 fn unexpected(op: &'static str, msg: Msg) -> Error {
-    Error::State {
-        op,
-        why: format!("unexpected reply type {}", proto::type_name(msg.typ())),
-    }
+    Error::State { op, why: format!("unexpected reply type {}", proto::type_name(msg.typ())) }
 }

@@ -76,10 +76,7 @@ fn a_newer_prereq_triggers_a_rebuild() {
 #[test]
 fn meta_rules_match_stems() {
     let w = Work::new("meta");
-    w.write(
-        "mkfile",
-        "%.echo: %.src\n\tcp $prereq $target\n",
-    );
+    w.write("mkfile", "%.echo: %.src\n\tcp $prereq $target\n");
     w.write("hello.src", "x");
     let (out, _, code) = w.mk(&["hello.echo"]);
     assert_eq!(code, 0, "meta-rule applies: {out}");
@@ -90,10 +87,7 @@ fn meta_rules_match_stems() {
 #[test]
 fn virtual_rules_always_run_and_group_prereqs() {
     let w = Work::new("virtual");
-    w.write(
-        "mkfile",
-        "all:V: one two\none:\n\techo one >> log\ntwo:\n\techo two >> log\n",
-    );
+    w.write("mkfile", "all:V: one two\none:\n\techo one >> log\ntwo:\n\techo two >> log\n");
     let (out, _, code) = w.mk(&["all"]);
     assert_eq!(code, 0, "{out}");
     let log = fs::read_to_string(w.dir.join("log")).expect("read");

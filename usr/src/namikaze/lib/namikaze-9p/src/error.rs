@@ -410,10 +410,7 @@ mod tests {
             Errno::leaf(&Error::State { op: "Twalk", why: "fid 2 is open".into() }),
             Errno::BadUseFd
         );
-        assert_eq!(
-            Errno::leaf(&Error::BadType { op: "parse", got: 200 }),
-            Errno::BadArg
-        );
+        assert_eq!(Errno::leaf(&Error::BadType { op: "parse", got: 200 }), Errno::BadArg);
         assert_eq!(
             Errno::leaf(&Error::Oversize { op: "read_frame", limit: 8192, got: 99_999 }),
             Errno::TooBig

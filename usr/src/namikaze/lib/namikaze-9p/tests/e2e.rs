@@ -6,8 +6,8 @@
 use std::os::unix::net::UnixStream;
 use std::thread;
 
-use namikaze_9p::proto::{DMDIR, OREAD, ORDWR, OWRITE};
-use namikaze_9p::{Conn, Errno, Error, Msg, Synth};
+use namikaze_9p::proto::{DMDIR, ORDWR, OREAD, OWRITE};
+use namikaze_9p::{Conn, Errno, Msg, Synth};
 
 fn demo_synth() -> Synth {
     let mut s = Synth::new();
@@ -67,11 +67,7 @@ fn directory_listing_round_trips() {
     }
     assert_eq!(
         names,
-        vec![
-            ("hello".to_string(), false),
-            ("clock".to_string(), false),
-            ("sub".to_string(), true),
-        ]
+        vec![("hello".to_string(), false), ("clock".to_string(), false), ("sub".to_string(), true),]
     );
 }
 
@@ -114,10 +110,7 @@ fn partial_walk_prefix_is_reported_by_the_client() {
     let err = conn.walk(1, 2, &names).expect_err("second element missing");
     assert_eq!(Errno::leaf(&err), Errno::NotFound);
     let text = err.to_string();
-    assert!(
-        text.contains("element 1 \"void\""),
-        "client names the failing element: {text}"
-    );
+    assert!(text.contains("element 1 \"void\""), "client names the failing element: {text}");
     drop(conn);
     server.join().expect("server clean");
 }
@@ -184,7 +177,6 @@ fn oversized_read_count_is_refused() {
     let tag = 99;
     let raw = Msg::Tread { tag, fid: 2, offset: 0, count: u32::MAX / 2 };
     let frame = raw.serialize(conn.msize()).expect("fits one frame");
-    use std::io::Write;
     conn.send_raw(&frame).expect("send raw Tread");
     let reply = conn.recv_raw().expect("recv reply");
     let msg = Msg::parse(&reply).expect("parse reply");

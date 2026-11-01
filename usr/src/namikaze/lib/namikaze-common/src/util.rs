@@ -87,6 +87,10 @@ pub fn gentoo_from(ws_version: &str) -> String {
 /// ebuild generator and the version guard.
 pub const EBUILD_SECTORS: &[(&str, &str)] = &[
     ("namikaze-rt", "rt"),
+    ("namikaze-9p", "9p"),
+    ("namikaze-rc", "rc"),
+    ("namikaze-mk", "mk"),
+    ("namikaze-9srv", "9srv"),
     ("namikaze-common", "common"),
     ("namikaze-ffi", "ffi"),
     ("namikaze-i18n", "i18n"),
