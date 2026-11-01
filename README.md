@@ -21,15 +21,16 @@ workspace is the from-scratch Rust rewrite ("Rust Edition") that becomes
 | P3 | One system, all machines | Single multi-arch ISO; CPU features and boards detected at boot |
 | P4 | Confidential by default | Live persistent by default, everything encrypted, deny-by-default egress |
 | P5 | Zero third-party dependencies | The entire workspace compiles with `std` alone; crypto (SHA-256, HMAC, PBKDF2, XChaCha20-Poly1305, AES-256-XTS), parsers, compression, HTTP, CLI and logging are hand-written and pinned by public test vectors (dep-guard) |
-| P6 | The repo is the filesystem | `airootfs/` mirrors the live root filesystem; what you see in the tree is what boots |
+| P6 | The repo is the filesystem | the tree at the repository root IS the live root filesystem (airootfs-style); what you see in the tree is what boots |
 | P7 | Compliance as code | CIS/STIG/NIST controls ship as executable profiles |
 | P8 | Encrypt everything, expose nothing | Tiered encryption; destructive tools are opt-in |
 | P9 | Conceal, don't erase | Wrong passphrases never destroy data; they conceal it |
 
 ## The airootfs and NamFS (new in 3.0.0-alpha.4)
 
-`airootfs/` is the live root filesystem tree - the Arch-releng
-`airootfs` idea, but persistent and encrypted. The ISO boots it live
+The repository root is the live root filesystem tree - the
+Arch-releng `airootfs` idea, but persistent and encrypted (and here
+also self-hosting the workspace sources under `usr/src/`). The ISO boots it live
 (squashfs slot in the boot tree); the writable layer is NamFS:
 
 - **NamFS** (`lib/namikaze-fs`) is the native encrypted persistent
@@ -44,9 +45,9 @@ workspace is the from-scratch Rust rewrite ("Rust Edition") that becomes
   (`boot/namfs/namikaze-demo.namfs`, 1 MiB, passphrase
   `namikaze-demo`, byte-stable across builds) so the persistent layer
   can be exercised anywhere.
-- **Policy lives in the airootfs**: `airootfs/etc/namikaze/namfs.conf`
+- **Policy lives in the airootfs**: `etc/namikaze/namfs.conf`
   (mode = volatile | persistent | ask, volume path, passphrase source,
-  KDF iterations) and `airootfs/etc/namikaze/namfs.tab` (volume table).
+  KDF iterations) and `etc/namikaze/namfs.tab` (volume table).
   The bare-metal kernel parses `namikaze.namfs=<label>` on its command
   line and reports the persistent layer on the splash and COM1.
 - The LUKS2 path (`namikaze-persist`, argon2id) stays for full-disk
@@ -84,7 +85,7 @@ The ISO boots live; boot modes are selected in the Limine menu or with
 | Copy to RAM | `namikaze.live=ram` | System image copied to RAM, media released |
 | Session | `namikaze.live=session` | RAM during the session, flushed to the volume on clean shutdown |
 
-Persistence is allowlist-only (`airootfs/etc/namikaze/persistence.conf`);
+Persistence is allowlist-only (`etc/namikaze/persistence.conf`);
 `/usr`, `/boot` and `/lib` stay sealed by dm-verity. Whole-image updates flow
 through `namikaze-secupdate` (SHA-256-verified bundles, atomic slot
 rotation, offline rollback). See

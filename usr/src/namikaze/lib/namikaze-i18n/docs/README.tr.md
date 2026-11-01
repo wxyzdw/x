@@ -19,7 +19,7 @@ ana hattın (mainline) Linux LTS çekirdeği. Tek ISO ile her makinede açılır
   8 mimari (x86_64, aarch64, armv7, armv6, riscv64, loongarch64, ppc64le,
   s390x) ve tek çekirdek + çok DTB stratejisi. Detay: `services/namikaze-hal/docs/HARDWARE.md`.
 - **Linux çekirdeği**: ana hat LTS, kernel.org'dan imzalı doğrulamayla
-  çekilir (`kernel/fetch.sh`); katkı yalnızca yapılandırma parçalarıdır
+  çekilir; katkı yalnızca yapılandırma parçalarıdır (bkz. `kernel/README.md`)
   (KSPP sertleştirme + mimari kapsamı). kernel-check zorunlu
   çekirdek seçeneklerini denetler.
 - **MPL-2.0**: lisans Mozilla Public License 2.0 olarak sabitlendi; tüm

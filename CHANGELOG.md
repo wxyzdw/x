@@ -36,7 +36,7 @@ the Keep a Changelog structure; the project uses pure semantic versioning.
   directory** (http://9p.io/sources/plan9/): 894 directories, 16,015
   files, ~277 MB, every listing recorded in
   `usr/src/namikaze/docs/plan9/plan9-tree.json` by the reproducible
-  `scripts/plan9_crawl.py`. The analysis and the per-directory
+  `usr/src/namikaze/docs/plan9/plan9_crawl.py`. The analysis and the per-directory
   adaptation verdicts are in
   `usr/src/namikaze/docs/plan9/plan9-adaptation.md`. Upstream is MIT
   (Plan 9 Foundation); the survey read `fcall.h`, `error.h`, `rc(1)`

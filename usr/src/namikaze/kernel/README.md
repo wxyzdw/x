@@ -33,18 +33,19 @@ boot path, not a replacement for the Linux kernel.
   builds never drag the freestanding entry point onto a hosted linker;
   unit tests run through its lib target (`cargo test --lib`).
 - `iso` stages a built kernel at `boot/namikaze-kernel`, which activates
-  the "bare-metal kernel" entry in `iso/limine/limine.conf`. The protocol
+  the "bare-metal kernel" entry in `boot/limine/limine.conf`. The protocol
   constants (base revision 2 tag, request ids, delimited-scan markers)
   are transcribed from the pinned limine-protocol spec that the official
   C template depends on.
 
 ## Files
 
-- `fetch.sh [VERSION]` - download and verify the LTS tarball from kernel.org
-  (uses the signed sha256sums list; VERSION defaults to the current longterm
-  series from releases.json).
-- `build.sh ARCH` - defconfig + `hardened.config` + `universal-ARCH.config`
-  merged with the official merge_config tool, then bzImage/Image/modules/dtbs.
+- Source arrives as a kernel.org LTS tarball, verified against the signed
+  sha256sums list (VERSION defaults to the current longterm series from
+  releases.json); the fetch runs on the build host, not in this tree.
+- The build merges the default config with `configs/fragments/hardened.config`
+  and the matching `universal-ARCH.config` via the official merge_config tool,
+  then produces bzImage/Image/modules/dtbs.
 - `configs/fragments/hardened.config` - KSPP-aligned hardening (already
   applied to every architecture).
 - `configs/fragments/universal-*.config` - per-architecture device coverage.
