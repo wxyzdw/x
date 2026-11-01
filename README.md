@@ -90,47 +90,58 @@ through `namikaze-secupdate` (SHA-256-verified bundles, atomic slot
 rotation, offline rollback). See
 `tools/namikaze-persist/docs/PERSISTENCE.md`.
 
-## Repository layout
+## Repository layout: the repo IS the filesystem
 
-The repository root carries only project meta (this README, LICENSE,
-policy docs and the CI workflows); the entire product tree lives under
-`NamikazeOS/`, laid out as the system itself. Documentation lives
-**inside the crates it describes**: each crate carries its own `docs/`
-directory next to the sources.
+The repository root is the airootfs - the live root filesystem itself.
+Every directory is a real FHS location, and the sources live inside the
+filesystem they build, at the place FHS reserves for them:
 
 ```
-NamikazeOS/
-├── Cargo.toml    workspace manifest: 58 crates, zero third-party deps
-├── airootfs/     THE live root filesystem tree (FHS): etc/init.d services,
-│                 etc/namikaze policy (namfs.conf, namfs.tab, motd),
-│                 greetd + Niri session, pam.d, sysctl, apparmor
-├── boot/         bootloader payload tree: pinned Limine binaries,
-│                 limine.conf, manifests (oneiso.toml, limine.lock)
-├── kernel/       bare-metal no_std Rust kernel (Limine splash stage,
-│                 excluded from the workspace on purpose) plus the
-│                 mainline LTS Linux config fragments
-├── lib/          foundational libraries: namikaze-rt (std-only toolkit),
-│                 -common (error/util/sbom/kernel-image), -fs (NamFS),
-│                 -iso (staging + ISO9660/El Torito writer + audit),
-│                 -dist (release pipeline), -guards (10 tree guards),
-│                 -ffi, -i18n, -config, -live-core, -persist-core
-├── services/     init.d-managed system services and the boot chain:
-│                 namikaze-init (PID 1), -detect, -hal, -oomd, -sentinel,
-│                 -guard (nftables), -watch, -secupdate, -secpatch,
-│                 -mirror, -cloak (Tor), -dns, -usbguard, -live,
-│                 -firstboot, -desk (Niri), -tune, -ntp, -logd,
-│                 -metrics, -trace
-├── tools/        the command-line surface: namikaze (build orchestration
-│                 + CLI, its build.rs IS the pipeline), namikaze-fstool
-│                 (NamFS volumes), namikaze-audit (deep ISO auditor),
-│                 namikaze-userland (50-tool multi-call binary),
-│                 namikaze-sh, -doctor, -vault, -seal, -ledger,
-│                 -sandbox, -anon, -macspin, -persist, -backup, -scrub,
-│                 -wipe, -share, -decoy, -report, -dupe, -guest, -pkg,
-│                 -install, -rescue, -attest, -chrono
-├── overlay/      the ::namikaze Gentoo overlay (ebuilds, package sets)
-└── .cargo/       musl rust-lld linker config (no aliases needed anymore)
+/ (repository root = filesystem root)
+|-- etc/                    system configuration (what boots)
+|   |-- namikaze/           namfs.conf, namfs.tab, motd, system.toml,
+|   |                       dns.toml, ntp.toml, persistence.conf, sandbox
+|   |-- init.d/  cron.*/  local.d/  profile.d/
+|   `-- greetd/  pam.d/
+|-- boot/                   bootloader payload tree: pinned Limine
+|   |                       binaries (limine.lock-sha256-verified),
+|   `--                     limine.conf, oneiso.toml manifest
+|-- usr/
+|   |-- bin/                session entry (namikaze-session)
+|   `-- src/namikaze/       THE Rust workspace (58 crates, zero
+|       |                   third-party deps) - Cargo.toml, .cargo,
+|       |-- kernel/         bare-metal no_std Rust kernel (Limine
+|       |                   splash stage) + Linux LTS config fragments
+|       |-- lib/            namikaze-rt, -common, -fs (NamFS), -iso,
+|       |                   -dist (release pipeline), -guards, -ffi,
+|       |                   -i18n, -config, -live-core, -persist-core
+|       |-- services/       namikaze-init (PID 1), -detect, -hal,
+|       |                   -oomd, -sentinel, -guard, -watch,
+|       |                   -secupdate, -secpatch, -mirror, -cloak,
+|       |                   -dns, -usbguard, -live, -firstboot, -desk,
+|       |                   -tune, -ntp, -logd, -metrics, -trace
+|       `-- tools/          namikaze (build orchestration: its
+|                           build.rs IS the pipeline), namikaze-fstool,
+|                           namikaze-audit, namikaze-userland (50-tool
+|                           multi-call binary), namikaze-sh, -doctor,
+|                           -vault, -seal, -ledger, -sandbox, -anon,
+|                           -macspin, -persist, -backup, -scrub,
+|                           -wipe, -share, -decoy, -report, -dupe,
+|                           -guest, -pkg, -install, -rescue, -attest,
+|                           -chrono
+|-- var/
+|   |-- db/repos/namikaze/  the ::namikaze Gentoo overlay (its real
+|   |                       portage home): ebuilds, package sets,
+|   |                       profiles
+|   |-- lib/namikaze/       state skeleton
+|   `-- log/namikaze/       log skeleton
+`-- root/                   root home skeleton
 ```
+
+Documentation lives **inside the crates it describes**: each crate
+carries its own `docs/` directory next to the sources. Project meta
+(this README, LICENSE, SECURITY, CONTRIBUTING, CHANGELOG and the CI
+workflows) sits at the filesystem root like a well-kept /-level.
 
 ## One command: cargo build
 

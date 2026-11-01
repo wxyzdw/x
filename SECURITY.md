@@ -29,7 +29,7 @@ multi-user host), and your assessment of severity.
 
 ## Scope
 
-In scope: every `namikaze-*` crate, the xtask automation, the sysroot
+In scope: every `namikaze-*` crate, the dist pipeline, the filesystem
 service files, the kernel config fragments and the ::namikaze overlay.
 
 Out of scope for this repository: the upstream kernel, upstream niri and
@@ -46,4 +46,4 @@ part of the security contract:
 - no banned legacy toolchain tokens (gnu-guard)
 - kernel config must keep the mandatory options on and the leak vectors
   off (xtask kernel-check)
-- Niri session files must agree across sysroot and overlay (desk-guard)
+- Niri session files must agree across the tree and the overlay (desk-guard)

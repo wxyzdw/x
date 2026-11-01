@@ -7,8 +7,8 @@ is "what the guards will check anyway".
 ## The one command that matters
 
 There is no shell, no make and no xtask: a plain build does everything.
-From the `NamikazeOS/` workspace directory (the repository root only
-carries project meta):
+From the workspace directory, `usr/src/namikaze` (the repository root
+IS the filesystem it builds):
 
     cargo build
 
@@ -45,8 +45,8 @@ Single steps are available as subcommands of the same library functions:
 7. Version discipline: the root `[workspace.package]` version is the only
    place a version is set. Crate manifests inherit it; overlay ebuilds
    must match (version-guard checks both).
-8. The Niri session files under `airootfs/` and `overlay/` must stay in
-   sync byte-for-byte (desk-guard).
+8. The Niri session files under `etc/`, `usr/bin/` and the overlay
+   (`var/db/repos/namikaze/`) must stay in sync byte-for-byte (desk-guard).
 9. Userland tools must exist in three places at once: the `TOOLS` file,
    `src/registry.rs` and the userland ebuild symlink loop (tools-guard).
 10. No credential-shaped strings anywhere in tracked files, and no

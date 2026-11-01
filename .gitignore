@@ -1,6 +1,6 @@
-# Build outputs (the workspace lives in NamikazeOS/)
+# Build outputs (the workspace lives in usr/src/namikaze/)
 target/
-/NamikazeOS/dist
+/usr/src/namikaze/dist
 *.img
 *.iso
 *.log

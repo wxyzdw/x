@@ -3,6 +3,33 @@
 All notable changes to NamikazeOS are documented here. The format follows
 the Keep a Changelog structure; the project uses pure semantic versioning.
 
+## [3.0.0-alpha.5]
+
+### Changed - the repository becomes the filesystem
+
+- **The `airootfs/` and `NamikazeOS/` directories are gone: the
+  repository root IS the filesystem root.** The tree now reads like the
+  booted system: system configuration at `etc/` (policy, init.d,
+  cron, greetd, pam.d, profile.d), the session entry at `usr/bin/`,
+  AppArmor and sysctl fragments at `lib/`, the bootloader payload at
+  `boot/`, the state and log skeletons at `var/lib/namikaze/` and
+  `var/log/namikaze/`, the root home at `root/`.
+- **The Rust workspace moved to its FHS home**: `usr/src/namikaze/`
+  (Cargo.toml, 58 crates, kernel configs). The `namikaze` tool
+  resolves the filesystem root by walking up to
+  `usr/src/namikaze/Cargo.toml`; the dist pipeline treats the repo
+  root as `root` and the workspace as `namikaze_common::WORKSPACE`.
+- **The overlay moved to portage's real home**: `var/db/repos/namikaze/`.
+- All path constants updated across the guards, the dist pipeline and
+  the ISO staging (desk-guard pairs, modes-guard allowlist,
+  tools-guard three-way check, version-guard manifest and ebuild
+  paths, dep-guard group roots, SBOM group roots). `release` now zips
+  the whole filesystem source tree as
+  `NamikazeOS-<version>-source.zip`.
+- CI runs everything from `usr/src/namikaze`; artifacts upload from
+  `usr/src/namikaze/dist`. Version bumped tree-wide, 58 overlay
+  ebuilds renamed.
+
 ## [3.0.0-alpha.4]
 
 ### Added - the airootfs generation
