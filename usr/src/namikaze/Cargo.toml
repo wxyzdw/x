@@ -6,8 +6,16 @@ members = ["lib/*", "services/*", "tools/*"]
 # of every plain `cargo build`) drives it.
 exclude = ["kernel/namikaze-kernel"]
 
+# The dist pipeline (guards + SBOM + kernel + NamFS + image + audit)
+# runs inside this workspace's build script; unoptimized it spends
+# minutes in PBKDF2/XTS loops that take seconds optimized (the img
+# stage went from ~122 s to seconds). Build scripts get full
+# optimization in dev too.
+[profile.dev.build-override]
+opt-level = 3
+
 [workspace.package]
-version = "3.0.0-alpha.7"
+version = "3.0.0-alpha.8"
 edition = "2021"
 rust-version = "1.75"
 license = "MPL-2.0"
@@ -18,6 +26,7 @@ repository = "https://github.com/wxyzdw/x"
 
 # lib: foundational libraries every other crate links against
 namikaze-common = { path = "lib/namikaze-common" }
+namikaze-compat = { path = "lib/namikaze-compat" }
 namikaze-config = { path = "lib/namikaze-config" }
 namikaze-ffi = { path = "lib/namikaze-ffi" }
 namikaze-i18n = { path = "lib/namikaze-i18n" }
@@ -25,7 +34,6 @@ namikaze-live-core = { path = "lib/namikaze-live-core" }
 namikaze-persist-core = { path = "lib/namikaze-persist-core" }
 namikaze-rt = { path = "lib/namikaze-rt" }
 namikaze-guards = { path = "lib/namikaze-guards" }
-namikaze-iso = { path = "lib/namikaze-iso" }
 namikaze-img = { path = "lib/namikaze-img" }
 namikaze-fs = { path = "lib/namikaze-fs" }
 namikaze-dist = { path = "lib/namikaze-dist" }

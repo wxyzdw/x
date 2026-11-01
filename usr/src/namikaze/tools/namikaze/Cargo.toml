@@ -11,7 +11,6 @@ build = "build.rs"
 namikaze-common = { path = "../../lib/namikaze-common" }
 namikaze-rt = { path = "../../lib/namikaze-rt" }
 namikaze-guards = { path = "../../lib/namikaze-guards" }
-namikaze-iso = { path = "../../lib/namikaze-iso" }
 namikaze-img = { path = "../../lib/namikaze-img" }
 namikaze-dist = { path = "../../lib/namikaze-dist" }
 namikaze-fs = { path = "../../lib/namikaze-fs" }

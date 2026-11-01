@@ -153,7 +153,7 @@ pub fn write(root: &Path) -> Result<ImgStats> {
     };
     let pass = passphrase();
     namikaze_fs::create(&volume_path, &pass, &opts)?;
-    namikaze_fs::put(&volume_path, &pass, "rootfs.nampack", &pack)?;
+    namikaze_fs::put_all(&volume_path, &pass, &[(PACK_ENTRY, &pack)])?;
     namikaze_fs::verify(&volume_path, &pass)?;
 
     // Assemble the disk: MBR + headers + entry arrays + the volume in

@@ -7,6 +7,7 @@ license.workspace = true
 
 [dependencies]
 namikaze-common = { path = "../../lib/namikaze-common" }
+namikaze-compat = { path = "../../lib/namikaze-compat" }
 namikaze-rt = { path = "../../lib/namikaze-rt" }
 
 [[bin]]

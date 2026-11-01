@@ -3,6 +3,71 @@
 All notable changes to NamikazeOS are documented here. The format follows
 the Keep a Changelog structure; the project uses pure semantic versioning.
 
+## [3.0.0-alpha.8]
+
+### Changed - IMG-only, for good
+
+- **The ISO is gone from the codebase, not just the pipeline.** The
+  `namikaze-iso` crate (the ECMA-119/El Torito writer, 1.5k lines) is
+  deleted; the bootid seal moved into `namikaze-dist`; the
+  `namikaze-audit` tool is now the NamikazeIMG deep auditor; the
+  overlay lost its `iso` sector. The only image this system builds is
+  `NamikazeOS-<version>-oneimg.img` - one partition, everything
+  encrypted.
+
+### Added - the confinement ladder and Hiraishin no Jutsu
+
+- **Levels 0-3** (`namikaze-sandbox level`): 0 is the desktop bubble
+  (the session itself, sealed off from system services -
+  `usr/bin/namikaze-session` now exports `NAMIKAZE_SANDBOX_LEVEL=0`),
+  1 is the deny-by-default application sandbox and the default, 2
+  adds network, 3 is escalated desktop/host access. Levels clamp
+  profiles and never widen them; `etc/namikaze/sandbox.toml` is the
+  policy, `etc/namikaze/sandbox.allow` the marks.
+- **Hiraishin no Jutsu** (`namikaze-sandbox hiraishin <app>
+  --realm desktop|system`): the sanctioned escape. A marked
+  application + armed master switch + gate key
+  (`etc/namikaze/hiraishin.key`, 0600, firstboot-generated) issues a
+  kunai - an HMAC-SHA256 ticket over app, realm and nonce - that the
+  launcher verifies before letting anything through. All three must
+  agree; anything less is refused. 12 new tests cover the ladder and
+  the gate, including tamper rejection and the disarmed default.
+
+### Added - the package compatibility base (Gentoo first)
+
+- **`namikaze-compat`** names any package format from its bytes -
+  ebuild, AppImage, deb, rpm, Alpine apk, flatpak, nix, android apk -
+  and turns it into an install plan: backend, confinement level,
+  filesystem prefix. Gentoo is priority one and the only format near
+  the root; foreign formats land in their own read-only overlay
+  prefixes at level 1 and earn more only through the Hiraishin
+  ladder. The Android backend is honest about being planned.
+  `etc/namikaze/compat.toml` encodes the priority law;
+  `namikaze-pkg compat FILE` prints the plan. 6 tests.
+
+### Changed - optimization, bottom-up
+
+- **The dist pipeline now runs optimized**: `[profile.dev.build-
+  override] opt-level = 3` - the build script executes the guards,
+  NamFS sealing and the image assembly with full optimization (the
+  image stage went from ~122 s of unoptimized PBKDF2/XTS loops to
+  seconds). Shipped binaries were already LTO'd single-codegen-unit
+  and stripped.
+- **`namikaze-fs put_all`**: one key derivation, one read, one write
+  for a whole entry set - the bulk constructor image assembly uses
+  (N individual puts would re-seal the volume N times).
+
+### Changed - OpenRC made explicit; tree audit
+
+- `etc/rc.conf` is the OpenRC master configuration (parallel boot,
+  interactive boot, logging); every service remains a proper
+  `#!/sbin/openrc-run` script with `depend()` ordering and
+  supervise-daemon - the tree has no systemd anywhere.
+- A content-hash audit of the whole filesystem found 9 same-content
+  files: 5 are the desk-guard-enforced overlay pairs, 4 are empty
+  placeholders - all by design; the tree carries no accidental
+  duplication.
+
 ## [3.0.0-alpha.7]
 
 ### Added - NamikazeIMG: the single-partition fully-encrypted disk image

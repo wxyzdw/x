@@ -1,0 +1,13 @@
+# Hiraishin marks: which applications may teleport out of their sandbox.
+#
+# One mark per line:  <app-id> <realm>
+#   desktop - the application may reach the session desktop (wayland
+#             socket, session dbus); it still never sees the host.
+#   system  - the application may reach the host directly. The full
+#             teleport, reserved for administration tools.
+#
+# Everything not listed here can NEVER escape its sandbox, whatever
+# it asks for. The gate itself must also be armed
+# (etc/namikaze/sandbox.toml: hiraishin_enabled = true) and the gate
+# key must exist (etc/namikaze/hiraishin.key, 0600) - all three must
+# agree before a kunai is issued.

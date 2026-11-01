@@ -1,4 +1,4 @@
-# NamikazeOS 3.0.0-alpha.7 (Rust Edition)
+# NamikazeOS 3.0.0-alpha.8 (Rust Edition)
 
 A privacy-first, anonymity-oriented operating system built on a Gentoo stage3
 base with a fully memory-safe, **dependency-free Rust userland** running on
@@ -106,7 +106,7 @@ filesystem they build, at the place FHS reserves for them:
 |   `-- greetd/  pam.d/
 |-- boot/                   bootloader payload tree: pinned Limine
 |   |                       binaries (limine.lock-sha256-verified),
-|   `--                     limine.conf, oneiso.toml manifest
+|   `--                     limine.conf, boot manifests
 |-- usr/
 |   |-- bin/                session entry (namikaze-session)
 |   `-- src/namikaze/       THE Rust workspace (62 crates, zero
@@ -216,6 +216,59 @@ cargo run -p namikaze -- audit   dist/NamikazeOS-*-oneimg.img
 The live ISO story remains in `namikaze-iso` (the ECMA-119 writer and
 its tests), but the pipeline no longer builds it: the disk image is
 what boots, persists and updates.
+
+## The confinement ladder: levels 0-3, and Hiraishin no Jutsu
+
+Every process sits on a level, and levels only clamp - they never
+widen:
+
+| Level | Name | Policy |
+| --- | --- | --- |
+| 0 | desktop | the session bubble itself, sealed off from system services |
+| 1 | app | deny-by-default sandbox: no network, no desktop (the default) |
+| 2 | networked | the same, plus network sockets |
+| 3 | escalated | desktop or host access - only via a Hiraishin grant |
+
+Per-application profiles live in `etc/namikaze/sandbox/*.toml` and
+compile into the launch recipe (`namikaze-sandbox compile app
+--level N`). **Hiraishin no Jutsu** - the Flying Thunder God
+technique - is the one sanctioned way anything leaves its sandbox:
+the operator marks the application in `etc/namikaze/sandbox.allow`,
+the master switch in `etc/namikaze/sandbox.toml` is armed, and only
+then does the gate issue a ticket (an HMAC-SHA256 seal over app,
+realm and nonce, the kunai) that the launcher verifies before
+spawning anything outside. Three switches must agree - the mark, the
+master switch, the gate key (`etc/namikaze/hiraishin.key`, 0600,
+firstboot-generated); anything less is refused, fail-closed.
+
+```sh
+cargo run -p namikaze-sandbox -- levels
+cargo run -p namikaze-sandbox -- hiraishin files --realm desktop
+cargo run -p namikaze-sandbox -- doctor
+```
+
+## Whatever falls in, runs: the package compatibility base
+
+`namikaze-compat` names a package format from its bytes (magic
+numbers, never the extension) and routes it - **Gentoo first,
+always**: ebuilds are native and the only format allowed near the
+root (portage via `namikaze-pkg`). AppImage runs read-only in a
+level-1 sandbox; DEB/RPM/APK trees extract into their own overlay
+prefix (`/opt/namikaze/compat/<format>/<name>`, read-only to the
+application, writable only by the installer) - a foreign package
+never touches the Gentoo root; Flatpak and Nix consume their runtimes
+read-only; Android (APK) has detection and routing today and an ART
+runtime container as documented future work - the policy says so
+instead of pretending. `namikaze-pkg compat FILE` prints the plan.
+
+## OpenRC, all the way down
+
+The init system is OpenRC - it was never anything else. Every service
+is an `#!/sbin/openrc-run` script with explicit `depend()` ordering
+and `supervise-daemon` supervision; `etc/rc.conf` is the master
+configuration (parallel boot, interactive boot, logging into
+`namikaze-logd`), the runlevel symlinks are firstboot's job, and no
+systemd unit exists anywhere in the tree.
 
 ## One command: cargo build
 

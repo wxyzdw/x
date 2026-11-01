@@ -20,9 +20,6 @@
 //!    every artifact with its SHA-256)
 //! 8. checksums- dist/SHA256SUMS over every produced artifact
 //!
-//! The live ISO is gone from the release: the disk image is the
-//! artifact (the ISO9660 writer remains in namikaze-iso for the
-//! record and its own tests).
 
 use std::path::Path;
 use std::time::Instant;

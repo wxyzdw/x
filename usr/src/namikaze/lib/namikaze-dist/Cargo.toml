@@ -10,6 +10,5 @@ description = "NamikazeOS release pipeline: SBOM, kernel, NamFS volume, disk ima
 namikaze-common = { path = "../namikaze-common" }
 namikaze-rt = { path = "../namikaze-rt" }
 namikaze-guards = { path = "../namikaze-guards" }
-namikaze-iso = { path = "../namikaze-iso" }
 namikaze-img = { path = "../namikaze-img" }
 namikaze-fs = { path = "../namikaze-fs" }

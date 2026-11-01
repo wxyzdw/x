@@ -63,7 +63,7 @@ Fixtures: `Quirk::Experimental` boards are excluded from the certified build;
 - Storage: NVMe, AHCI, UAS, SD/eMMC, UFS, virtio-blk.
 - Cameras: uvcvideo plus libcamera sensors imx219/imx708/ov5647.
 - Firmware: full linux-firmware union packed by the ISO pipeline
-  (`namikaze-iso`) as a read-only firmware layer; `namikaze-hal firmware-plan BOARD` prints the per-board
+  (`namikaze-img`) as a read-only firmware layer; `namikaze-hal firmware-plan BOARD` prints the per-board
   thin set for constrained media.
 
 ## Adding a board

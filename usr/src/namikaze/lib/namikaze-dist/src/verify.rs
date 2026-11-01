@@ -13,8 +13,6 @@ pub fn run(root: &Path) -> Result<()> {
     let mut files: Vec<PathBuf> = walk_files(&dist)
         .into_iter()
         .filter(|p| p.file_name().map(|n| n != "SHA256SUMS").unwrap_or(true))
-        // the staging tree is input to the image, not a release artifact
-        .filter(|p| !p.to_string_lossy().contains("iso-staging"))
         .collect();
     files.sort();
     for f in &files {

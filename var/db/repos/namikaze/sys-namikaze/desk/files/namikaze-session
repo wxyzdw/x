@@ -15,6 +15,10 @@ export MOZ_ENABLE_WAYLAND=1
 export QT_QPA_PLATFORM=wayland
 export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
 export ELECTRON_OZONE_PLATFORM_HINT=wayland
+# the desktop bubble: this session runs at confinement level 0 - it is
+# sealed off from system services; applications inside start at level
+# 1 (see etc/namikaze/sandbox.toml, namikaze-sandbox levels)
+export NAMIKAZE_SANDBOX_LEVEL=0
 
 mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}" "$HOME/Pictures/Screenshots"
 

@@ -20,7 +20,9 @@ pub mod aes;
 pub mod format;
 pub mod xts;
 
-pub use format::{create, get, info, list, open, put, verify, CreateOptions, VolumeInfo, MAGIC};
+pub use format::{
+    create, get, info, list, open, put, put_all, verify, CreateOptions, VolumeInfo, MAGIC,
+};
 
 /// The PBKDF2 iteration count the release pipeline uses for demo volumes
 /// (kept modest so builds stay fast; real volumes should raise it).

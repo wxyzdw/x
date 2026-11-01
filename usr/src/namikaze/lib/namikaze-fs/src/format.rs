@@ -383,6 +383,30 @@ pub fn put(path: &Path, pass: &[u8], name: &str, contents: &[u8]) -> Result<()> 
     volume.persist(path, &kept)
 }
 
+/// Replace the whole entry set in one pass: one key derivation, one
+/// read, one write. This is the bulk constructor the image assembler
+/// uses - N individual `put` calls would re-derive the keys and
+/// rewrite the volume N times.
+///
+/// Duplicate names are rejected; capacity (28 entries in v1) is
+/// enforced by the persist step. Returns the number of entries stored.
+pub fn put_all(path: &Path, pass: &[u8], entries: &[(&str, &[u8])]) -> Result<usize> {
+    let volume = open(path, pass)?;
+    let mut names: Vec<&str> = Vec::with_capacity(entries.len());
+    for (name, _) in entries {
+        seal_entry_name(name)?;
+        if names.contains(name) {
+            return Err(Error::Other(format!("namfs: duplicate entry name {name:?}")));
+        }
+        names.push(name);
+    }
+    let kept: Vec<(String, Vec<u8>)> =
+        entries.iter().map(|(name, contents)| ((*name).to_string(), contents.to_vec())).collect();
+    let count = kept.len();
+    volume.persist(path, &kept)?;
+    Ok(count)
+}
+
 /// Read one named file back out of the volume, verifying its SHA-256.
 pub fn get(path: &Path, pass: &[u8], name: &str) -> Result<Vec<u8>> {
     let volume = open(path, pass)?;
@@ -435,4 +459,57 @@ pub fn verify(path: &Path, pass: &[u8]) -> Result<usize> {
         volume.read_verified(entry)?;
     }
     Ok(count)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn put_all_matches_sequential_puts() {
+        let dir = std::env::temp_dir().join("namfs-put-all");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let a = dir.join("a.namfs");
+        let b = dir.join("b.namfs");
+        let opts = CreateOptions {
+            size_bytes: 1024 * 1024,
+            label: "test".into(),
+            iterations: 1000,
+            salt: Some([7u8; 32]),
+            uuid: Some([9u8; 16]),
+            created: 0,
+        };
+        let pass = b"pass";
+        create(&a, pass, &opts).unwrap();
+        put(&a, pass, "one", b"first").unwrap();
+        put(&a, pass, "two/two", b"second-second").unwrap();
+        create(&b, pass, &opts).unwrap();
+        let n = put_all(&b, pass, &[("one", b"first"), ("two/two", b"second-second")]).unwrap();
+        assert_eq!(n, 2);
+        assert_eq!(std::fs::read(&a).unwrap(), std::fs::read(&b).unwrap());
+        assert_eq!(list(&b, pass).unwrap().len(), 2);
+        assert_eq!(get(&b, pass, "two/two").unwrap(), b"second-second");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn put_all_rejects_duplicate_names() {
+        let dir = std::env::temp_dir().join("namfs-put-all-dup");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let v = dir.join("d.namfs");
+        let opts = CreateOptions {
+            size_bytes: 1024 * 1024,
+            label: "test".into(),
+            iterations: 1000,
+            salt: Some([7u8; 32]),
+            uuid: Some([9u8; 16]),
+            created: 0,
+        };
+        let pass = b"pass";
+        create(&v, pass, &opts).unwrap();
+        assert!(put_all(&v, pass, &[("x", b"1"), ("x", b"2")]).is_err());
+        std::fs::remove_dir_all(&dir).ok();
+    }
 }

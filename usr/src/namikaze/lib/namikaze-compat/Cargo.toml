@@ -1,10 +1,10 @@
 [package]
-name = "namikaze-iso"
+name = "namikaze-compat"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "NamikazeOS OneISO: staging, pure-Rust ISO9660 + El Torito writer, round-trip verifier and deep audit"
+description = "Package format compatibility base: detect, plan and route foreign packages into the sandbox ladder"
 
 [dependencies]
 namikaze-common = { path = "../namikaze-common" }

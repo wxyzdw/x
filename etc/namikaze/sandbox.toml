@@ -1,0 +1,30 @@
+# NamikazeOS confinement policy - the level ladder.
+#
+# Every process on the box sits on a level:
+#   0 desktop    - the session bubble itself, sealed off from system services
+#   1 app        - deny-by-default application sandbox (no network, no desktop)
+#   2 networked  - the same, plus network sockets
+#   3 escalated  - desktop or host access, ONLY via a Hiraishin grant
+#
+# Levels clamp application profiles; they never widen them. Per-app
+# profiles live in /etc/namikaze/sandbox/*.toml, the Hiraishin marks
+# in the allow file below.
+#
+# SECURITY AND PRIVACY ARE NON-NEGOTIABLE:
+#   - hiraishin_enabled = false means NOTHING ever leaves its sandbox,
+#     no matter what the allow file says (fail-closed master switch);
+#   - the gate key (etc/namikaze/hiraishin.key, 0600, firstboot
+#     generated) must exist for tickets to issue or verify;
+#   - a missing or unreadable allow file marks nobody.
+
+[sandbox]
+# The level applications get when their profile says nothing.
+default_level = 1
+
+# The Flying Thunder God master switch. Arming this is a conscious
+# operator decision; keep it false on any machine you care about.
+hiraishin_enabled = false
+
+# Which applications carry a mark, and for which realm
+# (desktop = session only, system = the host itself).
+allow_file = "/etc/namikaze/sandbox.allow"

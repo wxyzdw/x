@@ -9,4 +9,4 @@ description = "Independent deep auditor for NamikazeOS ISO images (ECMA-119 + El
 [dependencies]
 namikaze-common = { path = "../../lib/namikaze-common" }
 namikaze-rt = { path = "../../lib/namikaze-rt" }
-namikaze-iso = { path = "../../lib/namikaze-iso" }
+namikaze-img = { path = "../../lib/namikaze-img" }

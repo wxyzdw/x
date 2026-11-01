@@ -128,10 +128,10 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             --title "NamikazeOS $GITHUB_REF_NAME" \
             --generate-notes \
-            dist/NamikazeOS-*-oneiso.iso dist/NamikazeOS-*-oneiso.iso.sha256 \
-            dist/namfs/namikaze-demo.namfs \
+            dist/NamikazeOS-*-oneimg.img dist/NamikazeOS-*-oneimg.img.sha256 \
+            dist/manifest.json dist/namfs/namikaze-demo.namfs \
             dist/sbom.json dist/bootid dist/SHA256SUMS \
             || gh release upload "$GITHUB_REF_NAME" --clobber \
-                 dist/NamikazeOS-*-oneiso.iso dist/NamikazeOS-*-oneiso.iso.sha256 \
-                 dist/namfs/namikaze-demo.namfs \
+                 dist/NamikazeOS-*-oneimg.img dist/NamikazeOS-*-oneimg.img.sha256 \
+                 dist/manifest.json dist/namfs/namikaze-demo.namfs \
                  dist/sbom.json dist/bootid dist/SHA256SUMS

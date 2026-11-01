@@ -34,7 +34,23 @@ const USAGE: &[&str] = &[
     "  namikaze-pkg snapshot         snapshot the installed set with quickpkg",
     "  namikaze-pkg snapshots        list available snapshots",
     "  namikaze-pkg rollback FILE    reinstall everything from a snapshot",
+    "  namikaze-pkg compat FILE      detect a foreign package and print its plan",
 ];
+
+/// `compat FILE`: name the format from the bytes, print the install
+/// plan. Detection never trusts the extension; Gentoo stays priority
+/// one, everything foreign lands sandboxed in its own prefix.
+fn compat(file: &std::path::Path) -> Result<()> {
+    let bytes = std::fs::read(file)
+        .map_err(|e| Error::Other(format!("compat: cannot read {}: {e}", file.display())))?;
+    let name = file.file_stem().and_then(|s| s.to_str()).unwrap_or("package").to_string();
+    let detection = namikaze_compat::detect(&bytes, &file.to_string_lossy())?;
+    println!(
+        "{}",
+        namikaze_compat::render(&namikaze_compat::plan(&detection, &name), &file.to_string_lossy())
+    );
+    Ok(())
+}
 
 fn run(program: &str, args: &[&str]) -> Result<()> {
     println!("+ {program} {}", args.join(" "));
@@ -148,6 +164,14 @@ fn main() -> Result<()> {
     let free = cli.free(&[]);
     match cli.sub().unwrap_or_default() {
         "converge" => run_converge()?,
+        "compat" => {
+            let file = cli
+                .free(&[])
+                .get(1)
+                .map(std::path::PathBuf::from)
+                .ok_or_else(|| Error::Other("compat: missing FILE argument".into()))?;
+            compat(&file)?
+        }
         "check-collision" => run_check_collision()?,
         "verify" => run_verify()?,
         "snapshot" => {

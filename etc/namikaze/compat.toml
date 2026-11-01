@@ -1,0 +1,59 @@
+# NamikazeOS package compatibility policy - "whatever falls in, runs".
+#
+# Priority order is the law: Gentoo packages are the native format and
+# the only ones allowed near the root; every foreign format lands in
+# its own read-only overlay prefix and in the sandbox ladder. There is
+# no "trusted foreign format".
+
+# <format>   status      backend                                      level
+[g policy]
+order = ["gentoo", "appimage", "deb", "rpm", "apk", "flatpak", "nix", "android"]
+
+[gentoo]
+status   = "native"
+backend  = "portage (namikaze-pkg converge)"
+level    = 0
+prefix   = "/"
+
+[appimage]
+status   = "supported"
+backend  = "direct exec, read-only mount"
+level    = 1
+
+[deb]
+status   = "supported"
+backend  = "extract to overlay prefix, sandboxed launch"
+level    = 1
+prefix   = "/opt/namikaze/compat/deb"
+
+[rpm]
+status   = "supported"
+backend  = "extract to overlay prefix, sandboxed launch"
+level    = 1
+prefix   = "/opt/namikaze/compat/rpm"
+
+[apk]
+status   = "supported"
+backend  = "extract to overlay prefix, sandboxed launch"
+level    = 1
+prefix   = "/opt/namikaze/compat/apk"
+
+[flatpak]
+status   = "supported"
+backend  = "flatpak runtime, same level rules"
+level    = 1
+prefix   = "/var/lib/flatpak"
+
+[nix]
+status   = "supported"
+backend  = "nix store, read-only consumption"
+level    = 1
+prefix   = "/nix/store"
+
+# Android: detection and routing exist today, the ART runtime
+# container is documented future work. We say so instead of pretending.
+[android]
+status   = "planned"
+backend  = "ART runtime container behind the sandbox ladder"
+level    = 1
+prefix   = "/opt/namikaze/compat/android"

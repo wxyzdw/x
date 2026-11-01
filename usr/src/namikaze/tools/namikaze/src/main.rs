@@ -83,7 +83,7 @@ fn dispatch(root: &Path, sub: &str, args: &[String]) -> Result<()> {
             None => namikaze_guards::verify_all(root),
         },
         "sbom" => namikaze_common::sbom::run(root),
-        "bootid" => namikaze_iso::seal::run(root),
+        "bootid" => namikaze_dist::seal::run(root),
         "kernel" => namikaze_dist::rust_kernel::run(root),
         "kernel-check" => {
             let config = args.first().map(PathBuf::from).unwrap_or_else(|| {
